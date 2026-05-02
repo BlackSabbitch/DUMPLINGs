@@ -11,6 +11,7 @@ import json
 import os
 from typing import Tuple
 from evaluator import Evaluator
+import math
 
 
 class Trainer:
@@ -160,6 +161,23 @@ class Trainer:
             return None
         return [float(param_group.get('lr', 0.0)) for param_group in optimizer.param_groups]
 
+    @staticmethod
+    def _batch_summary(batch) -> str:
+        try:
+            _, _, _, complex_data, targets = batch
+            z = complex_data.x[:, 0] if hasattr(complex_data, 'x') and complex_data.x is not None else None
+            pos = complex_data.pos if hasattr(complex_data, 'pos') and complex_data.pos is not None else None
+            return (
+                f"targets_shape={tuple(targets.shape)} "
+                f"targets_finite={bool(torch.isfinite(targets).all().item())} "
+                f"num_nodes={int(complex_data.num_nodes) if hasattr(complex_data, 'num_nodes') else 'na'} "
+                f"z_min={int(z.min().item()) if z is not None and z.numel() else 'na'} "
+                f"z_max={int(z.max().item()) if z is not None and z.numel() else 'na'} "
+                f"pos_finite={bool(torch.isfinite(pos).all().item()) if pos is not None and pos.numel() else 'na'}"
+            )
+        except Exception as exc:
+            return f"batch_summary_error={exc}"
+
     def _log_epoch_start(self, epoch_id: int, total_epochs: int, progress: float) -> None:
         classic_lr = self._optimizer_lrs(self.opt_classic)
         quantum_lr = self._optimizer_lrs(self.opt_quantum)
@@ -221,7 +239,22 @@ class Trainer:
             
             # Forward pass
             preds = self.model(batch, progress=progress).view(-1)
+            if not torch.isfinite(preds).all():
+                raise RuntimeError(
+                    f"Non-finite predictions encountered in train batch {i}. "
+                    f"{self._batch_summary(batch)}"
+                )
+            if not torch.isfinite(targets).all():
+                raise RuntimeError(
+                    f"Non-finite targets encountered in train batch {i}. "
+                    f"{self._batch_summary(batch)}"
+                )
             loss = self.criterion(preds, targets)
+            if not torch.isfinite(loss):
+                raise RuntimeError(
+                    f"Non-finite loss encountered in train batch {i}. "
+                    f"{self._batch_summary(batch)}"
+                )
             
             # Backward pass
             loss.backward()
@@ -260,7 +293,18 @@ class Trainer:
                 batch = [b.to(self.device) if hasattr(b, 'to') else b for b in batch]
                 _, _, _, _, targets = batch
                 preds = self.model(batch, progress=progress).view(-1)
-                val_loss += self.criterion(preds, targets).item()
+                if not torch.isfinite(preds).all() or not torch.isfinite(targets).all():
+                    raise RuntimeError(
+                        f"Non-finite tensors encountered during validation. "
+                        f"{self._batch_summary(batch)}"
+                    )
+                batch_loss = self.criterion(preds, targets)
+                if not torch.isfinite(batch_loss):
+                    raise RuntimeError(
+                        f"Non-finite validation loss encountered. "
+                        f"{self._batch_summary(batch)}"
+                    )
+                val_loss += batch_loss.item()
         return val_loss / len(loader)
 
     def train(self, train_loader, val_loader, exp_dir, save_only_best_epoch=True) -> Tuple[int, float]:
@@ -325,6 +369,8 @@ class Trainer:
                 if mode == 'ignore': continue
                 val = current_metrics.get(metric)
                 if val is None: continue
+                if isinstance(val, float) and not math.isfinite(val):
+                    continue
                 if (mode == 'max' and val > self.best_scores[metric]) or \
                     (mode == 'min' and val < self.best_scores[metric]):
 

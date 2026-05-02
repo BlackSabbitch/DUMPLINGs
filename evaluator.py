@@ -109,9 +109,19 @@ class Evaluator:
         
         preds = np.array(preds)
         targets = np.array(targets)
+
+        finite_mask = np.isfinite(preds) & np.isfinite(targets)
+        preds = preds[finite_mask]
+        targets = targets[finite_mask]
+
+        if preds.size == 0 or targets.size == 0:
+            return float('nan'), float('nan'), 0.0, preds, targets
         
         rmse = np.sqrt(np.mean((preds - targets)**2))
-        r_val, _ = pearsonr(preds, targets)
+        if preds.size < 2 or np.std(preds) == 0 or np.std(targets) == 0:
+            r_val = float('nan')
+        else:
+            r_val, _ = pearsonr(preds, targets)
         ci_val = self.concordance_index(targets, preds)  # Calculate CI
 
         return rmse, r_val, ci_val, preds, targets
@@ -165,6 +175,15 @@ class Evaluator:
         plt.xlabel('Epochs')
         plt.ylabel('CI')
         plt.grid(True)
+
+        if history.get('best_y_true') is None or history.get('best_y_pred') is None:
+            plt.tight_layout()
+            if save:
+                plt.savefig(f'{exp_dir}/model_performance_report.png')
+                log_info(f"Performance report saved to {exp_dir}/model_performance_report.png", stage="EVALUATOR")
+            if show:
+                plt.show()
+            return
 
         y_true_np = np.array(history['best_y_true'])
         y_pred_np = np.array(history['best_y_pred'])

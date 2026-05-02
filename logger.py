@@ -82,6 +82,14 @@ def get_ascii_plot(data, title,
     # 1. Логика для Scatter Plot (Actual vs Predicted)
     if isinstance(data, list) and len(data) == 2 and isinstance(data[0], (list, np.ndarray)):
         xs_raw, ys_raw = np.array(data[0]), np.array(data[1])
+        if xs_raw.size == 0 or ys_raw.size == 0:
+            return [f"{title}: no data"]
+
+        finite_mask = np.isfinite(xs_raw) & np.isfinite(ys_raw)
+        xs_raw = xs_raw[finite_mask]
+        ys_raw = ys_raw[finite_mask]
+        if xs_raw.size == 0 or ys_raw.size == 0:
+            return [f"{title}: no finite data"]
         
         if force_diagonal:
             low = min(xs_raw.min(), ys_raw.min())
@@ -102,9 +110,24 @@ def get_ascii_plot(data, title,
     else:
         # Если это гистограмма, пришедшая как [bins, counts]
         if isinstance(data, list) and len(data) == 2 and isinstance(data[0], (list, np.ndarray)):
-             uplot_args.update({"xs": data[0], "ys": data[1]})
+             xs = np.array(data[0])
+             ys = np.array(data[1])
+             if xs.size == 0 or ys.size == 0:
+                 return [f"{title}: no data"]
+             finite_mask = np.isfinite(xs) & np.isfinite(ys)
+             xs = xs[finite_mask]
+             ys = ys[finite_mask]
+             if xs.size == 0 or ys.size == 0:
+                 return [f"{title}: no finite data"]
+             uplot_args.update({"xs": xs, "ys": ys})
         else:
-             uplot_args.update({"ys": data})
+             ys = np.array(data)
+             if ys.size == 0:
+                 return [f"{title}: no data"]
+             ys = ys[np.isfinite(ys)]
+             if ys.size == 0:
+                 return [f"{title}: no finite data"]
+             uplot_args.update({"ys": ys})
 
     try:
         with redirect_stdout(buf):
@@ -116,7 +139,18 @@ def get_ascii_plot(data, title,
 
 def get_residuals_hist_data(y_true, y_pred, bins=20):
     """Готовит данные для гистограммы"""
-    errors = np.array(y_pred) - np.array(y_true)
+    if y_true is None or y_pred is None:
+        return np.array([]), np.array([])
+    y_true = np.array(y_true)
+    y_pred = np.array(y_pred)
+    if y_true.size == 0 or y_pred.size == 0:
+        return np.array([]), np.array([])
+    finite_mask = np.isfinite(y_true) & np.isfinite(y_pred)
+    y_true = y_true[finite_mask]
+    y_pred = y_pred[finite_mask]
+    if y_true.size == 0 or y_pred.size == 0:
+        return np.array([]), np.array([])
+    errors = y_pred - y_true
     counts, bin_edges = np.histogram(errors, bins=bins)
     bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
     return bin_centers, counts
@@ -164,20 +198,24 @@ def console_plots(trainer_history, side_by_side=True, stage="SUMMARY"):
         )
         log_info(dashboard_r_ci, stage=stage)
 
-        y_true = np.array(trainer_history['best_y_true'])
-        y_pred = np.array(trainer_history['best_y_pred'])
+        y_true = trainer_history.get('best_y_true')
+        y_pred = trainer_history.get('best_y_pred')
+        if y_true is None or y_pred is None:
+            log_info("Final Performance Analytics: best predictions are not available yet.", stage=stage)
+        else:
+            y_true = np.array(y_true)
+            y_pred = np.array(y_pred)
+            hist_x, hist_y = get_residuals_hist_data(y_true, y_pred)
 
-        hist_x, hist_y = get_residuals_hist_data(y_true, y_pred)
-
-        dashboard_final = log_side_by_side(
-            [y_true, y_pred], "Actual vs Predicted",   # Left: Scatter
-            [hist_x, hist_y], "Residuals Distribution", # Right: Histogram (как XY график)
-            is_scatter=True,
-            is_hist=True,
-            stage=stage
-        )
-        
-        log_info("Final Performance Analytics:" + dashboard_final, stage=stage)
+            dashboard_final = log_side_by_side(
+                [y_true, y_pred], "Actual vs Predicted",
+                [hist_x, hist_y], "Residuals Distribution",
+                is_scatter=True,
+                is_hist=True,
+                stage=stage
+            )
+            
+            log_info("Final Performance Analytics:" + dashboard_final, stage=stage)
 
     else:
         loss_chart = get_ascii_plot(trainer_history["train_loss"], title="Learning Curve (Loss)")
@@ -192,13 +230,15 @@ def console_plots(trainer_history, side_by_side=True, stage="SUMMARY"):
         ci_chart = get_ascii_plot(trainer_history["val_ci"], title="Ranking Accuracy (CI)")
         log_info(f"Concordancy Index Curve:\n" + "\n".join(ci_chart), stage=stage)
 
-        y_true = trainer_history['best_y_true']
-        y_pred = trainer_history['best_y_pred']
+        y_true = trainer_history.get('best_y_true')
+        y_pred = trainer_history.get('best_y_pred')
+        if y_true is None or y_pred is None:
+            log_info("Best predictions are not available yet; skipping final scatter/hist plots.", stage=stage)
+        else:
+            act_vs_pred_chart = get_ascii_plot([y_true, y_pred], title="Predicted = f(Actual)", force_diagonal=True)
+            log_info(f"Actual vs Predicted Scatter Plot:\n" + "\n".join(act_vs_pred_chart), stage=stage)
 
-        act_vs_pred_chart = get_ascii_plot([y_true, y_pred], title="Predicted = f(Actual)", force_diagonal=True)
-        log_info(f"Actual vs Predicted Scatter Plot:\n" + "\n".join(act_vs_pred_chart), stage=stage)
+            hist_x, hist_y = get_residuals_hist_data(y_true, y_pred)
 
-        hist_x, hist_y = get_residuals_hist_data(y_true, y_pred)
-
-        resid_chart = get_ascii_plot([hist_x, hist_y], title="Residuals Distribution", lines=True)
-        log_info(f"Errors Distribution (Residuals):\n" + "\n".join(resid_chart), stage=stage)
+            resid_chart = get_ascii_plot([hist_x, hist_y], title="Residuals Distribution", lines=True)
+            log_info(f"Errors Distribution (Residuals):\n" + "\n".join(resid_chart), stage=stage)
