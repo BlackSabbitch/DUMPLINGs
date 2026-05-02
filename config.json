@@ -1,5 +1,14 @@
 {
     "experiment_name": "DUMPLING_A1_DimeNet",
+    "splitter": {
+        "selected": "random",
+        "available": {
+            "random": {
+                "val_frac": 0.15,
+                "seed": 42
+            }
+        }
+    },
     "dataset": {
         "batch_size": 8,
         "num_workers": 4,
@@ -14,12 +23,48 @@
                 "duo": {
                     "protein_ligand_pocket_encoders": "NE",
                     "egnn_params": {
-                        "dist_threshold": 5.0,
-                        "ca_only": false,
                         "hidden_channels": 128,
-                        "num_layers": 3
+                        "dist_threshold": 5.0,
+                        "ca_only": false
                     }
                 }
+            }
+        }
+    },
+    "training": {
+        "epochs": 10,
+        "plot_every_n_epochs": 2,
+        "save_only_best_epoch": true,
+        "early_stopping": {
+            "enabled": true,
+            "patience": 5,
+            "primary_monitor": "val_pearson",
+            "monitors": {
+                "val_pearson": "max",
+                "val_rmse": "min",
+                "train_loss": "ignore",
+                "val_ci": "max"
+            }
+        },
+        "loss_fn": {
+            "selected": "HuberLoss",
+            "available": {
+                "HuberLoss": { "delta": 1.0 },
+                "MSELoss": {}
+            }
+        },
+        "optimizers": {
+            "classic": {
+                "type": "AdamW",
+                "params": { "lr": 0.001, "weight_decay": 0.01 },
+                "scheduler": {
+                    "type": "ReduceLROnPlateau",
+                    "params": { "mode": "min", "factor": 0.5, "patience": 3 }
+                }
+            },
+            "quantum": {
+                "type": "AdamW",
+                "params": { "lr": 0.001 }
             }
         }
     }

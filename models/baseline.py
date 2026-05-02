@@ -25,15 +25,16 @@ class DumplingA1(nn.Module):
             nn.Linear(hidden_channels // 2, out_channels)
         )
 
-    def forward(self, batch):
+    def forward(self, batch_list, progress=0.0):
         # z: атомные номера (batch.x[:, 0])
         # pos: координаты
         # batch: индекс батча
-        z = batch.x[:, 0].long() 
-        pos = batch.pos.float()
+        prot_data, lig_data, pock_data, complex_data, target = batch_list
+        z = complex_data.x[:, 0].long()
+        pos = complex_data.pos.float()
         
         # Получаем эмбеддинг всей системы
-        x = self.gnn(z, pos, batch)
+        x = self.gnn(z, pos, complex_data.batch)
         
         # Предсказываем Delta G
         return self.head(x).view(-1)

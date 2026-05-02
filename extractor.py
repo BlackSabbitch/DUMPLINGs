@@ -65,6 +65,20 @@ class PDBBindOrchestrator:
             "pocket": "_pocket.pdb"
             }
 
+    @staticmethod
+    def _parser_signature(parser: Any) -> Any:
+        if parser is None:
+            return "None"
+
+        safe_params = {
+            k: v for k, v in vars(parser).items()
+            if isinstance(v, (str, int, float, bool, list, dict, type(None)))
+        }
+        return {
+            "class": parser.__class__.__name__,
+            "params": safe_params,
+        }
+
     def prepare_metadata(self) -> None:
         """
         Prepare metadata by extracting index and readme files from archive.
@@ -269,22 +283,20 @@ class PDBBindOrchestrator:
         Example:
             >>> df = orchestrator.build_dataset("refined", n_jobs=4, fmt="parquet")
         """
-        parsers_str_id = ""
-        for parser in self.parsers:
-            if parser is None:
-                parsers_str_id += "N"
-                continue
-            parsers_str_id += "_".join([f"{k}{v}" for k, v in sorted(vars(parser).items())])
-        parsers_str_id = md5(parsers_str_id.encode()).hexdigest()
+        parsers_signature = [self._parser_signature(parser) for parser in self.parsers]
+        parsers_str_id = md5(
+            json.dumps(parsers_signature, sort_keys=True).encode()
+        ).hexdigest()
 
         name = file_name if file_name else f"pdbbds_{subset[:3]}_{self.graph_encoder}{self.graph_encoder_mode}_{parsers_str_id}"
         self.full_path = os.path.join(save_dir, f"{name}.{fmt}")
 
         if os.path.exists(self.full_path):
             log_info(f"Existing dataset found: {self.full_path}. Loading from cache...", stage="CACHE")
-            if fmt == "parquet": return pd.read_parquet(self.full_path)
-            if fmt in ["pickle", "pkl"]: return pd.read_pickle(self.full_path)
-            if fmt == "csv": return pd.read_csv(self.full_path)
+            cached_df = self._load_dataset(fmt)
+            if cached_df is not None:
+                return cached_df
+            log_warn(f"Cache is unreadable, rebuilding: {self.full_path}", stage="CACHE")
 
         targets = self.get_complex_ids(subset)
         
@@ -300,10 +312,23 @@ class PDBBindOrchestrator:
         
         actual_comp = compression if fmt == "parquet" else (None if compression == "snappy" else compression)
         os.makedirs(save_dir, exist_ok=True)
-        self._save_metadata(subset, save_dir, name, fmt, actual_comp, len(df))
         self._save_dataset(df, fmt, actual_comp)
+        self._save_metadata(subset, save_dir, name, fmt, actual_comp, len(df))
 
         return df
+
+    def _load_dataset(self, fmt: str) -> Optional[pd.DataFrame]:
+        try:
+            if fmt == "parquet":
+                return pd.read_parquet(self.full_path)
+            if fmt in ["pickle", "pkl"]:
+                return pd.read_pickle(self.full_path)
+            if fmt == "csv":
+                return pd.read_csv(self.full_path)
+        except Exception as e:
+            log_warn(f"Failed to load cached dataset: {e}", stage="CACHE")
+            return None
+        raise ValueError(f"Unsupported file format: {fmt}")
 
     def _save_dataset(self, df: pd.DataFrame, fmt: str, actual_comp: Optional[str]) -> None:
         """
@@ -314,12 +339,17 @@ class PDBBindOrchestrator:
             fmt: File format.
             actual_comp: Compression type.
         """
+        tmp_path = f"{self.full_path}.tmp.{os.getpid()}"
         if fmt == "parquet":
-            df.to_parquet(self.full_path, compression=actual_comp)
+            df.to_parquet(tmp_path, compression=actual_comp)
         elif fmt in ["pickle", "pkl"]:
-            df.to_pickle(self.full_path, compression=actual_comp)
+            df.to_pickle(tmp_path, compression=actual_comp)
         elif fmt == "csv":
-            df.to_csv(self.full_path, index=False, compression=actual_comp)
+            df.to_csv(tmp_path, index=False, compression=actual_comp)
+        else:
+            raise ValueError(f"Unsupported file format: {fmt}")
+
+        os.replace(tmp_path, self.full_path)
             
         log_info(f"Dataset saved to {self.full_path} (compression: {actual_comp})", stage="SAVE")
 
@@ -327,20 +357,7 @@ class PDBBindOrchestrator:
         """
         Save extended dataset metadata to JSON file for full reproducibility.
         """
-        # Собираем детальную информацию о каждом парсере
-        parsers_info = []
-        for parser in self.parsers:
-            if parser is None:
-                parsers_info.append("None")
-            else:
-                safe_params = {
-                    k: v for k, v in vars(parser).items() 
-                    if isinstance(v, (str, int, float, bool, list, dict))
-                    }
-                parsers_info.append({
-                    "class": parser.__class__.__name__,
-                    "params": safe_params
-                    })
+        parsers_info = [self._parser_signature(parser) for parser in self.parsers]
 
         metadata = {
             "dataset_name": name,

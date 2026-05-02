@@ -6,6 +6,8 @@ ipywidgets
 matplotlib
 torch
 torch_geometric
+torch-cluster
+# torch-sparse
+# torch-scatter
 pennylane
 uniplot
-

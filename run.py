@@ -129,7 +129,14 @@ class ExperimentRunner:
             orchestrator = PDBBindOrchestrator(parsers, self.config)
             if self.extract: orchestrator.extract_subset("refined")
             df_refined = orchestrator.build_dataset(subset="refined", fmt="pickle", save_dir=DATASETS_DIR)
-            df_core = orchestrator.build_dataset(subset="core", fmt="pickle", save_dir=DATASETS_DIR)
+            core_ids = set(orchestrator.get_complex_ids("core").keys())
+            df_core = df_refined[df_refined['pdb_id'].isin(core_ids)].copy()
+            missing_core_ids = core_ids - set(df_core['pdb_id'])
+            if missing_core_ids:
+                log_warn(
+                    f"{len(missing_core_ids)} core complexes are missing from refined dataset",
+                    stage="DATASET"
+                )
 
             clean_refined = df_refined[~df_refined['pdb_id'].isin(df_core['pdb_id'])]
 
