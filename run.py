@@ -2,8 +2,6 @@
 
 import json
 import os
-from matplotlib.pylab import sample
-import numpy as np
 import pandas as pd
 import gc
 import argparse
@@ -12,7 +10,6 @@ import shutil
 import torch
 from datetime import datetime
 from torch_geometric.loader import DataLoader
-from typing import Tuple
 
 from logger import *
 from extractor import PDBBindOrchestrator
@@ -42,7 +39,8 @@ class ExperimentRunner:
                  val_dataset_path: None | str = None,
                  temp_run: bool = False,
                  keep_temp: bool = False,
-                 exp_dir: None | str = None):
+                 exp_dir: None | str = None,
+                 core_as_test: None | bool = None):
         with open(config_path or 'config.json', 'r') as f:
             self.config = json.load(f)
         
@@ -56,6 +54,18 @@ class ExperimentRunner:
         self.temp_run = temp_run
         self.keep_temp = keep_temp
         self.exp_dir = exp_dir
+        self.source_subset = self.config['dataset'].get('source_subset', 'refined')
+        if self.source_subset not in {'refined', 'general'}:
+            raise ValueError("source_subset must be either 'refined' or 'general'")
+
+        configured_core_as_test = self.config['dataset'].get('core_as_test', True)
+        self.core_as_test = configured_core_as_test if core_as_test is None else core_as_test
+        self.test_frac = self.config['dataset'].get('test_frac', 0.15)
+        if not self.core_as_test and not 0.0 < float(self.test_frac) < 1.0:
+            raise ValueError("test_frac must be between 0 and 1")
+        self.config['dataset']['source_subset'] = self.source_subset
+        self.config['dataset']['core_as_test'] = self.core_as_test
+        self.config['dataset']['test_frac'] = self.test_frac
         assert all([self.train_dataset_path, self.test_dataset_path, self.val_dataset_path]) or not any([self.train_dataset_path, self.test_dataset_path, self.val_dataset_path])
 
     def prepare_folders(self):
@@ -127,27 +137,22 @@ class ExperimentRunner:
                 else: log_info(f"Unknown symbol {char} in the architecture description.", stage="EXPERIMENT")
 
             orchestrator = PDBBindOrchestrator(parsers, self.config)
-            if self.extract: orchestrator.extract_subset("refined")
-            df_refined = orchestrator.build_dataset(subset="refined", fmt="pickle", save_dir=DATASETS_DIR)
-            core_ids = set(orchestrator.get_complex_ids("core").keys())
-            df_core = df_refined[df_refined['pdb_id'].isin(core_ids)].copy()
-            missing_core_ids = core_ids - set(df_core['pdb_id'])
-            if missing_core_ids:
-                log_warn(
-                    f"{len(missing_core_ids)} core complexes are missing from refined dataset",
-                    stage="DATASET"
-                )
-
-            clean_refined = df_refined[~df_refined['pdb_id'].isin(df_core['pdb_id'])]
-
-            train_df, val_df = PDBBindSplitter.split(clean_refined, self.config["splitter"])
-
-            test_df = df_core.copy()
+            if self.extract: orchestrator.extract_subset(self.source_subset)
+            df_source = orchestrator.build_dataset(subset=self.source_subset, fmt="pickle", save_dir=DATASETS_DIR)
+            core_ids = set(orchestrator.get_complex_ids("core").keys()) if self.core_as_test else None
+            train_df, val_df, test_df, test_file_name = PDBBindSplitter.split_with_test(
+                df_source,
+                self.config["splitter"],
+                core_as_test=self.core_as_test,
+                test_frac=self.test_frac,
+                core_ids=core_ids,
+                source_subset=self.source_subset,
+            )
 
             if self.save_train_test_val_datasets:
                 train_path = f"{self.exp_run_datasets_dir}/train.pickle"
                 val_path   = f"{self.exp_run_datasets_dir}/val.pickle"
-                test_path  = f"{self.exp_run_datasets_dir}/test_core.pickle"
+                test_path  = f"{self.exp_run_datasets_dir}/{test_file_name}"
 
                 train_df.to_pickle(train_path)
                 test_df.to_pickle(test_path)
@@ -199,8 +204,15 @@ class ExperimentRunner:
         with open(f"{self.exp_run_dir}/config.json", 'w') as f:
             json.dump(self.config, f, indent=4)
 
-        hidden_dim = self.config['model']['graph_encoder']['available']['duo']['egnn_params'].get('hidden_channels', 128)
-        model = DumplingA1(hidden_channels=hidden_dim, out_channels=1)
+        dimenet_cfg = self.config['model']['graph_encoder']['available']['duo']['egnn_params']
+        hidden_dim = dimenet_cfg.get('hidden_channels', 128)
+        model = DumplingA1(
+            hidden_channels=hidden_dim,
+            out_channels=1,
+            cutoff=dimenet_cfg.get('dist_threshold', 5.0),
+            max_num_neighbors=dimenet_cfg.get('max_num_neighbors', 32),
+            num_blocks=dimenet_cfg.get('num_blocks', 3),
+        )
         evaluator = Evaluator(model, self.device)
 
         log_info(f"Launch on: {self.device}", stage="EXPERIMENT")
@@ -231,6 +243,8 @@ if __name__ == "__main__":
     parser.add_argument('--temp-run', action='store_true', help='Use a temporary experiment directory and remove it after successful completion')
     parser.add_argument('--keep-temp', action='store_true', help='Keep temporary directory even after successful temp-run')
     parser.add_argument('--exp-dir', type=str, default=None, help='Use a fixed experiment directory instead of timestamped runs/<name>_<ts>')
+    parser.add_argument('--core-as-test', action=argparse.BooleanOptionalAction, default=None,
+                        help='Use PDBBind core as test set. Use --no-core-as-test to split the configured source subset into train/val/test.')
 
     args = parser.parse_args()
     runner = ExperimentRunner(
@@ -241,7 +255,8 @@ if __name__ == "__main__":
         val_dataset_path=args.val_path,
         temp_run=args.temp_run,
         keep_temp=args.keep_temp,
-        exp_dir=args.exp_dir
+        exp_dir=args.exp_dir,
+        core_as_test=args.core_as_test
     )
     runner.prepare_folders()
     train_df, val_df, test_df = runner.prepare_datasets()

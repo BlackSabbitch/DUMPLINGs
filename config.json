@@ -6,13 +6,28 @@
             "random": {
                 "val_frac": 0.15,
                 "seed": 42
+            },
+            "scaffold": {
+                "val_frac": 0.15,
+                "seed": 42
+            },
+            "scaffold_balanced": {
+                "val_frac": 0.15,
+                "seed": 42
+            },
+            "cold_protein": {
+                "val_frac": 0.15,
+                "seed": 42
             }
         }
     },
     "dataset": {
-        "batch_size": 8,
+        "batch_size": 1,
         "num_workers": 4,
-        "save_train_test_val_datasets": true,
+        "save_train_test_val_datasets": false,
+        "source_subset": "refined",
+        "core_as_test": true,
+        "test_frac": 0.15,
         "prot_vocab": "?ACDEFGHIKLMNPQRSTVWY",
         "lig_vocab": "?ABCDEFGHIKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-=[]()#%@+./\\:,;^$"
     },
@@ -25,7 +40,9 @@
                     "egnn_params": {
                         "hidden_channels": 128,
                         "dist_threshold": 5.0,
-                        "ca_only": false
+                        "ca_only": false,
+                        "max_num_neighbors": 16,
+                        "num_blocks": 3
                     }
                 }
             }

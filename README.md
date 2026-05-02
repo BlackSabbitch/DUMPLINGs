@@ -191,6 +191,19 @@ Run with prebuilt train/test/validation dataframes:
          --test_path runs/<exp>/datasets/test_core.pickle
 ```
 
+Choose the test-set strategy:
+
+```bash
+./run.sh --core-as-test
+./run.sh --no-core-as-test
+```
+
+`core_as_test` is configured in `config.json` and can be overridden from the
+CLI. When enabled, the PDBBind core subset is used as the final test set and
+the model trains/validates on `source_subset - core`. When disabled, the
+configured `source_subset` is randomly split into train/validation/test.
+`test_frac` and validation fractions live in `config.json`, not in shell flags.
+
 `run.sh` uses `pipefail`, so Python failures are not hidden by `tee`.
 
 ## Experiment Outputs
@@ -214,8 +227,10 @@ Typical outputs:
 
 ## Notes
 
-- `core` is treated as the final test set.
-- `refined - core` is split into train and validation.
+- By default, `core` is treated as the final test set.
+- `source_subset - core` is split into train and validation.
+- Alternatively, `--no-core-as-test` splits the configured source subset into
+  train/validation/test using `dataset.test_frac`.
 - Targets are normalized using train-set statistics before training.
 - Validation RMSE is reported in denormalized `pKd` units.
 - The trainer still contains some hybrid/quantum scaffolding inherited from

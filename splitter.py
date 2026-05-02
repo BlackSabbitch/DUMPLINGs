@@ -8,8 +8,8 @@ import pandas as pd
 
 from rdkit import Chem
 from rdkit.Chem.Scaffolds import MurckoScaffold
-from typing import Tuple, Optional, List
-from logger import log_info
+from typing import Tuple, Optional, Set
+from logger import log_info, log_warn
 
 
 class PDBBindSplitter:
@@ -49,6 +49,39 @@ class PDBBindSplitter:
         train_idx = indices[val_size:]
 
         return df.iloc[train_idx], df.iloc[val_idx]
+
+    @staticmethod
+    def random_test_split(df: pd.DataFrame, test_frac: float = 0.15, seed: int = 42) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        """
+        Split a dataframe into a train/validation pool and a held-out test set.
+        """
+        if not 0.0 < float(test_frac) < 1.0:
+            raise ValueError("test_frac must be between 0 and 1")
+
+        indices = np.random.default_rng(seed).permutation(len(df))
+        test_size = int(len(df) * float(test_frac))
+        if test_size == 0 or test_size == len(df):
+            raise ValueError("test_frac creates an empty train/validation pool or test set")
+
+        test_idx = indices[:test_size]
+        train_val_idx = indices[test_size:]
+        return df.iloc[train_val_idx].copy(), df.iloc[test_idx].copy()
+
+    @staticmethod
+    def core_test_split(df: pd.DataFrame, core_ids: Set[str]) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        """
+        Split refined into train/validation pool and PDBBind core test set.
+        """
+        test_df = df[df['pdb_id'].isin(core_ids)].copy()
+        missing_core_ids = core_ids - set(test_df['pdb_id'])
+        if missing_core_ids:
+            log_warn(
+                f"{len(missing_core_ids)} core complexes are missing from refined dataset",
+                stage="DATASET"
+            )
+
+        train_val_df = df[~df['pdb_id'].isin(test_df['pdb_id'])].copy()
+        return train_val_df, test_df
 
     # ======================
     # SCAFFOLD SPLIT
@@ -247,3 +280,37 @@ class PDBBindSplitter:
         log_info(f"Total: {len(df)} | Train: {len(train_df)} | Val: {len(val_df)}", stage="SPLIT")
         
         return train_df, val_df
+
+    @staticmethod
+    def split_with_test(
+        df: pd.DataFrame,
+        conf_splitter: dict,
+        core_as_test: bool = True,
+        test_frac: float = 0.15,
+        core_ids: Optional[Set[str]] = None,
+        source_subset: str = "refined",
+    ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, str]:
+        """
+        Split a source dataframe into train, validation, and test sets.
+        """
+        strategy = conf_splitter['selected']
+        split_params = conf_splitter['available'][strategy]
+        seed = split_params.get("seed", 42)
+
+        log_info(f"Core as test: {core_as_test}", stage="SPLIT")
+        if core_as_test:
+            if core_ids is None:
+                raise ValueError("core_ids are required when core_as_test=True")
+            train_val_df, test_df = PDBBindSplitter.core_test_split(df, core_ids)
+            test_file_name = "test_core.pickle"
+        else:
+            train_val_df, test_df = PDBBindSplitter.random_test_split(df, test_frac=test_frac, seed=seed)
+            test_file_name = f"test_{source_subset}.pickle"
+            log_info(
+                f"{source_subset} random test split: test_frac={test_frac} "
+                f"| Train/Val pool: {len(train_val_df)} | Test: {len(test_df)}",
+                stage="SPLIT"
+            )
+
+        train_df, val_df = PDBBindSplitter.split(train_val_df, conf_splitter)
+        return train_df, val_df, test_df, test_file_name

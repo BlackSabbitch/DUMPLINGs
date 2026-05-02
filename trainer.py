@@ -220,7 +220,7 @@ class Trainer:
                 self.opt_quantum.zero_grad()
             
             # Forward pass
-            preds = self.model(batch, progress=progress).squeeze()
+            preds = self.model(batch, progress=progress).view(-1)
             loss = self.criterion(preds, targets)
             
             # Backward pass
@@ -259,7 +259,7 @@ class Trainer:
             for batch in loader:
                 batch = [b.to(self.device) if hasattr(b, 'to') else b for b in batch]
                 _, _, _, _, targets = batch
-                preds = self.model(batch, progress=progress).squeeze()
+                preds = self.model(batch, progress=progress).view(-1)
                 val_loss += self.criterion(preds, targets).item()
         return val_loss / len(loader)
 
