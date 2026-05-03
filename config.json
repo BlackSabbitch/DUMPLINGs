@@ -23,7 +23,7 @@
     },
     "dataset": {
         "batch_size": 1,
-        "num_workers": 4,
+        "num_workers": 2,
         "save_train_test_val_datasets": false,
         "source_subset": "refined",
         "core_as_test": true,
