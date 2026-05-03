@@ -41,7 +41,7 @@
                         "hidden_channels": 128,
                         "dist_threshold": 5.0,
                         "ca_only": false,
-                        "max_num_neighbors": 16,
+                        "max_num_neighbors": 12,
                         "num_blocks": 3
                     }
                 }
@@ -49,12 +49,12 @@
         }
     },
     "training": {
-        "epochs": 10,
-        "plot_every_n_epochs": 2,
-        "save_only_best_epoch": true,
+        "epochs": 100,
+        "plot_every_n_epochs": 10,
+        "save_only_best_epoch": false,
         "early_stopping": {
             "enabled": true,
-            "patience": 5,
+            "patience": 10,
             "primary_monitor": "val_pearson",
             "monitors": {
                 "val_pearson": "max",
@@ -73,7 +73,7 @@
         "optimizers": {
             "classic": {
                 "type": "AdamW",
-                "params": { "lr": 0.001, "weight_decay": 0.01 },
+                "params": { "lr": 0.0001, "weight_decay": 0.01 },
                 "scheduler": {
                     "type": "ReduceLROnPlateau",
                     "params": { "mode": "min", "factor": 0.5, "patience": 3 }

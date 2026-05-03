@@ -201,9 +201,19 @@ class ExperimentRunner:
         val_ds   = UniversalPDBBindDataset(val_df, self.config)
         gc.collect()
 
-        train_loader = DataLoader(train_ds, batch_size=self.config['dataset']['batch_size'], shuffle=True)
-        test_loader = DataLoader(test_ds, batch_size=self.config['dataset']['batch_size'], shuffle=False)
-        val_loader   = DataLoader(val_ds, batch_size=self.config['dataset']['batch_size'], shuffle=False)
+        batch_size = self.config['dataset']['batch_size']
+        num_workers = int(self.config['dataset'].get('num_workers', 0))
+        loader_kwargs = {
+            "batch_size": batch_size,
+            "num_workers": num_workers,
+            "pin_memory": self.device == 'cuda',
+        }
+        if num_workers > 0:
+            loader_kwargs["persistent_workers"] = True
+
+        train_loader = DataLoader(train_ds, shuffle=True, **loader_kwargs)
+        test_loader = DataLoader(test_ds, shuffle=False, **loader_kwargs)
+        val_loader = DataLoader(val_ds, shuffle=False, **loader_kwargs)
 
         self.config['dataset']['actual_sizes'] = {
             'train': len(train_ds),
@@ -220,6 +230,27 @@ class ExperimentRunner:
 
         dimenet_cfg = self.config['model']['graph_encoder']['available']['duo']['egnn_params']
         hidden_dim = dimenet_cfg.get('hidden_channels', 128)
+        splitter_seed = self.config['splitter']['available'][self.config['splitter']['selected']].get('seed', 'na')
+        log_info(
+            f"Run settings -> source_subset={self.source_subset}, core_as_test={self.core_as_test}, "
+            f"splitter={self.config['splitter']['selected']}, batch_size={self.config['dataset']['batch_size']}, "
+            f"num_workers={num_workers}, splitter_seed={splitter_seed}, "
+            f"epochs={self.config['training']['epochs']}",
+            stage="EXPERIMENT"
+        )
+        log_info(
+            f"DimeNet settings -> hidden_channels={hidden_dim}, cutoff={dimenet_cfg.get('dist_threshold', 5.0)}, "
+            f"max_num_neighbors={dimenet_cfg.get('max_num_neighbors', 32)}, "
+            f"num_blocks={dimenet_cfg.get('num_blocks', 3)}, ca_only={dimenet_cfg.get('ca_only', False)}",
+            stage="MODEL"
+        )
+        classic_opt_cfg = self.config['training']['optimizers']['classic']
+        log_info(
+            f"Optimizer settings -> type={classic_opt_cfg['type']}, "
+            f"lr={classic_opt_cfg['params'].get('lr')}, "
+            f"weight_decay={classic_opt_cfg['params'].get('weight_decay', 0.0)}",
+            stage="OPTIMIZER"
+        )
         model = DumplingA1(
             hidden_channels=hidden_dim,
             out_channels=1,
