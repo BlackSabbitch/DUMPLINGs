@@ -18,10 +18,44 @@ class InteractionGraphParser(BaseParser):
     """
 
     def __init__(self, dist_threshold: float = 5.0, ca_only: bool = False) -> None:
+        self.parser_version = 2
         self.dist_threshold = dist_threshold
         self.ca_only = ca_only
         self.pdb_parser = PDBParser(QUIET=True)
         log_info(f"Initialized dist_threshold={dist_threshold}, ca_only={ca_only}", stage="InteractionGraphParser")
+
+    @staticmethod
+    def _stabilize_duplicate_coordinates(coords: np.ndarray, eps: float = 1e-3) -> np.ndarray:
+        """
+        DimeNet++ can become numerically unstable when different nodes share
+        exactly the same 3D position. We keep the graph topology intact but
+        nudge repeated coordinates by a tiny deterministic offset.
+        """
+        if coords.shape[0] < 2:
+            return coords
+
+        adjusted = coords.astype(np.float32, copy=True)
+        seen: Dict[Tuple[float, float, float], int] = {}
+        directions = np.array([
+            [1.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [0.0, 0.0, 1.0],
+            [1.0, 1.0, 0.0],
+            [1.0, 0.0, 1.0],
+            [0.0, 1.0, 1.0],
+            [1.0, 1.0, 1.0],
+        ], dtype=np.float32)
+        directions /= np.linalg.norm(directions, axis=1, keepdims=True)
+
+        for idx, coord in enumerate(adjusted):
+            key = tuple(np.round(coord, 6).tolist())
+            dup_count = seen.get(key, 0)
+            if dup_count > 0:
+                direction = directions[(dup_count - 1) % len(directions)]
+                adjusted[idx] = coord + direction * (eps * dup_count)
+            seen[key] = dup_count + 1
+
+        return adjusted
 
     def parse_file(self, lig_path: str, pock_path: Optional[str] = None) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
         """
@@ -83,6 +117,7 @@ class InteractionGraphParser(BaseParser):
 
         all_x = np.array(lig_x + pock_x)
         all_coords = np.concatenate([lig_coords, np.array(pock_coords)], axis=0)
+        all_coords = self._stabilize_duplicate_coordinates(all_coords)
 
         edges: List[List[int]] = []
         for bond in lig_mol.GetBonds():
