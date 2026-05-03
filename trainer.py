@@ -162,6 +162,16 @@ class Trainer:
         return [float(param_group.get('lr', 0.0)) for param_group in optimizer.param_groups]
 
     @staticmethod
+    def _tensor_min_max_repr(tensor) -> str:
+        if tensor is None or not hasattr(tensor, "numel") or tensor.numel() == 0:
+            return "na"
+        tensor = tensor.detach()
+        finite = tensor[torch.isfinite(tensor)]
+        if finite.numel() == 0:
+            return "no_finite_values"
+        return f"{float(finite.min().item()):.6f}..{float(finite.max().item()):.6f}"
+
+    @staticmethod
     def _batch_summary(batch) -> str:
         try:
             _, _, _, complex_data, targets = batch
@@ -194,6 +204,20 @@ class Trainer:
             )
         except Exception as exc:
             return f"batch_summary_error={exc}"
+
+    def _maybe_log_large_loss(self, loss_value: float, preds, targets, batch, batch_idx: int) -> None:
+        threshold = float(self.train_cfg.get("large_loss_threshold", 1e3))
+        if not math.isfinite(loss_value) or loss_value <= threshold:
+            return
+
+        log_warn(
+            "Large finite loss encountered in "
+            f"train batch {batch_idx}: loss={loss_value:.6f} "
+            f"pred_range={self._tensor_min_max_repr(preds)} "
+            f"target_range={self._tensor_min_max_repr(targets)} "
+            f"{self._batch_summary(batch)}",
+            stage="TRAINER"
+        )
 
     def _log_epoch_start(self, epoch_id: int, total_epochs: int, progress: float) -> None:
         classic_lr = self._optimizer_lrs(self.opt_classic)
@@ -272,6 +296,7 @@ class Trainer:
                     f"Non-finite loss encountered in train batch {i}. "
                     f"{self._batch_summary(batch)}"
                 )
+            self._maybe_log_large_loss(float(loss.item()), preds, targets, batch, i)
             
             # Backward pass
             loss.backward()
