@@ -1,0 +1,69 @@
+# Known problematic complexes for dataset construction and model training.
+#
+# This registry is intentionally human-readable and research-facing:
+# - every excluded complex should include a scientific/engineering rationale,
+# - the context in which the issue was observed,
+# - and enough detail for a future reader to challenge or refine the decision.
+#
+# Fields:
+#   status      - currently only "skip" is used by the pipeline.
+#   applies_to  - "all", "refined", "core", or "general".
+#   stage       - where the issue manifested most clearly.
+#   reason      - long-form note for researchers and future maintainers.
+
+[complexes.4bps]
+status = "skip"
+applies_to = "all"
+stage = "training"
+reason = """
+Complex 4bps is excluded because it behaves as a persistent pathological
+training example for the current interaction-graph + DimeNet++ baseline.
+
+Observed context:
+- Project: DUMPLING_A1_DimeNet baseline on PDBBind 2016 refined/core setup.
+- Representation: all-atom ligand + pocket interaction graph built by
+  InteractionGraphParser.
+- Training regime where the issue was reproduced repeatedly:
+  batch_size = 1, learning_rate = 1e-4, max_num_neighbors = 12,
+  dist_threshold = 5.0, DimeNet++ on Colab T4 / CUDA runtime.
+
+Observed symptoms:
+- The run no longer collapses to NaN globally after duplicate-coordinate
+  stabilization was introduced, but 4bps still produces extremely large finite
+  losses in essentially every epoch.
+- Logged predictions for this single complex reached magnitudes on the order of
+  1e12 to 1e16 in normalized target space, while the target itself remained
+  ordinary and finite.
+- The effect is sufficiently strong to dominate mean train loss while leaving
+  validation metrics comparatively reasonable, which indicates that this is not
+  just generic optimizer noise.
+
+Geometric notes:
+- Earlier diagnostics showed zero pairwise node distances in the constructed
+  graph. A parser-side stabilization step now nudges exact coordinate duplicates
+  by a tiny deterministic epsilon.
+- After that stabilization, the minimum pairwise distance for the problematic
+  graph became 0.015625 rather than 0.0, but the complex still triggered
+  extreme finite losses.
+- This suggests that exact duplicate coordinates were part of the problem, but
+  likely not the whole story.
+
+File-level evidence:
+- In data/v2016/4bps/4bps_pocket.pdb, residue ARG 136 contains overlapping atom
+  records for NH1 and NH2 with identical coordinates, and the corresponding
+  hydrogens are also duplicated.
+- This means the pocket file itself appears to encode a chemically/geometrically
+  degenerate local arrangement, not merely a downstream numerical artifact.
+
+Interpretation:
+- For simpler graph models, this complex may pass unnoticed because they do not
+  rely as heavily on angle- and triplet-sensitive 3D message passing.
+- For DimeNet++, however, this local geometry appears sufficient to create a
+  persistent pathological signal that compromises optimization diagnostics.
+
+Current policy:
+- Exclude 4bps from automatic dataset construction until we either:
+  (1) derive a scientifically justified repair for the structure, or
+  (2) conclude from broader study that the complex should remain filtered for
+      this family of 3D geometric baselines.
+"""

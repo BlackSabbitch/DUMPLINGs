@@ -5,6 +5,7 @@ from html import parser
 import json
 import os
 import tarfile
+import tomllib
 import pandas as pd
 from tqdm import tqdm
 from multiprocessing import Pool
@@ -54,6 +55,14 @@ class PDBBindOrchestrator:
         self.graph_encoder_mode = config_dict['model']['graph_encoder']['available'][self.graph_encoder]['protein_ligand_pocket_encoders'] 
         self.archive_path = archive_path
         self.dest_path = dest_path
+        self.bad_complexes_path = config_dict.get('dataset', {}).get('bad_complexes_path', 'bad_complexes.toml')
+        self.bad_complexes_registry = self._load_bad_complexes_registry()
+        if self.bad_complexes_registry:
+            log_info(
+                f"Loaded bad complexes registry from {self.bad_complexes_path} "
+                f"with {len(self.bad_complexes_registry)} entries",
+                stage="REGISTRY"
+            )
         self.index_map = {
             "core": "v2016/index/INDEX_core_data.2016",
             "refined": "v2016/index/INDEX_refined_data.2016",
@@ -78,6 +87,53 @@ class PDBBindOrchestrator:
             "class": parser.__class__.__name__,
             "params": safe_params,
         }
+
+    def _load_bad_complexes_registry(self) -> Dict[str, Dict[str, Any]]:
+        if not self.bad_complexes_path or not os.path.exists(self.bad_complexes_path):
+            return {}
+        try:
+            with open(self.bad_complexes_path, "rb") as f:
+                data = tomllib.load(f)
+        except Exception as exc:
+            log_warn(f"Failed to load bad complexes registry {self.bad_complexes_path}: {exc}", stage="REGISTRY")
+            return {}
+        complexes = data.get("complexes", {})
+        if not isinstance(complexes, dict):
+            log_warn(f"Bad complexes registry {self.bad_complexes_path} has invalid [complexes] section", stage="REGISTRY")
+            return {}
+        return complexes
+
+    def _filter_known_bad_ids(self, ids: List[str], subset: str) -> List[str]:
+        if not self.bad_complexes_registry:
+            return ids
+
+        kept_ids: List[str] = []
+        excluded: List[Tuple[str, str]] = []
+        for pid in ids:
+            entry = self.bad_complexes_registry.get(pid)
+            if not entry:
+                kept_ids.append(pid)
+                continue
+
+            status = str(entry.get("status", "skip")).lower()
+            applies_to = str(entry.get("applies_to", "all")).lower()
+            if status != "skip":
+                kept_ids.append(pid)
+                continue
+            if applies_to not in {"all", subset.lower()}:
+                kept_ids.append(pid)
+                continue
+
+            excluded.append((pid, str(entry.get("stage", "unspecified"))))
+
+        if excluded:
+            log_warn(
+                f"Excluded {len(excluded)} complexes from subset {subset} using {self.bad_complexes_path}: "
+                f"{', '.join(f'{pid}({stage})' for pid, stage in excluded[:10])}"
+                f"{'...' if len(excluded) > 10 else ''}",
+                stage="REGISTRY"
+            )
+        return kept_ids
 
     def prepare_metadata(self) -> None:
         """
@@ -285,7 +341,10 @@ class PDBBindOrchestrator:
         """
         parsers_signature = [self._parser_signature(parser) for parser in self.parsers]
         parsers_str_id = md5(
-            json.dumps(parsers_signature, sort_keys=True).encode()
+            json.dumps({
+                "parsers": parsers_signature,
+                "bad_complexes_registry": self.bad_complexes_registry,
+            }, sort_keys=True).encode()
         ).hexdigest()
 
         name = file_name if file_name else f"pdbbds_{subset[:3]}_{self.graph_encoder}{self.graph_encoder_mode}_{parsers_str_id}"
@@ -302,6 +361,7 @@ class PDBBindOrchestrator:
         
         ids_on_disk = [pid for pid in targets.keys() if 
                        os.path.exists(os.path.join(self.dest_path, "v2016", pid))]
+        ids_on_disk = self._filter_known_bad_ids(ids_on_disk, subset)
             
         df = self._build(ids_on_disk, targets, n_jobs)
 
@@ -373,7 +433,9 @@ class PDBBindOrchestrator:
             "parsers_config": parsers_info,
             "orchestrator_params": {
                 "dest_path": self.dest_path,
-                "file_suffix_map": self.file_suffix_map
+                "file_suffix_map": self.file_suffix_map,
+                "bad_complexes_path": self.bad_complexes_path,
+                "bad_complexes_registry": self.bad_complexes_registry,
             }
         }
         

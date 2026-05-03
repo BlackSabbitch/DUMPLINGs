@@ -210,6 +210,7 @@ class Trainer:
         if not math.isfinite(loss_value) or loss_value <= threshold:
             return
 
+        self.large_loss_events_in_epoch += 1
         log_warn(
             "Large finite loss encountered in "
             f"train batch {batch_idx}: loss={loss_value:.6f} "
@@ -266,6 +267,7 @@ class Trainer:
         """
         self.model.train()
         epoch_loss = 0
+        self.large_loss_events_in_epoch = 0
 
         pbar = tqdm(loader, desc="Training", unit="batch", leave=True)
         
@@ -377,6 +379,12 @@ class Trainer:
             val_loss = self.validate(val_loader, progress=progress)
             
             log_info(f"[EPOCH {epoch_id}/{total_number_of_epochs}] Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}", stage="TRAINER")
+            if self.large_loss_events_in_epoch:
+                log_warn(
+                    f"[EPOCH {epoch_id}/{total_number_of_epochs}] large finite loss batches: "
+                    f"{self.large_loss_events_in_epoch}",
+                    stage="TRAINER"
+                )
 
             _, r_val, ci_val, preds, targets = self.evaluator.evaluate(val_loader, progress=progress)
 
@@ -465,6 +473,11 @@ class Trainer:
                 console_plots(self.history, side_by_side=True, stage="TRAINER")
 
         log_info("-" * 75, stage="TRAINER")
+        log_info(
+            f"Training completed. Best {self.primary_metric}: "
+            f"{self.best_scores[self.primary_metric]:.4f} at epoch {best_epoch}",
+            stage="TRAINER"
+        )
         return best_epoch, self.best_scores[self.primary_metric]
 
     def test(self, test_loader, exp_dir, best_epoch, show_plots=False, save_plots=True):
@@ -484,6 +497,11 @@ class Trainer:
 
         test_rmse, test_r, test_ci, _, _ = self.evaluator.evaluate(test_loader, progress=1.0)
         log_info(f"FINAL TEST -> RMSE: {test_rmse:.4f} | Pearson R: {test_r:.4f} | CI: {test_ci:.4f}", stage="TEST")
+        log_warn(
+            "Test RMSE is currently reported in evaluator/model scale, while validation RMSE in training logs "
+            "is denormalized to pKd units. Do not compare the two RMSE values directly until test denormalization is added.",
+            stage="TEST"
+        )
         
         # Сохраняем результаты теста
         with open(f"{exp_dir}/test_results.json", 'w') as f:

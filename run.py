@@ -182,6 +182,16 @@ class ExperimentRunner:
         log_info(f"Атомов в графе: {len(complex_dict['x'])}", stage="CHECK")
         log_info(f"Размерность признаков: {len(complex_dict['x'][0])}", stage="CHECK")
         log_info(f"Наличие координат (pos): {'pos' in complex_dict}", stage="CHECK")
+        if 'orchestrator' in locals() and orchestrator.bad_complexes_registry:
+            log_info(
+                f"Data quality registry active: {orchestrator.bad_complexes_path} "
+                f"({len(orchestrator.bad_complexes_registry)} entries)",
+                stage="DATA_QUALITY"
+            )
+        log_info(
+            f"Prepared splits -> train: {len(train_df)}, val: {len(val_df)}, test: {len(test_df)}",
+            stage="EXPERIMENT"
+        )
 
         return train_df, val_df, test_df
 
@@ -200,6 +210,10 @@ class ExperimentRunner:
             'val': len(val_ds),
             'test': len(test_ds)
         }
+        log_info(
+            f"Dataset sizes -> train: {len(train_ds)}, val: {len(val_ds)}, test: {len(test_ds)}",
+            stage="EXPERIMENT"
+        )
 
         with open(f"{self.exp_run_dir}/config.json", 'w') as f:
             json.dump(self.config, f, indent=4)
