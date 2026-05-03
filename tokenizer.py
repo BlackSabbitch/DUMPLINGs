@@ -151,6 +151,7 @@ class UniversalPDBBindDataset(Dataset):
         else:
             # If no complex graph, return empty Data
             complex_data = self._encode_graph(None)
+        complex_data.pdb_id = str(row['pdb_id'])
 
         # Target (affinity)
         target = torch.tensor(row['pkd'], dtype=torch.float32)

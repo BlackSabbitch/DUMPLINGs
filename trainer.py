@@ -167,13 +167,30 @@ class Trainer:
             _, _, _, complex_data, targets = batch
             z = complex_data.x[:, 0] if hasattr(complex_data, 'x') and complex_data.x is not None else None
             pos = complex_data.pos if hasattr(complex_data, 'pos') and complex_data.pos is not None else None
+            pdb_id = getattr(complex_data, 'pdb_id', None)
+            if isinstance(pdb_id, (list, tuple)):
+                pdb_repr = ",".join(str(x) for x in pdb_id[:4])
+                if len(pdb_id) > 4:
+                    pdb_repr += ",..."
+            else:
+                pdb_repr = str(pdb_id) if pdb_id is not None else 'na'
+
+            min_pair_dist = 'na'
+            if pos is not None and pos.numel() and pos.size(0) > 1:
+                pos_cpu = pos.detach().float().cpu()
+                dist = torch.cdist(pos_cpu, pos_cpu, p=2)
+                dist.fill_diagonal_(float('inf'))
+                min_pair_dist = float(dist.min().item())
+
             return (
+                f"pdb_id={pdb_repr} "
                 f"targets_shape={tuple(targets.shape)} "
                 f"targets_finite={bool(torch.isfinite(targets).all().item())} "
                 f"num_nodes={int(complex_data.num_nodes) if hasattr(complex_data, 'num_nodes') else 'na'} "
                 f"z_min={int(z.min().item()) if z is not None and z.numel() else 'na'} "
                 f"z_max={int(z.max().item()) if z is not None and z.numel() else 'na'} "
-                f"pos_finite={bool(torch.isfinite(pos).all().item()) if pos is not None and pos.numel() else 'na'}"
+                f"pos_finite={bool(torch.isfinite(pos).all().item()) if pos is not None and pos.numel() else 'na'} "
+                f"min_pair_dist={min_pair_dist}"
             )
         except Exception as exc:
             return f"batch_summary_error={exc}"
