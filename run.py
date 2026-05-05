@@ -7,6 +7,7 @@ import gc
 import argparse
 import tempfile
 import shutil
+import time
 import torch
 from datetime import datetime
 from torch_geometric.loader import DataLoader
@@ -100,6 +101,16 @@ class ExperimentRunner:
         setup_file_logging(log_path)
         log_info(f"Log file: {log_path}", stage="EXPERIMENT")
 
+    @staticmethod
+    def _format_duration(seconds: float) -> str:
+        if seconds < 60:
+            return f"{seconds:.1f}s"
+        minutes, rem = divmod(seconds, 60)
+        if minutes < 60:
+            return f"{int(minutes)}m {rem:.1f}s"
+        hours, minutes = divmod(minutes, 60)
+        return f"{int(hours)}h {int(minutes)}m {rem:.1f}s"
+
     def _get_dataset_from_path(self, path: str):
         if path.endswith('.csv'):
             return pd.read_csv(path)
@@ -111,8 +122,9 @@ class ExperimentRunner:
             raise ValueError("Unsupported file format. Use .csv, .pkl, or .parquet")
 
     def prepare_datasets(self):
+        prepare_started_at = time.perf_counter()
         if self.train_dataset_path is not None:
-            log_info(f"Run with custom train/test/val datasets", stage="EXPERIMENT")
+            log_info("Preparing custom train/test/val datasets...", stage="EXPERIMENT")
 
             self.config["dataset"].update({
                 "train_path": self.train_dataset_path,
@@ -122,6 +134,11 @@ class ExperimentRunner:
             train_df = self._get_dataset_from_path(self.train_dataset_path)
             test_df = self._get_dataset_from_path(self.test_dataset_path)
             val_df = self._get_dataset_from_path(self.val_dataset_path)
+            log_info(
+                f"Custom train/test/val datasets loaded in "
+                f"{self._format_duration(time.perf_counter() - prepare_started_at)}",
+                stage="EXPERIMENT"
+            )
 
         else:
             mode = self.config['model']['graph_encoder']['selected']
@@ -142,9 +159,26 @@ class ExperimentRunner:
                 else: log_info(f"Unknown symbol {char} in the architecture description.", stage="EXPERIMENT")
 
             orchestrator = PDBBindOrchestrator(parsers, self.config)
-            if self.extract: orchestrator.extract_subset(self.source_subset)
+            if self.extract:
+                log_info(f"Preparing extraction for subset '{self.source_subset}'...", stage="EXPERIMENT")
+                extract_started_at = time.perf_counter()
+                orchestrator.extract_subset(self.source_subset)
+                log_info(
+                    f"Extraction for subset '{self.source_subset}' completed in "
+                    f"{self._format_duration(time.perf_counter() - extract_started_at)}",
+                    stage="EXPERIMENT"
+                )
+            log_info(f"Preparing dataset build for subset '{self.source_subset}'...", stage="EXPERIMENT")
+            build_started_at = time.perf_counter()
             df_source = orchestrator.build_dataset(subset=self.source_subset, fmt="pickle", save_dir=DATASETS_DIR)
+            log_info(
+                f"Dataset build for subset '{self.source_subset}' completed in "
+                f"{self._format_duration(time.perf_counter() - build_started_at)}",
+                stage="EXPERIMENT"
+            )
             core_ids = set(orchestrator.get_complex_ids("core").keys()) if self.core_as_test else None
+            log_info("Preparing train/val/test split...", stage="SPLIT")
+            split_started_at = time.perf_counter()
             train_df, val_df, test_df, test_file_name = PDBBindSplitter.split_with_test(
                 df_source,
                 self.config["splitter"],
@@ -153,8 +187,15 @@ class ExperimentRunner:
                 core_ids=core_ids,
                 source_subset=self.source_subset
             )
+            log_info(
+                f"Train/val/test split completed in "
+                f"{self._format_duration(time.perf_counter() - split_started_at)}",
+                stage="SPLIT"
+            )
 
             if self.save_train_test_val_datasets:
+                log_info("Saving per-run train/val/test dataset snapshots...", stage="SAVE")
+                save_started_at = time.perf_counter()
                 train_path = f"{self.exp_run_datasets_dir}/train.pickle"
                 val_path   = f"{self.exp_run_datasets_dir}/val.pickle"
                 test_path  = f"{self.exp_run_datasets_dir}/{test_file_name}"
@@ -168,14 +209,24 @@ class ExperimentRunner:
                     "test_path": test_path,
                     "val_path": val_path,
                     })
+                log_info(
+                    f"Per-run dataset snapshots saved in "
+                    f"{self._format_duration(time.perf_counter() - save_started_at)}",
+                    stage="SAVE"
+                )
 
         # Normalization
-        log_info(f"Data normalization", stage="EXPERIMENT")
+        log_info("Preparing data normalization...", stage="EXPERIMENT")
+        norm_started_at = time.perf_counter()
         train_target = train_df['pkd'].values
         stats = {'mean': float(train_target.mean()), 'std': float(train_target.std())}
         self.config['dataset']['stats'] = stats
         for df in [train_df, val_df, test_df]:
             df['pkd'] = Utils.normalize(df['pkd'].values, stats)
+        log_info(
+            f"Data normalization completed in {self._format_duration(time.perf_counter() - norm_started_at)}",
+            stage="EXPERIMENT"
+        )
         log_info(f"Data Stats: {stats}", stage="EXPERIMENT")
         log_info(f"min value: {train_df['pkd'].min()}, max value: {train_df['pkd'].max()}", stage="EXPERIMENT")
 
@@ -197,6 +248,11 @@ class ExperimentRunner:
             f"Prepared splits -> train: {len(train_df)}, val: {len(val_df)}, test: {len(test_df)}",
             stage="EXPERIMENT"
         )
+        log_info(
+            f"Dataset preparation finished in "
+            f"{self._format_duration(time.perf_counter() - prepare_started_at)}",
+            stage="EXPERIMENT"
+        )
 
         return train_df, val_df, test_df
 
@@ -206,11 +262,12 @@ class ExperimentRunner:
             return
 
         log_info(
-            f"Prewarming protein context encoder weights: mode={protein_context_cfg.mode}, "
+            f"Preparing protein context prewarm: mode={protein_context_cfg.mode}, "
             f"model={protein_context_cfg.model_name}, repr_layer={protein_context_cfg.repr_layer}, "
             f"pooling={protein_context_cfg.pooling}, cache_path={protein_context_cfg.cache_path}",
             stage="PROTEIN_CONTEXT"
         )
+        started_at = time.perf_counter()
 
         encoder = FrozenESMEncoder(
             model_name=protein_context_cfg.model_name,
@@ -225,9 +282,15 @@ class ExperimentRunner:
         if self.device == 'cuda':
             torch.cuda.empty_cache()
 
-        log_info("Protein context encoder weights are warmed up.", stage="PROTEIN_CONTEXT")
+        log_info(
+            f"Protein context encoder weights are warmed up in "
+            f"{self._format_duration(time.perf_counter() - started_at)}.",
+            stage="PROTEIN_CONTEXT"
+        )
 
     def run(self, train_df, val_df, test_df):
+        run_started_at = time.perf_counter()
+        log_info("Preparing training datasets and loaders...", stage="EXPERIMENT")
         train_ds = UniversalPDBBindDataset(train_df, self.config)
         test_ds = UniversalPDBBindDataset(test_df, self.config)
         val_ds   = UniversalPDBBindDataset(val_df, self.config)
@@ -293,6 +356,8 @@ class ExperimentRunner:
             stage="OPTIMIZER"
         )
         self.prewarm_protein_context()
+        log_info("Preparing model initialization...", stage="MODEL")
+        model_init_started_at = time.perf_counter()
         model = A1DimeNet(
             config=self.config,
             device=self.device,
@@ -302,18 +367,40 @@ class ExperimentRunner:
             max_num_neighbors=dimenet_cfg.get('max_num_neighbors', 32),
             num_blocks=dimenet_cfg.get('num_blocks', 3),
         )
+        log_info(
+            f"Model initialization completed in "
+            f"{self._format_duration(time.perf_counter() - model_init_started_at)}",
+            stage="MODEL"
+        )
         evaluator = Evaluator(model, self.device)
 
         log_info(f"Launch on: {self.device}", stage="EXPERIMENT")
 
         self.trainer = Trainer(model, evaluator, self.config, self.device)
+        log_info("Preparing training loop...", stage="TRAINER")
+        train_started_at = time.perf_counter()
         best_epoch, _ = self.trainer.train(train_loader, val_loader, self.exp_run_dir, self.config['training']['save_only_best_epoch'])
+        log_info(
+            f"Training loop completed in {self._format_duration(time.perf_counter() - train_started_at)}",
+            stage="TRAINER"
+        )
+        log_info("Preparing final test evaluation...", stage="TEST")
+        test_started_at = time.perf_counter()
         self.trainer.test(test_loader, self.exp_run_dir, best_epoch)
+        log_info(
+            f"Final test evaluation completed in "
+            f"{self._format_duration(time.perf_counter() - test_started_at)}",
+            stage="TEST"
+        )
 
         log_info("Generating ASCII performance summary...", stage="SUMMARY")
         console_plots(self.trainer.history, side_by_side=False, stage="SUMMARY")
         console_plots(self.trainer.history, side_by_side=True, stage="SUMMARY")
-        log_info("Experiment completed successfully.", stage="EXPERIMENT")
+        log_info(
+            f"Experiment completed successfully in "
+            f"{self._format_duration(time.perf_counter() - run_started_at)}.",
+            stage="EXPERIMENT"
+        )
 
 
 if __name__ == "__main__":

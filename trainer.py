@@ -12,6 +12,7 @@ import os
 from typing import Tuple
 from evaluator import Evaluator
 import math
+import time
 
 
 class Trainer:
@@ -242,6 +243,16 @@ class Trainer:
                 stage="TRAINER"
             )
 
+    @staticmethod
+    def _format_duration(seconds: float) -> str:
+        if seconds < 60:
+            return f"{seconds:.1f}s"
+        minutes, rem = divmod(seconds, 60)
+        if minutes < 60:
+            return f"{int(minutes)}m {rem:.1f}s"
+        hours, minutes = divmod(minutes, 60)
+        return f"{int(hours)}h {int(minutes)}m {rem:.1f}s"
+
     def step_schedulers(self, metrics):
         """Обновление шага обучения"""
         if self.sched_classic:
@@ -354,13 +365,31 @@ class Trainer:
         total_number_of_epochs = self.train_cfg['epochs']
         log_info("-" * 75, stage="TRAINER")
         for epoch in range(total_number_of_epochs):
+            epoch_started_at = time.perf_counter()
             epoch_id = epoch + 1
             progress = epoch / max(1, total_number_of_epochs - 1)
             self._log_epoch_start(epoch_id, total_number_of_epochs, progress)
+            log_info(f"[EPOCH {epoch_id}/{total_number_of_epochs}] Preparing training epoch...", stage="TRAINER")
+            train_started_at = time.perf_counter()
             train_loss = self.train_epoch(train_loader, progress=progress)
+            train_duration = time.perf_counter() - train_started_at
+            log_info(
+                f"[EPOCH {epoch_id}/{total_number_of_epochs}] Training pass completed in "
+                f"{self._format_duration(train_duration)}",
+                stage="TRAINER"
+            )
+            log_info(f"[EPOCH {epoch_id}/{total_number_of_epochs}] Preparing validation pass...", stage="TRAINER")
+            val_started_at = time.perf_counter()
             val_loss, _, r_val, ci_val, preds, targets = self.validate(val_loader, progress=progress)
-            
-            log_info(f"[EPOCH {epoch_id}/{total_number_of_epochs}] Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}", stage="TRAINER")
+            val_duration = time.perf_counter() - val_started_at
+            epoch_duration = time.perf_counter() - epoch_started_at
+
+            log_info(
+                f"[EPOCH {epoch_id}/{total_number_of_epochs}] Train Loss: {train_loss:.4f}, "
+                f"Val Loss: {val_loss:.4f} | train_time={self._format_duration(train_duration)} "
+                f"| val_time={self._format_duration(val_duration)} | epoch_time={self._format_duration(epoch_duration)}",
+                stage="TRAINER"
+            )
             if self.large_loss_events_in_epoch:
                 log_warn(
                     f"[EPOCH {epoch_id}/{total_number_of_epochs}] large finite loss batches: "
