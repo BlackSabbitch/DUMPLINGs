@@ -28,7 +28,7 @@ reusable molecular parsing over production packaging.
 
 ## Current Model
 
-The active model is `DumplingA1` in `models/baseline.py`.
+The active model is `A1DimeNet` in `models/a1.py`.
 
 It uses:
 
@@ -111,7 +111,7 @@ also validated on load; unreadable cache files are rebuilt.
 | `extractor.py` | PDBBind archive/index handling and parsed dataset caching. |
 | `parsers/interaction_graph_parser.py` | Fused ligand-pocket graph parser. |
 | `tokenizer.py` | Converts dataframe rows into PyTorch/PyG objects. |
-| `models/baseline.py` | Current DimeNet++ baseline model. |
+| `models/a1.py` | Current DimeNet++ baseline model with optional protein-context branch. |
 | `trainer.py` | Training loop, early stopping, checkpointing. |
 | `evaluator.py` | RMSE, Pearson R, concordance index, plots. |
 | `splitter.py` | Random, scaffold, scaffold-balanced, and cold-protein splits. |

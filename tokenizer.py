@@ -152,6 +152,8 @@ class UniversalPDBBindDataset(Dataset):
             # If no complex graph, return empty Data
             complex_data = self._encode_graph(None)
         complex_data.pdb_id = str(row['pdb_id'])
+        if 'protein' in row and row['protein'] is not None and not pd.isna(row['protein']):
+            complex_data.protein_sequence = str(row['protein'])
 
         # Target (affinity)
         target = torch.tensor(row['pkd'], dtype=torch.float32)

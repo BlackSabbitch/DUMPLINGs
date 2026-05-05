@@ -13,6 +13,8 @@ from hashlib import md5
 from collections import Counter
 from typing import List, Optional, Dict, Any, Tuple
 from logger import log_info, log_warn
+from parsers.cnn_parser import CNNParser
+from models.protein_context import get_protein_context_mode
 
 
 class PDBBindOrchestrator:
@@ -57,6 +59,8 @@ class PDBBindOrchestrator:
         self.dest_path = dest_path
         self.bad_complexes_path = config_dict.get('dataset', {}).get('bad_complexes_path', 'bad_complexes.toml')
         self.bad_complexes_registry = self._load_bad_complexes_registry()
+        self.protein_context_mode = get_protein_context_mode(config_dict)
+        self.protein_sequence_parser = CNNParser(is_ligand=False) if self.protein_context_mode != "none" else None
         if self.bad_complexes_registry:
             log_info(
                 f"Loaded bad complexes registry from {self.bad_complexes_path} "
@@ -87,6 +91,11 @@ class PDBBindOrchestrator:
             "class": parser.__class__.__name__,
             "params": safe_params,
         }
+
+    def _maybe_extract_protein_sequence(self, protein_path: str) -> Tuple[Optional[str], Optional[str]]:
+        if self.protein_sequence_parser is None:
+            return None, None
+        return self.protein_sequence_parser.parse_file(protein_path)
 
     def _load_bad_complexes_registry(self) -> Dict[str, Dict[str, Any]]:
         if not self.bad_complexes_path or not os.path.exists(self.bad_complexes_path):
@@ -278,6 +287,11 @@ class PDBBindOrchestrator:
                     p_res, p_err = protein_parser.parse_file(protein_path)
                     if p_err: return (pdb_id, None, f"protein_parse_error: {p_err}")
                     data_results['protein'] = p_res
+                elif self.protein_sequence_parser:
+                    protein_seq, seq_err = self._maybe_extract_protein_sequence(protein_path)
+                    if seq_err:
+                        return (pdb_id, None, f"protein_context_error: {seq_err}")
+                    data_results['protein'] = protein_seq
 
                 complex_res, complex_err = complex_parser.parse_file(ligand_path, pocket_path)
                 if complex_err: return (pdb_id, None, f"complex_parse_error: {complex_err}")

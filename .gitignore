@@ -1,6 +1,7 @@
 *.gz
 data/
 datasets/
+esm_cache/
 runs/
 # Byte-compiled / optimized / DLL files
 __pycache__/

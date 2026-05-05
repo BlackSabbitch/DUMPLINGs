@@ -15,16 +15,18 @@ from logger import *
 from extractor import PDBBindOrchestrator
 from trainer import Trainer
 from evaluator import Evaluator
-from models.baseline import DumplingA1
+from models.a1 import A1DimeNet
 from parsers.interaction_graph_parser import InteractionGraphParser
 from tokenizer import UniversalPDBBindDataset
 from splitter import PDBBindSplitter
 from parsers.cnn_parser import CNNParser
 from parsers.gnn_parser import GNNParser
 from utils import Utils
+from models.protein_context import ProteinContextConfig, get_protein_context_mode
 
 
 DATASETS_DIR = "datasets"
+ESM_CACHE_DIR = "esm_cache"
 
 
 class ExperimentRunner:
@@ -82,6 +84,9 @@ class ExperimentRunner:
 
         os.makedirs(DATASETS_DIR, exist_ok=True)
         log_info(f"Base Datasets folder: {DATASETS_DIR}", stage="EXPERIMENT")
+
+        os.makedirs(ESM_CACHE_DIR, exist_ok=True)
+        log_info(f"Base ESM cache folder: {ESM_CACHE_DIR}", stage="EXPERIMENT")
 
         os.makedirs(self.exp_run_dir, exist_ok=True)
         log_info(f"Run results folder: {self.exp_run_dir}", stage="EXPERIMENT")
@@ -230,6 +235,8 @@ class ExperimentRunner:
 
         dimenet_cfg = self.config['model']['graph_encoder']['available']['duo']['egnn_params']
         hidden_dim = dimenet_cfg.get('hidden_channels', 128)
+        protein_context_mode = get_protein_context_mode(self.config)
+        protein_context_cfg = ProteinContextConfig.from_config(self.config)
         splitter_seed = self.config['splitter']['available'][self.config['splitter']['selected']].get('seed', 'na')
         log_info(
             f"Run settings -> source_subset={self.source_subset}, core_as_test={self.core_as_test}, "
@@ -241,9 +248,17 @@ class ExperimentRunner:
         log_info(
             f"DimeNet settings -> hidden_channels={hidden_dim}, cutoff={dimenet_cfg.get('dist_threshold', 5.0)}, "
             f"max_num_neighbors={dimenet_cfg.get('max_num_neighbors', 32)}, "
-            f"num_blocks={dimenet_cfg.get('num_blocks', 3)}, ca_only={dimenet_cfg.get('ca_only', False)}",
+            f"num_blocks={dimenet_cfg.get('num_blocks', 3)}, ca_only={dimenet_cfg.get('ca_only', False)}, "
+            f"protein_context={protein_context_mode}",
             stage="MODEL"
         )
+        if protein_context_mode != "none":
+            log_info(
+                f"Protein context settings -> mode={protein_context_cfg.mode}, model={protein_context_cfg.model_name}, "
+                f"repr_layer={protein_context_cfg.repr_layer}, pooling={protein_context_cfg.pooling}, "
+                f"cache_path={protein_context_cfg.cache_path}, max_length={protein_context_cfg.max_length}",
+                stage="PROTEIN_CONTEXT"
+            )
         classic_opt_cfg = self.config['training']['optimizers']['classic']
         log_info(
             f"Optimizer settings -> type={classic_opt_cfg['type']}, "
@@ -251,7 +266,9 @@ class ExperimentRunner:
             f"weight_decay={classic_opt_cfg['params'].get('weight_decay', 0.0)}",
             stage="OPTIMIZER"
         )
-        model = DumplingA1(
+        model = A1DimeNet(
+            config=self.config,
+            device=self.device,
             hidden_channels=hidden_dim,
             out_channels=1,
             cutoff=dimenet_cfg.get('dist_threshold', 5.0),

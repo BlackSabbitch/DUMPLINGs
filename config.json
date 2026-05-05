@@ -46,10 +46,37 @@
                     }
                 }
             }
+        },
+        "protein_context": {
+            "selected": "none",
+            "available": {
+                "none": {},
+                "esm_frozen_whole": {
+                    "model_name": "esm2_t33_650M_UR50D",
+                    "repr_layer": 33,
+                    "pooling": "mean",
+                    "embedding_dim": 1280,
+                    "max_length": 1022
+                },
+                "esm_only": {
+                    "model_name": "esm2_t33_650M_UR50D",
+                    "repr_layer": 33,
+                    "pooling": "mean",
+                    "embedding_dim": 1280,
+                    "max_length": 1022
+                },
+                "esm_frozen_pocket": {
+                    "model_name": "esm2_t33_650M_UR50D",
+                    "repr_layer": 33,
+                    "pooling": "mean",
+                    "embedding_dim": 1280,
+                    "max_length": 1022
+                }
+            }
         }
     },
     "training": {
-        "epochs": 100,
+        "epochs": 5,
         "plot_every_n_epochs": 10,
         "save_only_best_epoch": false,
         "early_stopping": {
