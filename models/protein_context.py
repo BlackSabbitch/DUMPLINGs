@@ -142,7 +142,7 @@ class FrozenESMEncoder(nn.Module):
             return token_embeddings[0]
         return token_embeddings.mean(dim=0)
 
-    @torch.inference_mode()
+    @torch.no_grad()
     def encode_sequences(self, sequences: Sequence[str]) -> torch.Tensor:
         sanitized = [self._truncate(seq) for seq in sequences]
         for seq in sanitized:
@@ -173,7 +173,7 @@ class FrozenESMEncoder(nn.Module):
 
         return torch.stack([self.embedding_cache[seq] for seq in sanitized], dim=0).to(self.device_name)
 
-    @torch.inference_mode()
+    @torch.no_grad()
     def encode_sequence(self, sequence: str) -> torch.Tensor:
         return self.encode_sequences([sequence])[0]
 
