@@ -81,6 +81,43 @@ class Evaluator:
         
         return (concordant + 0.5 * ties) / valid_pairs
 
+    def _run_loader(
+        self,
+        loader,
+        progress: float = 1.0,
+        criterion: Optional[torch.nn.Module] = None,
+    ) -> Tuple[Optional[float], np.ndarray, np.ndarray]:
+        """
+        Shared inference pass over a loader.
+
+        Optionally accumulates average loss while collecting predictions and targets.
+        """
+        self.model.eval()
+        preds, targets = [], []
+        total_loss = 0.0
+        batch_count = 0
+
+        with torch.no_grad():
+            for batch in loader:
+                batch = [
+                    inp.to(self.device) if hasattr(inp, 'to')
+                    else {k: v.to(self.device) for k, v in inp.items()}
+                    for inp in batch
+                ]
+                y_hat = self.model(tuple(batch), progress=progress).view(-1)
+                target = batch[-1].view(-1)
+
+                preds.extend(y_hat.cpu().tolist())
+                targets.extend(target.cpu().tolist())
+
+                if criterion is not None:
+                    batch_loss = criterion(y_hat, target)
+                    total_loss += float(batch_loss.item())
+                    batch_count += 1
+
+        avg_loss = (total_loss / batch_count) if criterion is not None and batch_count > 0 else None
+        return avg_loss, np.array(preds), np.array(targets)
+
     def evaluate(self, loader, progress: float = 1.0) -> Tuple[float, float, float, np.ndarray, np.ndarray]:
         """
         Evaluate model performance on a dataset.
@@ -97,18 +134,7 @@ class Evaluator:
             >>> rmse, pearson, ci, preds, targets = evaluator.evaluate(test_loader)
             >>> logger.info(f"[EVALUATION] RMSE: {rmse:.3f}, Pearson: {pearson:.3f}, CI: {ci:.3f}")
         """
-        self.model.eval()
-        preds, targets = [], []
-        with torch.no_grad():
-            for batch in loader:
-                batch = [inp.to(self.device) if hasattr(inp, 'to') else {k: v.to(self.device) for k, v in inp.items()} for inp in batch]
-                y_hat = self.model(tuple(batch), progress=progress)
-                target = batch[-1]
-                preds.extend(y_hat.cpu().view(-1).tolist())
-                targets.extend(target.tolist())
-        
-        preds = np.array(preds)
-        targets = np.array(targets)
+        _, preds, targets = self._run_loader(loader, progress=progress, criterion=None)
 
         finite_mask = np.isfinite(preds) & np.isfinite(targets)
         preds = preds[finite_mask]
@@ -125,6 +151,39 @@ class Evaluator:
         ci_val = self.concordance_index(targets, preds)  # Calculate CI
 
         return rmse, r_val, ci_val, preds, targets
+
+    def evaluate_with_loss(
+        self,
+        loader,
+        criterion: torch.nn.Module,
+        progress: float = 1.0,
+    ) -> Tuple[float, float, float, float, np.ndarray, np.ndarray]:
+        """
+        Evaluate model performance and validation loss in a single loader pass.
+
+        Returns:
+            Tuple of (avg_loss, rmse, pearson_r, ci, predictions, targets).
+        """
+        avg_loss, preds, targets = self._run_loader(loader, progress=progress, criterion=criterion)
+
+        finite_mask = np.isfinite(preds) & np.isfinite(targets)
+        preds = preds[finite_mask]
+        targets = targets[finite_mask]
+
+        if preds.size == 0 or targets.size == 0:
+            return float('nan'), float('nan'), float('nan'), 0.0, preds, targets
+
+        rmse = np.sqrt(np.mean((preds - targets) ** 2))
+        if preds.size < 2 or np.std(preds) == 0 or np.std(targets) == 0:
+            r_val = float('nan')
+        else:
+            r_val, _ = pearsonr(preds, targets)
+        ci_val = self.concordance_index(targets, preds)
+
+        if avg_loss is None:
+            avg_loss = float('nan')
+
+        return avg_loss, rmse, r_val, ci_val, preds, targets
 
     def plot_history(self, exp_dir: str, history: dict, show: bool = True, save: bool = True) -> None:
         """
@@ -145,13 +204,16 @@ class Evaluator:
         
         plt.figure(figsize=(15, 15))
 
-        # 1. Loss (Training)
+        # 1. Losses
         plt.subplot(3, 2, 1)
         plt.plot(epochs, history['train_loss'], 'b-', label='Train Loss')
+        if 'val_loss' in history and len(history['val_loss']) == len(history['train_loss']):
+            plt.plot(epochs, history['val_loss'], 'k--', label='Val Loss')
         plt.title('Learning Curve (Loss)')
         plt.xlabel('Epochs')
         plt.ylabel('Loss')
         plt.grid(True)
+        plt.legend()
 
         # 2. RMSE
         plt.subplot(3, 2, 2)

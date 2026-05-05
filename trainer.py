@@ -319,7 +319,7 @@ class Trainer:
             
         return avg_loss
 
-    def validate(self, loader, progress: float = 1.0) -> float:
+    def validate(self, loader, progress: float = 1.0):
         """
         Validate the model on validation set.
 
@@ -328,28 +328,10 @@ class Trainer:
             progress: Schedule progress in [0, 1] for the quantum encoder.
 
         Returns:
-            Average validation loss.
+            Tuple of validation statistics:
+            (avg_loss, rmse, pearson_r, ci, predictions, targets).
         """
-        self.model.eval()
-        val_loss = 0
-        with torch.no_grad():
-            for batch in loader:
-                batch = [b.to(self.device) if hasattr(b, 'to') else b for b in batch]
-                _, _, _, _, targets = batch
-                preds = self.model(batch, progress=progress).view(-1)
-                if not torch.isfinite(preds).all() or not torch.isfinite(targets).all():
-                    raise RuntimeError(
-                        f"Non-finite tensors encountered during validation. "
-                        f"{self._batch_summary(batch)}"
-                    )
-                batch_loss = self.criterion(preds, targets)
-                if not torch.isfinite(batch_loss):
-                    raise RuntimeError(
-                        f"Non-finite validation loss encountered. "
-                        f"{self._batch_summary(batch)}"
-                    )
-                val_loss += batch_loss.item()
-        return val_loss / len(loader)
+        return self.evaluator.evaluate_with_loss(loader, self.criterion, progress=progress)
 
     def train(self, train_loader, val_loader, exp_dir, save_only_best_epoch=True) -> Tuple[int, float]:
         """
@@ -363,7 +345,7 @@ class Trainer:
         # best_val_r = -1.0
         best_epoch = 0
         self.history = {
-            'train_loss': [], 'val_rmse': [], 'val_pearson': [], 
+            'train_loss': [], 'val_loss': [], 'val_rmse': [], 'val_pearson': [], 
             'val_ci': [], 'best_y_true': None, 'best_y_pred': None
             }
         if self.es_enabled:
@@ -376,7 +358,7 @@ class Trainer:
             progress = epoch / max(1, total_number_of_epochs - 1)
             self._log_epoch_start(epoch_id, total_number_of_epochs, progress)
             train_loss = self.train_epoch(train_loader, progress=progress)
-            val_loss = self.validate(val_loader, progress=progress)
+            val_loss, _, r_val, ci_val, preds, targets = self.validate(val_loader, progress=progress)
             
             log_info(f"[EPOCH {epoch_id}/{total_number_of_epochs}] Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}", stage="TRAINER")
             if self.large_loss_events_in_epoch:
@@ -385,8 +367,6 @@ class Trainer:
                     f"{self.large_loss_events_in_epoch}",
                     stage="TRAINER"
                 )
-
-            _, r_val, ci_val, preds, targets = self.evaluator.evaluate(val_loader, progress=progress)
 
             if self.config['dataset']['stats'] is not None:
                 stats = self.config['dataset']['stats']
@@ -400,6 +380,7 @@ class Trainer:
             log_debug(f"{train_loss}, {rmse_denorm}, {r_val}, {ci_val}", stage="TRAINER")
             log_debug(f"{preds_denorm}, {targets_denorm}, {preds_denorm[0]}, {targets_denorm[0]}", stage="TRAINER")
             self.history['train_loss'].append(float(train_loss))
+            self.history['val_loss'].append(float(val_loss))
             self.history['val_rmse'].append(float(rmse_denorm))
             self.history['val_pearson'].append(float(r_val))
             self.history['val_ci'].append(float(ci_val))
@@ -452,7 +433,7 @@ class Trainer:
                         f" Early stopping triggered", stage="TRAINER")
                         self.early_stop = True
 
-            for k in ['train_loss', 'val_rmse', 'val_pearson', 'val_ci']:
+            for k in ['train_loss', 'val_loss', 'val_rmse', 'val_pearson', 'val_ci']:
                 data = self.history[k]
                 log_debug(f"Key: {k}, Length: {len(data)}, Types: {[type(x) for x in data]}", stage="DEBUG_PLOT")
 

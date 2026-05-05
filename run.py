@@ -22,7 +22,7 @@ from splitter import PDBBindSplitter
 from parsers.cnn_parser import CNNParser
 from parsers.gnn_parser import GNNParser
 from utils import Utils
-from models.protein_context import ProteinContextConfig, get_protein_context_mode
+from models.protein_context import FrozenESMEncoder, ProteinContextConfig, get_protein_context_mode
 
 
 DATASETS_DIR = "datasets"
@@ -151,7 +151,7 @@ class ExperimentRunner:
                 core_as_test=self.core_as_test,
                 test_frac=self.test_frac,
                 core_ids=core_ids,
-                source_subset=self.source_subset,
+                source_subset=self.source_subset
             )
 
             if self.save_train_test_val_datasets:
@@ -199,6 +199,33 @@ class ExperimentRunner:
         )
 
         return train_df, val_df, test_df
+
+    def prewarm_protein_context(self) -> None:
+        protein_context_cfg = ProteinContextConfig.from_config(self.config)
+        if protein_context_cfg.mode == "none":
+            return
+
+        log_info(
+            f"Prewarming protein context encoder weights: mode={protein_context_cfg.mode}, "
+            f"model={protein_context_cfg.model_name}, repr_layer={protein_context_cfg.repr_layer}, "
+            f"pooling={protein_context_cfg.pooling}, cache_path={protein_context_cfg.cache_path}",
+            stage="PROTEIN_CONTEXT"
+        )
+
+        encoder = FrozenESMEncoder(
+            model_name=protein_context_cfg.model_name,
+            repr_layer=protein_context_cfg.repr_layer,
+            pooling=protein_context_cfg.pooling,
+            device=self.device,
+            cache_path=protein_context_cfg.cache_path,
+            max_length=protein_context_cfg.max_length,
+        )
+        del encoder
+        gc.collect()
+        if self.device == 'cuda':
+            torch.cuda.empty_cache()
+
+        log_info("Protein context encoder weights are warmed up.", stage="PROTEIN_CONTEXT")
 
     def run(self, train_df, val_df, test_df):
         train_ds = UniversalPDBBindDataset(train_df, self.config)
@@ -265,6 +292,7 @@ class ExperimentRunner:
             f"weight_decay={classic_opt_cfg['params'].get('weight_decay', 0.0)}",
             stage="OPTIMIZER"
         )
+        self.prewarm_protein_context()
         model = A1DimeNet(
             config=self.config,
             device=self.device,

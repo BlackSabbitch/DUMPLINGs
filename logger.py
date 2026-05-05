@@ -137,6 +137,70 @@ def get_ascii_plot(data, title,
         log_error(f"{title} Plot Error: {e}", stage=stage)
         return [f"{title} Plot Error: {e}"]
 
+
+def get_overlay_ascii_plot(
+    series_list,
+    title,
+    width=DEFAULT_WIDTH_SINGLE,
+    height=DEFAULT_HEIGHT_SINGLE,
+):
+    """
+    Render a simple multi-series ASCII plot without relying on uniplot's
+    multi-series support.
+
+    Each series item is a tuple of (label, values, char).
+    """
+    valid_series = []
+    for label, values, char in series_list:
+        arr = np.array(values, dtype=float)
+        arr = arr[np.isfinite(arr)]
+        if arr.size == 0:
+            continue
+        valid_series.append((label, arr, char))
+
+    if not valid_series:
+        return [f"{title}: no finite data"]
+
+    plot_width = max(10, width - 2)
+    plot_height = max(5, height - 2)
+
+    global_min = min(float(arr.min()) for _, arr, _ in valid_series)
+    global_max = max(float(arr.max()) for _, arr, _ in valid_series)
+    if global_min == global_max:
+        global_min -= 1.0
+        global_max += 1.0
+
+    canvas = [[" " for _ in range(plot_width)] for _ in range(plot_height)]
+
+    for _, arr, char in valid_series:
+        if arr.size == 1:
+            x_positions = [0]
+        else:
+            x_positions = np.linspace(0, plot_width - 1, num=arr.size)
+
+        for x_f, value in zip(x_positions, arr):
+            x = int(round(float(x_f)))
+            norm = (float(value) - global_min) / (global_max - global_min)
+            y = plot_height - 1 - int(round(norm * (plot_height - 1)))
+            current = canvas[y][x]
+            canvas[y][x] = char if current == " " else "▘"
+
+    lines = [title]
+    legend = "  ".join([f"{char}={label}" for label, _, char in valid_series])
+    lines.append(legend)
+    lines.append("+" + "-" * plot_width + f"+ {global_max:.4f}")
+    for row in canvas:
+        lines.append("|" + "".join(row) + "|")
+    lines.append("+" + "-" * plot_width + f"+ {global_min:.4f}")
+
+    max_points = max(arr.size for _, arr, _ in valid_series)
+    if max_points > 1:
+        lines.append(f"1{' ' * max(1, plot_width - len(str(max_points)) - 1)}{max_points}")
+    else:
+        lines.append("1")
+
+    return lines
+
 def get_residuals_hist_data(y_true, y_pred, bins=20):
     """Готовит данные для гистограммы"""
     if y_true is None or y_pred is None:
@@ -158,9 +222,22 @@ def get_residuals_hist_data(y_true, y_pred, bins=20):
 def log_side_by_side(data_left, title_left, data_right, title_right, 
                      is_scatter=False, is_hist=False, stage="SUMMARY"):
     # Если слева scatter, включаем диагональ
-    left_lines = get_ascii_plot(data_left, title_left,
-                                width=DEFAULT_WIDTH_SIDE, height=DEFAULT_HEIGHT_SIDE,
-                                force_diagonal=is_scatter, stage=stage)
+    if (
+        isinstance(data_left, list)
+        and data_left
+        and isinstance(data_left[0], tuple)
+        and len(data_left[0]) == 3
+    ):
+        left_lines = get_overlay_ascii_plot(
+            data_left,
+            title_left,
+            width=DEFAULT_WIDTH_SIDE,
+            height=DEFAULT_HEIGHT_SIDE,
+        )
+    else:
+        left_lines = get_ascii_plot(data_left, title_left,
+                                    width=DEFAULT_WIDTH_SIDE, height=DEFAULT_HEIGHT_SIDE,
+                                    force_diagonal=is_scatter, stage=stage)
     
     # Если справа гистограмма, рисуем ее линиями
     right_lines = get_ascii_plot(data_right, title_right,
@@ -187,7 +264,10 @@ def console_plots(trainer_history, side_by_side=True, stage="SUMMARY"):
         log_info("Generating Multi-column ASCII Dashboard...", stage=stage)
 
         dashboard_loss_rmse = log_side_by_side(
-            trainer_history["train_loss"], "Learning Curve (Loss)",
+            [
+                ("Train Loss", trainer_history["train_loss"], "▘"),
+                ("Val Loss", trainer_history.get("val_loss", []), "*"),
+            ], "Learning Curve (Loss)",
             trainer_history["val_rmse"], "Validation RMSE"
         )
         log_info(dashboard_loss_rmse, stage=stage)
@@ -218,7 +298,13 @@ def console_plots(trainer_history, side_by_side=True, stage="SUMMARY"):
             log_info("Final Performance Analytics:" + dashboard_final, stage=stage)
 
     else:
-        loss_chart = get_ascii_plot(trainer_history["train_loss"], title="Learning Curve (Loss)")
+        loss_chart = get_overlay_ascii_plot(
+            [
+                ("Train Loss", trainer_history["train_loss"], "▘"),
+                ("Val Loss", trainer_history.get("val_loss", []), "*"),
+            ],
+            title="Learning Curve (Loss)"
+        )
         log_info(f"Loss Curve:\n" + "\n".join(loss_chart), stage=stage)
 
         rmse_chart = get_ascii_plot(trainer_history["val_rmse"], title="Validation RMSE")
