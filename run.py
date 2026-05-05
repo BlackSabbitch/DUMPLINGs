@@ -252,13 +252,12 @@ class ExperimentRunner:
             f"protein_context={protein_context_mode}",
             stage="MODEL"
         )
-        if protein_context_mode != "none":
-            log_info(
-                f"Protein context settings -> mode={protein_context_cfg.mode}, model={protein_context_cfg.model_name}, "
-                f"repr_layer={protein_context_cfg.repr_layer}, pooling={protein_context_cfg.pooling}, "
-                f"cache_path={protein_context_cfg.cache_path}, max_length={protein_context_cfg.max_length}",
-                stage="PROTEIN_CONTEXT"
-            )
+        log_info(
+            f"Protein context settings -> mode={protein_context_cfg.mode}, model={protein_context_cfg.model_name}, "
+            f"repr_layer={protein_context_cfg.repr_layer}, pooling={protein_context_cfg.pooling}, "
+            f"cache_path={protein_context_cfg.cache_path}, max_length={protein_context_cfg.max_length}",
+            stage="PROTEIN_CONTEXT"
+        )
         classic_opt_cfg = self.config['training']['optimizers']['classic']
         log_info(
             f"Optimizer settings -> type={classic_opt_cfg['type']}, "

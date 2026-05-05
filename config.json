@@ -1,5 +1,5 @@
 {
-    "experiment_name": "DUMPLING_A1b_DimeNet_Initial_milestone_bs2",
+    "experiment_name": "DUMPLING_A1b_DimeNet_ESM_only_ESM",
     "splitter": {
         "selected": "random",
         "available": {
@@ -48,7 +48,7 @@
             }
         },
         "protein_context": {
-            "selected": "none",
+            "selected": "esm_only",
             "available": {
                 "none": {},
                 "esm_frozen_whole": {
