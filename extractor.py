@@ -172,18 +172,19 @@ class PDBBindOrchestrator:
             None values indicate components that should be skipped.
         """
         folder = os.path.join(self.dest_path, "v2016", pdb_id)
+        protein_needed = bool(self.parsers and self.parsers[0]) or self.protein_sequence_parser is not None
         
         if len(self.parsers) == 3:
             # TRIO: account for parsers that might be None (mode 'N')
             return [
-                os.path.join(folder, f"{pdb_id}{self.file_suffix_map['protein']}") if self.parsers[0] else None,
+                os.path.join(folder, f"{pdb_id}{self.file_suffix_map['protein']}") if protein_needed else None,
                 os.path.join(folder, f"{pdb_id}{self.file_suffix_map['ligand']}") if self.parsers[1] else None,
                 os.path.join(folder, f"{pdb_id}{self.file_suffix_map['pocket']}") if self.parsers[2] else None
             ]
         elif len(self.parsers) == 2:
             # EGNN / Interaction (Duo)
             return [
-                os.path.join(folder, f"{pdb_id}{self.file_suffix_map['protein']}") if self.parsers[0] else None,
+                os.path.join(folder, f"{pdb_id}{self.file_suffix_map['protein']}") if protein_needed else None,
                 os.path.join(folder, f"{pdb_id}{self.file_suffix_map['ligand']}"),
                 os.path.join(folder, f"{pdb_id}{self.file_suffix_map['pocket']}")
             ]
@@ -378,6 +379,11 @@ class PDBBindOrchestrator:
         ids_on_disk = self._filter_known_bad_ids(ids_on_disk, subset)
             
         df = self._build(ids_on_disk, targets, n_jobs)
+        if df.empty:
+            raise RuntimeError(
+                f"Dataset build produced zero rows for subset={subset}. "
+                "See BUILD warnings above for the dominant parse errors."
+            )
 
         ideal_order = ['pdb_id', 'pkd', 'res', 'ligand', 'protein', 'pocket', 'complex_graph']
         existing_cols = [col for col in ideal_order if col in df.columns]
