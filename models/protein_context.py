@@ -25,7 +25,7 @@ class ProteinContextConfig:
     model_name: str = "esm2_t33_650M_UR50D"
     repr_layer: int = 33
     pooling: str = "mean"
-    cache_path: str = "esm_cache"
+    cache_path: str = "protein_context_features"
     embedding_dim: int = 1280
     max_length: Optional[int] = None
     precompute_batch_size: int = 8

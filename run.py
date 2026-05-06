@@ -27,7 +27,7 @@ from models.protein_context import FrozenESMEncoder, ProteinContextConfig, get_p
 
 
 DATASETS_DIR = "datasets"
-ESM_CACHE_DIR = "esm_cache"
+PROTEIN_CONTEXT_FEATURES_DIR = "protein_context_features"
 
 
 class ExperimentRunner:
@@ -86,8 +86,11 @@ class ExperimentRunner:
         os.makedirs(DATASETS_DIR, exist_ok=True)
         log_info(f"Base Datasets folder: {DATASETS_DIR}", stage="EXPERIMENT")
 
-        os.makedirs(ESM_CACHE_DIR, exist_ok=True)
-        log_info(f"Base ESM cache folder: {ESM_CACHE_DIR}", stage="EXPERIMENT")
+        os.makedirs(PROTEIN_CONTEXT_FEATURES_DIR, exist_ok=True)
+        log_info(
+            f"Base protein context features folder: {PROTEIN_CONTEXT_FEATURES_DIR}",
+            stage="EXPERIMENT"
+        )
 
         os.makedirs(self.exp_run_dir, exist_ok=True)
         log_info(f"Run results folder: {self.exp_run_dir}", stage="EXPERIMENT")

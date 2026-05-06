@@ -17,7 +17,7 @@ The repo currently has two layers:
    - staging code from Drive into `/content`,
    - installing Colab-specific PyG wheels,
    - syncing `runs/` back to Drive,
-   - syncing `esm_cache/` back to Drive.
+   - syncing `protein_context_features/` back to Drive.
 
 Those helpers are notebook/runtime concerns rather than experiment logic, so
 they live in `scripts/`.
@@ -34,7 +34,7 @@ cells instead of inventing a new workflow:
 - `colab_start_sync.sh`
   - mirrors the background `rsync` loop for `runs/`
 - `colab_finalize_sync.sh`
-  - mirrors the final one-shot sync of `runs/` and `esm_cache/`
+  - mirrors the final one-shot sync of `runs/` and `protein_context_features/`
 
 ## Why `run.py` stays in the repo root
 

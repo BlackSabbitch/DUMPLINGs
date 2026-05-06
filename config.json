@@ -55,22 +55,28 @@
                     "model_name": "esm2_t33_650M_UR50D",
                     "repr_layer": 33,
                     "pooling": "mean",
+                    "cache_path": "protein_context_features",
                     "embedding_dim": 1280,
-                    "max_length": 1022
+                    "max_length": 1022,
+                    "precompute_batch_size": 8
                 },
                 "esm_only": {
                     "model_name": "esm2_t33_650M_UR50D",
                     "repr_layer": 33,
                     "pooling": "mean",
+                    "cache_path": "protein_context_features",
                     "embedding_dim": 1280,
-                    "max_length": 1022
+                    "max_length": 1022,
+                    "precompute_batch_size": 8
                 },
                 "esm_frozen_pocket": {
                     "model_name": "esm2_t33_650M_UR50D",
                     "repr_layer": 33,
                     "pooling": "mean",
+                    "cache_path": "protein_context_features",
                     "embedding_dim": 1280,
-                    "max_length": 1022
+                    "max_length": 1022,
+                    "precompute_batch_size": 8
                 }
             }
         }
