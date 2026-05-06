@@ -253,6 +253,80 @@ class Trainer:
         hours, minutes = divmod(minutes, 60)
         return f"{int(hours)}h {int(minutes)}m {rem:.1f}s"
 
+    @staticmethod
+    def _format_bytes(num_bytes) -> str:
+        if num_bytes is None:
+            return "na"
+        units = ["B", "KB", "MB", "GB", "TB"]
+        value = float(num_bytes)
+        unit_idx = 0
+        while value >= 1024.0 and unit_idx < len(units) - 1:
+            value /= 1024.0
+            unit_idx += 1
+        return f"{value:.1f}{units[unit_idx]}"
+
+    @staticmethod
+    def _read_proc_status_value_bytes(key: str):
+        try:
+            with open("/proc/self/status", "r", encoding="utf-8") as fh:
+                for line in fh:
+                    if line.startswith(key + ":"):
+                        parts = line.split()
+                        if len(parts) >= 2:
+                            return int(parts[1]) * 1024
+        except (FileNotFoundError, OSError, ValueError):
+            return None
+        return None
+
+    @staticmethod
+    def _read_meminfo_value_bytes(key: str):
+        try:
+            with open("/proc/meminfo", "r", encoding="utf-8") as fh:
+                for line in fh:
+                    if line.startswith(key + ":"):
+                        parts = line.split()
+                        if len(parts) >= 2:
+                            return int(parts[1]) * 1024
+        except (FileNotFoundError, OSError, ValueError):
+            return None
+        return None
+
+    def _memory_log_every_n_batches(self) -> int:
+        return int(self.train_cfg.get("memory_log_every_n_batches", 250))
+
+    def _log_memory_snapshot(self, label: str, batch_idx: int | None = None, total_batches: int | None = None) -> None:
+        process_rss = self._read_proc_status_value_bytes("VmRSS")
+        process_hwm = self._read_proc_status_value_bytes("VmHWM")
+        system_available = self._read_meminfo_value_bytes("MemAvailable")
+        system_total = self._read_meminfo_value_bytes("MemTotal")
+
+        parts = [label]
+        if batch_idx is not None and total_batches is not None:
+            parts.append(f"batch={batch_idx}/{total_batches}")
+        parts.extend([
+            f"rss={self._format_bytes(process_rss)}",
+            f"rss_peak={self._format_bytes(process_hwm)}",
+            f"sys_avail={self._format_bytes(system_available)}",
+            f"sys_total={self._format_bytes(system_total)}",
+        ])
+
+        if self.device == 'cuda' and torch.cuda.is_available():
+            try:
+                allocated = torch.cuda.memory_allocated()
+                reserved = torch.cuda.memory_reserved()
+                max_allocated = torch.cuda.max_memory_allocated()
+                max_reserved = torch.cuda.max_memory_reserved()
+                parts.extend([
+                    f"cuda_alloc={self._format_bytes(allocated)}",
+                    f"cuda_reserved={self._format_bytes(reserved)}",
+                    f"cuda_max_alloc={self._format_bytes(max_allocated)}",
+                    f"cuda_max_reserved={self._format_bytes(max_reserved)}",
+                ])
+            except RuntimeError as exc:
+                parts.append(f"cuda_mem_error={exc}")
+
+        log_info(" | ".join(parts), stage="MEMORY")
+
     def _build_checkpoint_payload(self):
         if hasattr(self.model, "build_checkpoint_payload"):
             return self.model.build_checkpoint_payload()
@@ -290,6 +364,11 @@ class Trainer:
         self.model.train()
         epoch_loss = 0
         self.large_loss_events_in_epoch = 0
+        memory_log_every_n_batches = self._memory_log_every_n_batches()
+        total_batches = len(loader) if hasattr(loader, "__len__") else None
+        if self.device == 'cuda' and torch.cuda.is_available():
+            torch.cuda.reset_peak_memory_stats()
+        self._log_memory_snapshot("train_epoch_start", batch_idx=0, total_batches=total_batches)
 
         pbar = tqdm(loader, desc="Training", unit="batch", leave=True)
         
@@ -338,7 +417,15 @@ class Trainer:
             # Рендерим полоску и обновляем прогресс-бар
             l_bar = Utils.get_loss_bar(current_loss)
             pbar.set_postfix_str(f"Loss: {current_loss:.4f} {l_bar} Avg: {avg_loss:.4f}")
+
+            if memory_log_every_n_batches > 0 and ((i + 1) % memory_log_every_n_batches == 0):
+                self._log_memory_snapshot(
+                    "train_epoch_progress",
+                    batch_idx=i + 1,
+                    total_batches=total_batches,
+                )
             
+        self._log_memory_snapshot("train_epoch_end", batch_idx=total_batches, total_batches=total_batches)
         return avg_loss
 
     def validate(self, loader, progress: float = 1.0):
@@ -380,10 +467,12 @@ class Trainer:
             epoch_id = epoch + 1
             progress = epoch / max(1, total_number_of_epochs - 1)
             self._log_epoch_start(epoch_id, total_number_of_epochs, progress)
+            self._log_memory_snapshot(f"epoch_{epoch_id}_start")
             log_info(f"[EPOCH {epoch_id}/{total_number_of_epochs}] Preparing training epoch...", stage="TRAINER")
             train_started_at = time.perf_counter()
             train_loss = self.train_epoch(train_loader, progress=progress)
             train_duration = time.perf_counter() - train_started_at
+            self._log_memory_snapshot(f"epoch_{epoch_id}_after_train")
             log_info(
                 f"[EPOCH {epoch_id}/{total_number_of_epochs}] Training pass completed in "
                 f"{self._format_duration(train_duration)}",
@@ -394,6 +483,7 @@ class Trainer:
             val_loss, _, r_val, ci_val, preds, targets = self.validate(val_loader, progress=progress)
             val_duration = time.perf_counter() - val_started_at
             epoch_duration = time.perf_counter() - epoch_started_at
+            self._log_memory_snapshot(f"epoch_{epoch_id}_after_val")
 
             log_info(
                 f"[EPOCH {epoch_id}/{total_number_of_epochs}] Train Loss: {train_loss:.4f}, "
@@ -589,6 +679,7 @@ class Trainer:
             log_info("No training history available for plotting.", stage="TEST")
 
         log_info("FINAL TEST (CORE SET)", stage="TEST")
+        self._log_memory_snapshot("test_start")
         # Подгружаем веса лучшей эпохи (в идеале нужно написать логику загрузки лучшего .pt,
         # но пока протестируем на весах последней эпохи)
 
@@ -607,6 +698,7 @@ class Trainer:
         log_info("Preparing final test metric evaluation...", stage="TEST")
         eval_started_at = time.perf_counter()
         test_rmse, test_r, test_ci, _, _ = self.evaluator.evaluate(test_loader, progress=1.0)
+        self._log_memory_snapshot("test_after_eval")
         log_info(
             f"FINAL TEST -> RMSE: {test_rmse:.4f} | Pearson R: {test_r:.4f} | CI: {test_ci:.4f} "
             f"| eval_time={self._format_duration(time.perf_counter() - eval_started_at)}",
