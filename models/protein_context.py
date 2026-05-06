@@ -8,6 +8,7 @@ from typing import Dict, List, Optional, Sequence, Tuple
 import torch
 from torch import nn
 from logger import log_info
+from tqdm import tqdm
 
 
 SUPPORTED_PROTEIN_CONTEXT_MODES = {
@@ -27,6 +28,7 @@ class ProteinContextConfig:
     cache_path: str = "esm_cache"
     embedding_dim: int = 1280
     max_length: Optional[int] = None
+    precompute_batch_size: int = 8
 
     @classmethod
     def from_config(cls, config: dict) -> "ProteinContextConfig":
@@ -45,6 +47,7 @@ class ProteinContextConfig:
             cache_path=selected_cfg.get("cache_path", cls.cache_path),
             embedding_dim=selected_cfg.get("embedding_dim", cls.embedding_dim),
             max_length=selected_cfg.get("max_length", cls.max_length),
+            precompute_batch_size=selected_cfg.get("precompute_batch_size", cls.precompute_batch_size),
         )
         cfg.validate()
         return cfg
@@ -57,6 +60,8 @@ class ProteinContextConfig:
             )
         if self.pooling not in {"mean", "cls"}:
             raise ValueError("protein_context pooling must be 'mean' or 'cls'")
+        if int(self.precompute_batch_size) <= 0:
+            raise ValueError("protein_context precompute_batch_size must be > 0")
 
 
 class FrozenESMEncoder(nn.Module):
@@ -137,6 +142,9 @@ class FrozenESMEncoder(nn.Module):
             return sequence
         return sequence[: self.max_length]
 
+    def _sanitize_sequence(self, sequence: str) -> str:
+        return self._truncate(sequence)
+
     def _pool(self, token_embeddings: torch.Tensor) -> torch.Tensor:
         if self.pooling == "cls":
             return token_embeddings[0]
@@ -144,7 +152,7 @@ class FrozenESMEncoder(nn.Module):
 
     @torch.no_grad()
     def encode_sequences(self, sequences: Sequence[str]) -> torch.Tensor:
-        sanitized = [self._truncate(seq) for seq in sequences]
+        sanitized = [self._sanitize_sequence(seq) for seq in sequences]
         for seq in sanitized:
             if seq in self.embedding_cache:
                 continue
@@ -176,6 +184,42 @@ class FrozenESMEncoder(nn.Module):
     @torch.no_grad()
     def encode_sequence(self, sequence: str) -> torch.Tensor:
         return self.encode_sequences([sequence])[0]
+
+    def precompute_sequences(
+        self,
+        sequences: Sequence[str],
+        batch_size: int = 8,
+        progress_desc: str = "ESM precompute",
+    ) -> dict:
+        sanitized = [self._sanitize_sequence(seq) for seq in sequences if seq is not None]
+        unique_sequences = list(dict.fromkeys(sanitized))
+
+        cached_before = 0
+        missing_sequences: List[str] = []
+        for seq in unique_sequences:
+            if seq in self.embedding_cache:
+                cached_before += 1
+                continue
+            cached = self._load_cached_embedding(seq)
+            if cached is not None:
+                self.embedding_cache[seq] = cached
+                cached_before += 1
+            else:
+                missing_sequences.append(seq)
+
+        if missing_sequences:
+            total_batches = (len(missing_sequences) + batch_size - 1) // batch_size
+            for batch_idx in tqdm(range(total_batches), desc=progress_desc, unit="batch", leave=True):
+                start = batch_idx * batch_size
+                end = start + batch_size
+                batch = missing_sequences[start:end]
+                _ = self.encode_sequences(batch)
+
+        return {
+            "total_unique": len(unique_sequences),
+            "cached_before": cached_before,
+            "computed_now": len(missing_sequences),
+        }
 
 
 class ProteinContextProjector(nn.Module):

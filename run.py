@@ -288,9 +288,96 @@ class ExperimentRunner:
             stage="PROTEIN_CONTEXT"
         )
 
+    @staticmethod
+    def _extract_split_sequences(df: pd.DataFrame) -> list[str]:
+        if 'protein' not in df.columns:
+            return []
+        sequences: list[str] = []
+        for value in df['protein'].tolist():
+            if value is None or pd.isna(value):
+                continue
+            sequences.append(str(value))
+        return sequences
+
+    def precompute_protein_context_embeddings(
+        self,
+        train_df: pd.DataFrame,
+        val_df: pd.DataFrame,
+        test_df: pd.DataFrame,
+    ) -> None:
+        protein_context_cfg = ProteinContextConfig.from_config(self.config)
+        if protein_context_cfg.mode == "none":
+            return
+
+        started_at = time.perf_counter()
+        batch_size = int(protein_context_cfg.precompute_batch_size)
+        log_info(
+            f"Preparing protein context embedding precompute: mode={protein_context_cfg.mode}, "
+            f"model={protein_context_cfg.model_name}, batch_size={batch_size}, "
+            f"cache_path={protein_context_cfg.cache_path}",
+            stage="PROTEIN_CONTEXT"
+        )
+
+        encoder = FrozenESMEncoder(
+            model_name=protein_context_cfg.model_name,
+            repr_layer=protein_context_cfg.repr_layer,
+            pooling=protein_context_cfg.pooling,
+            device=self.device,
+            cache_path=protein_context_cfg.cache_path,
+            max_length=protein_context_cfg.max_length,
+        )
+
+        split_frames = [
+            ("train", train_df),
+            ("val", val_df),
+            ("test", test_df),
+        ]
+
+        total_unique = 0
+        total_cached_before = 0
+        total_computed_now = 0
+
+        for split_name, split_df in split_frames:
+            split_sequences = self._extract_split_sequences(split_df)
+            log_info(
+                f"Preparing protein context precompute for split '{split_name}' "
+                f"with {len(split_sequences)} sequences...",
+                stage="PROTEIN_CONTEXT"
+            )
+            split_started_at = time.perf_counter()
+            stats = encoder.precompute_sequences(
+                split_sequences,
+                batch_size=batch_size,
+                progress_desc=f"ESM precompute ({split_name})",
+            )
+            total_unique += stats["total_unique"]
+            total_cached_before += stats["cached_before"]
+            total_computed_now += stats["computed_now"]
+            log_info(
+                f"Protein context precompute for split '{split_name}' completed in "
+                f"{self._format_duration(time.perf_counter() - split_started_at)} "
+                f"(unique={stats['total_unique']}, cached_before={stats['cached_before']}, "
+                f"computed_now={stats['computed_now']})",
+                stage="PROTEIN_CONTEXT"
+            )
+
+        del encoder
+        gc.collect()
+        if self.device == 'cuda':
+            torch.cuda.empty_cache()
+
+        log_info(
+            f"Protein context embedding precompute completed in "
+            f"{self._format_duration(time.perf_counter() - started_at)} "
+            f"(split_unique_total={total_unique}, cached_before_total={total_cached_before}, "
+            f"computed_now_total={total_computed_now})",
+            stage="PROTEIN_CONTEXT"
+        )
+
     def run(self, train_df, val_df, test_df):
         run_started_at = time.perf_counter()
         log_info("Preparing training datasets and loaders...", stage="EXPERIMENT")
+        self.precompute_protein_context_embeddings(train_df, val_df, test_df)
         train_ds = UniversalPDBBindDataset(train_df, self.config)
         test_ds = UniversalPDBBindDataset(test_df, self.config)
         val_ds   = UniversalPDBBindDataset(val_df, self.config)

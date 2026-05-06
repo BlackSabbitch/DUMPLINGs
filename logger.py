@@ -171,6 +171,16 @@ def get_overlay_ascii_plot(
         global_max += 1.0
 
     canvas = [[" " for _ in range(plot_width)] for _ in range(plot_height)]
+    tick_count = min(5, plot_height)
+    tick_rows = {}
+    for idx in range(tick_count):
+        if tick_count == 1:
+            row = 0
+            value = global_max
+        else:
+            row = int(round(idx * (plot_height - 1) / (tick_count - 1)))
+            value = global_max - (global_max - global_min) * (row / max(1, plot_height - 1))
+        tick_rows[row] = value
 
     for _, arr, char in valid_series:
         if arr.size == 1:
@@ -188,10 +198,12 @@ def get_overlay_ascii_plot(
     lines = [title]
     legend = "  ".join([f"{char}={label}" for label, _, char in valid_series])
     lines.append(legend)
-    lines.append("+" + "-" * plot_width + f"+ {global_max:.4f}")
-    for row in canvas:
-        lines.append("|" + "".join(row) + "|")
-    lines.append("+" + "-" * plot_width + f"+ {global_min:.4f}")
+    lines.append("+" + "-" * plot_width + "+")
+    for row_idx, row in enumerate(canvas):
+        label = tick_rows.get(row_idx)
+        suffix = f" {label:.4f}" if label is not None else ""
+        lines.append("|" + "".join(row) + "|" + suffix)
+    lines.append("+" + "-" * plot_width + "+")
 
     max_points = max(arr.size for _, arr, _ in valid_series)
     if max_points > 1:
