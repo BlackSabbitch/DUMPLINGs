@@ -76,7 +76,7 @@
                     "cache_path": "protein_context_features",
                     "embedding_dim": 1280,
                     "max_length": 1022,
-                    "precompute_batch_size": 8
+                    "precompute_batch_size": 16
                 }
             }
         }
