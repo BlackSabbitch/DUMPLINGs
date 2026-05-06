@@ -67,6 +67,46 @@ class A1DimeNet(nn.Module):
             nn.Linear(hidden_channels // 2, out_channels),
         )
 
+    def checkpoint_exclude_prefixes(self) -> tuple[str, ...]:
+        prefixes: list[str] = []
+        if self.protein_context_encoder is not None:
+            prefixes.append("protein_context_encoder.model.")
+        return tuple(prefixes)
+
+    def build_checkpoint_payload(self) -> dict:
+        state = self.state_dict()
+        excluded_prefixes = self.checkpoint_exclude_prefixes()
+        filtered_state = {
+            key: value
+            for key, value in state.items()
+            if not any(key.startswith(prefix) for prefix in excluded_prefixes)
+        }
+        return {
+            "checkpoint_format": "lightweight_no_frozen_esm_v1",
+            "state_dict": filtered_state,
+            "excluded_prefixes": list(excluded_prefixes),
+            "protein_context_mode": self.protein_context_mode,
+        }
+
+    def load_checkpoint_payload(self, payload) -> None:
+        if isinstance(payload, dict) and "state_dict" in payload:
+            state_dict = payload["state_dict"]
+            excluded_prefixes = tuple(payload.get("excluded_prefixes", []))
+            incompatible = self.load_state_dict(state_dict, strict=False)
+            unexpected = list(incompatible.unexpected_keys)
+            disallowed_missing = [
+                key for key in incompatible.missing_keys
+                if not any(key.startswith(prefix) for prefix in excluded_prefixes)
+            ]
+            if unexpected or disallowed_missing:
+                raise RuntimeError(
+                    "Checkpoint load mismatch: "
+                    f"unexpected_keys={unexpected}, missing_keys={disallowed_missing}"
+                )
+            return
+
+        self.load_state_dict(payload)
+
     @staticmethod
     def _extract_protein_sequences(complex_data) -> Sequence[str]:
         sequences = getattr(complex_data, "protein_sequence", None)

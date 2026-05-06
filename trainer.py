@@ -253,6 +253,17 @@ class Trainer:
         hours, minutes = divmod(minutes, 60)
         return f"{int(hours)}h {int(minutes)}m {rem:.1f}s"
 
+    def _build_checkpoint_payload(self):
+        if hasattr(self.model, "build_checkpoint_payload"):
+            return self.model.build_checkpoint_payload()
+        return self.model.state_dict()
+
+    def _load_checkpoint_payload(self, payload) -> None:
+        if hasattr(self.model, "load_checkpoint_payload"):
+            self.model.load_checkpoint_payload(payload)
+            return
+        self.model.load_state_dict(payload)
+
     def step_schedulers(self, metrics):
         """Обновление шага обучения"""
         if self.sched_classic:
@@ -469,7 +480,7 @@ class Trainer:
                     stage="TRAINER"
                 )
                 best_save_started_at = time.perf_counter()
-                torch.save(self.model.state_dict(), f"{exp_dir}/best_model.pt")
+                torch.save(self._build_checkpoint_payload(), f"{exp_dir}/best_model.pt")
                 self.history['best_y_true'] = targets_denorm.tolist()
                 self.history['best_y_pred'] = preds_denorm.tolist()
                 log_info(
@@ -519,7 +530,7 @@ class Trainer:
                     stage="TRAINER"
                 )
                 epoch_save_started_at = time.perf_counter()
-                torch.save(self.model.state_dict(), f"{exp_dir}/model_epoch_{epoch_id}.pt")
+                torch.save(self._build_checkpoint_payload(), f"{exp_dir}/model_epoch_{epoch_id}.pt")
                 log_info(
                     f"[EPOCH {epoch_id}/{total_number_of_epochs}] Per-epoch checkpoint saved in "
                     f"{self._format_duration(time.perf_counter() - epoch_save_started_at)}",
@@ -585,7 +596,8 @@ class Trainer:
         if os.path.exists(best_model_path):
             log_info("Loading best checkpoint for final test...", stage="TEST")
             load_started_at = time.perf_counter()
-            self.model.load_state_dict(torch.load(best_model_path))
+            checkpoint_payload = torch.load(best_model_path)
+            self._load_checkpoint_payload(checkpoint_payload)
             log_info(
                 f"Weights for the best model (epoch {best_epoch}) loaded from {best_model_path} "
                 f"in {self._format_duration(time.perf_counter() - load_started_at)}",
