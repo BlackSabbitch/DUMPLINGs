@@ -9,7 +9,7 @@ import pandas as pd
 from rdkit import Chem
 from rdkit.Chem.Scaffolds import MurckoScaffold
 from typing import Tuple, Optional, Set
-from logger import log_info, log_warn
+from logger import *
 
 
 class PDBBindSplitter:
@@ -306,7 +306,7 @@ class PDBBindSplitter:
         else:
             train_val_df, test_df = PDBBindSplitter.random_test_split(df, test_frac=test_frac, seed=seed)
             test_file_name = f"test_{source_subset}.pickle"
-            log_info(
+            log_debug(
                 f"{source_subset} random test split: test_frac={test_frac} "
                 f"| Train/Val pool: {len(train_val_df)} | Test: {len(test_df)}",
                 stage="SPLIT"

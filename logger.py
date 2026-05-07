@@ -25,13 +25,26 @@ class StageFormatter(logging.Formatter):
 # Настройка
 logger = logging.getLogger("AppCore")
 handler = logging.StreamHandler()
+level = None
 
 # Вот здесь задаем твою схему [LEVEL][STAGE]
 formatter = StageFormatter('[%(levelname)s][%(stage)s] %(message)s')
 
 handler.setFormatter(formatter)
 logger.addHandler(handler)
-logger.setLevel(logging.INFO)
+# подтягиваем debug_mode из конфига и устанавливаем соответствующий уровень логов
+def get_level():
+    global level
+    with open("config.json") as f:
+        import json
+        config = json.load(f)
+    if config.get("debug_mode", False):
+        level = logging.DEBUG
+    else:
+        level = logging.INFO
+    return level
+
+logger.setLevel(level or get_level())
 
 def _log(msg, stage, level):
     logger.log(level, msg, extra={'stage': stage})
@@ -52,7 +65,7 @@ def log_debug(msg, stage="GENERAL"):
 def setup_file_logging(log_path):
     # Создаем обработчик для файла
     fh = logging.FileHandler(log_path)
-    fh.setLevel(logging.INFO)
+    fh.setLevel(level or get_level())
     
     # Применяем тот же форматтер
     formatter = StageFormatter('[%(levelname)s][%(stage)s] %(message)s')
@@ -273,7 +286,7 @@ def log_side_by_side(data_left, title_left, data_right, title_right,
 
 def console_plots(trainer_history, side_by_side=True, stage="SUMMARY"):
     if side_by_side:
-        log_info("Generating Multi-column ASCII Dashboard...", stage=stage)
+        log_info("Generating Multi-column ASCII Dashboard.", stage=stage)
 
         dashboard_loss_rmse = log_side_by_side(
             [

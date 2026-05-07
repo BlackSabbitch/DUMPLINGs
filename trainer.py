@@ -325,7 +325,7 @@ class Trainer:
             except RuntimeError as exc:
                 parts.append(f"cuda_mem_error={exc}")
 
-        log_info(" | ".join(parts), stage="MEMORY")
+        log_debug(" | ".join(parts), stage="MEMORY")
 
     def _build_checkpoint_payload(self):
         if hasattr(self.model, "build_checkpoint_payload"):
@@ -461,24 +461,24 @@ class Trainer:
             self.es_counter = 0
         
         total_number_of_epochs = self.train_cfg['epochs']
-        log_info("-" * 75, stage="TRAINER")
+        log_info("=" * 50 + " *** STAGE: TRAINING *** " + "=" * 50 + "\n" + "=" * 125, stage="EXPERIMENT")
         for epoch in range(total_number_of_epochs):
             epoch_started_at = time.perf_counter()
             epoch_id = epoch + 1
             progress = epoch / max(1, total_number_of_epochs - 1)
             self._log_epoch_start(epoch_id, total_number_of_epochs, progress)
             self._log_memory_snapshot(f"epoch_{epoch_id}_start")
-            log_info(f"[EPOCH {epoch_id}/{total_number_of_epochs}] Preparing training epoch...", stage="TRAINER")
+            log_info(f"[EPOCH {epoch_id}/{total_number_of_epochs}] Preparing training epoch.", stage="TRAINER")
             train_started_at = time.perf_counter()
             train_loss = self.train_epoch(train_loader, progress=progress)
             train_duration = time.perf_counter() - train_started_at
             self._log_memory_snapshot(f"epoch_{epoch_id}_after_train")
-            log_info(
+            log_debug(
                 f"[EPOCH {epoch_id}/{total_number_of_epochs}] Training pass completed in "
                 f"{self._format_duration(train_duration)}",
                 stage="TRAINER"
             )
-            log_info(f"[EPOCH {epoch_id}/{total_number_of_epochs}] Preparing validation pass...", stage="TRAINER")
+            log_info(f"[EPOCH {epoch_id}/{total_number_of_epochs}] Validation.", stage="TRAINER")
             val_started_at = time.perf_counter()
             val_loss, _, r_val, ci_val, preds, targets = self.validate(val_loader, progress=progress)
             val_duration = time.perf_counter() - val_started_at
@@ -487,10 +487,14 @@ class Trainer:
 
             log_info(
                 f"[EPOCH {epoch_id}/{total_number_of_epochs}] Train Loss: {train_loss:.4f}, "
-                f"Val Loss: {val_loss:.4f} | train_time={self._format_duration(train_duration)} "
-                f"| val_time={self._format_duration(val_duration)} | epoch_time={self._format_duration(epoch_duration)}",
+                f"Val Loss: {val_loss:.4f}",
                 stage="TRAINER"
             )
+            log_debug(f"[EPOCH {epoch_id}/{total_number_of_epochs}] "
+                      f"Train_time={self._format_duration(train_duration)} "
+                      f"| Val_time={self._format_duration(val_duration)} "
+                      f"| epoch_time={self._format_duration(epoch_duration)}",
+                      stage="TRAINER")
             if self.large_loss_events_in_epoch:
                 log_warn(
                     f"[EPOCH {epoch_id}/{total_number_of_epochs}] large finite loss batches: "
@@ -502,15 +506,15 @@ class Trainer:
                 stats = self.config['dataset']['stats']
             else:
                 raise ValueError("Data are denormalized.")
-            log_info(
-                f"[EPOCH {epoch_id}/{total_number_of_epochs}] Preparing denormalized validation metrics...",
+            log_debug(
+                f"[EPOCH {epoch_id}/{total_number_of_epochs}] Preparing denormalized validation metrics.",
                 stage="TRAINER"
             )
             metric_post_started_at = time.perf_counter()
             preds_denorm = Utils.denormalize(preds, stats)
             targets_denorm = Utils.denormalize(targets, stats)
             rmse_denorm = Utils.calculate_rmse(targets_denorm, preds_denorm)
-            log_info(
+            log_debug(
                 f"[EPOCH {epoch_id}/{total_number_of_epochs}] Denormalized validation metrics prepared in "
                 f"{self._format_duration(time.perf_counter() - metric_post_started_at)}",
                 stage="TRAINER"
@@ -536,8 +540,8 @@ class Trainer:
             improved_any = False
             improved_primary = False
 
-            log_info(
-                f"[EPOCH {epoch_id}/{total_number_of_epochs}] Checking monitored metrics for improvements...",
+            log_debug(
+                f"[EPOCH {epoch_id}/{total_number_of_epochs}] Checking monitored metrics for improvements.",
                 stage="TRAINER"
             )
             monitor_started_at = time.perf_counter()
@@ -552,12 +556,13 @@ class Trainer:
 
                     self.best_scores[metric] = val
                     improved_any = True
-                    log_info(f"{'Primary m' if self.primary_metric == metric else 'M'}etric"
-                    f" {metric} improved: {val:.4f}", stage="TRAINER")
+                    log_info(f"Improved: "
+                             f"{'Primary' if self.primary_metric == metric else 'Secondary'} metric"
+                    f" '{metric}': {val:.4f}", stage="TRAINER")
 
                     if metric == self.primary_metric:
                         improved_primary = True
-            log_info(
+            log_debug(
                 f"[EPOCH {epoch_id}/{total_number_of_epochs}] Metric improvement check completed in "
                 f"{self._format_duration(time.perf_counter() - monitor_started_at)}",
                 stage="TRAINER"
@@ -565,25 +570,25 @@ class Trainer:
 
             if improved_primary:
                 best_epoch = epoch_id
-                log_info(
-                    f"[EPOCH {epoch_id}/{total_number_of_epochs}] Saving best model checkpoint...",
+                log_debug(
+                    f"[EPOCH {epoch_id}/{total_number_of_epochs}] Saving best model.",
                     stage="TRAINER"
                 )
                 best_save_started_at = time.perf_counter()
                 torch.save(self._build_checkpoint_payload(), f"{exp_dir}/best_model.pt")
                 self.history['best_y_true'] = targets_denorm.tolist()
                 self.history['best_y_pred'] = preds_denorm.tolist()
-                log_info(
+                log_debug(
                     f"[EPOCH {epoch_id}/{total_number_of_epochs}] Best model checkpoint saved in "
                     f"{self._format_duration(time.perf_counter() - best_save_started_at)}",
                     stage="TRAINER"
                 )
-                log_info(f"New best for primary metric {self.primary_metric}:"
+                log_debug(f"New best for primary metric {self.primary_metric}:"
                 f" {self.best_scores[self.primary_metric]:.4f} (Saved to best_model.pt)",
                 stage="TRAINER")
             if self.es_enabled:
-                log_info(
-                    f"[EPOCH {epoch_id}/{total_number_of_epochs}] Updating early stopping state...",
+                log_debug(
+                    f"[EPOCH {epoch_id}/{total_number_of_epochs}] Updating early stopping state.",
                     stage="TRAINER"
                 )
                 if improved_any:
@@ -601,43 +606,42 @@ class Trainer:
                 data = self.history[k]
                 log_debug(f"Key: {k}, Length: {len(data)}, Types: {[type(x) for x in data]}", stage="DEBUG_PLOT")
 
-            log_info(
-                f"[EPOCH {epoch_id}/{total_number_of_epochs}] Saving history.json...",
+            log_debug(
+                f"[EPOCH {epoch_id}/{total_number_of_epochs}] Saving history.json.",
                 stage="TRAINER"
             )
             history_save_started_at = time.perf_counter()
             with open(f"{exp_dir}/history.json", 'w') as f:
                 json.dump(self.history, f, indent=4)
-            log_info(
+            log_debug(
                 f"[EPOCH {epoch_id}/{total_number_of_epochs}] history.json saved in "
                 f"{self._format_duration(time.perf_counter() - history_save_started_at)}",
                 stage="TRAINER"
             )
 
             if not save_only_best_epoch:
-                log_info(
-                    f"[EPOCH {epoch_id}/{total_number_of_epochs}] Saving per-epoch checkpoint...",
+                log_debug(
+                    f"[EPOCH {epoch_id}/{total_number_of_epochs}] Saving per-epoch checkpoint.",
                     stage="TRAINER"
                 )
                 epoch_save_started_at = time.perf_counter()
                 torch.save(self._build_checkpoint_payload(), f"{exp_dir}/model_epoch_{epoch_id}.pt")
-                log_info(
+                log_debug(
                     f"[EPOCH {epoch_id}/{total_number_of_epochs}] Per-epoch checkpoint saved in "
                     f"{self._format_duration(time.perf_counter() - epoch_save_started_at)}",
                     stage="TRAINER"
                 )
 
-            log_info("-" * 75, stage="TRAINER")
             if self.early_stop:
                 break
 
-            log_info(
-                f"[EPOCH {epoch_id}/{total_number_of_epochs}] Updating schedulers...",
+            log_debug(
+                f"[EPOCH {epoch_id}/{total_number_of_epochs}] Updating schedulers.",
                 stage="TRAINER"
             )
             scheduler_started_at = time.perf_counter()
             self.step_schedulers(val_loss)
-            log_info(
+            log_debug(
                 f"[EPOCH {epoch_id}/{total_number_of_epochs}] Schedulers updated in "
                 f"{self._format_duration(time.perf_counter() - scheduler_started_at)}",
                 stage="TRAINER"
@@ -646,18 +650,18 @@ class Trainer:
             # if it is the last epoch, the runner anyway will draw the results
             if (epoch_id % plot_every_n_epochs == 0) and (epoch_id != total_number_of_epochs):
                 log_info(
-                    f"[EPOCH {epoch_id}/{total_number_of_epochs}] Rendering ASCII dashboard...",
+                    f"[EPOCH {epoch_id}/{total_number_of_epochs}] Rendering ASCII dashboard.",
                     stage="TRAINER"
                 )
                 plot_started_at = time.perf_counter()
                 console_plots(self.history, side_by_side=True, stage="TRAINER")
-                log_info(
+                log_debug(
                     f"[EPOCH {epoch_id}/{total_number_of_epochs}] ASCII dashboard rendered in "
                     f"{self._format_duration(time.perf_counter() - plot_started_at)}",
                     stage="TRAINER"
                 )
+                log_info("-" * 75, stage="TRAINER")
 
-        log_info("-" * 75, stage="TRAINER")
         log_info(
             f"Training completed. Best {self.primary_metric}: "
             f"{self.best_scores[self.primary_metric]:.4f} at epoch {best_epoch}",
@@ -666,17 +670,18 @@ class Trainer:
         return best_epoch, self.best_scores[self.primary_metric]
 
     def test(self, test_loader, exp_dir, best_epoch, show_plots=False, save_plots=True):
+        log_info("=" * 50 + " *** STAGE: TESTING *** " + "=" * 50 + "\n" + "=" * 125, stage="EXPERIMENT")
         if hasattr(self, 'history'):
-            log_info("Preparing final performance report plot...", stage="TEST")
+            log_debug("Preparing final performance report plot.", stage="TEST")
             plot_started_at = time.perf_counter()
             self.evaluator.plot_history(exp_dir, self.history, show=show_plots, save=save_plots)
-            log_info(
+            log_debug(
                 f"Final performance report plot completed in "
                 f"{self._format_duration(time.perf_counter() - plot_started_at)}",
                 stage="TEST"
             )
         else:
-            log_info("No training history available for plotting.", stage="TEST")
+            log_debug("No training history available for plotting.", stage="TEST")
 
         log_info("FINAL TEST (CORE SET)", stage="TEST")
         self._log_memory_snapshot("test_start")
@@ -685,41 +690,46 @@ class Trainer:
 
         best_model_path = f"{exp_dir}/best_model.pt"
         if os.path.exists(best_model_path):
-            log_info("Loading best checkpoint for final test...", stage="TEST")
+            log_debug("Loading best checkpoint for final test.", stage="TEST")
             load_started_at = time.perf_counter()
             checkpoint_payload = torch.load(best_model_path)
             self._load_checkpoint_payload(checkpoint_payload)
-            log_info(
+            log_debug(
                 f"Weights for the best model (epoch {best_epoch}) loaded from {best_model_path} "
                 f"in {self._format_duration(time.perf_counter() - load_started_at)}",
                 stage="TEST"
             )
 
-        log_info("Preparing final test metric evaluation...", stage="TEST")
+        log_debug("Preparing final test metric evaluation.", stage="TEST")
         eval_started_at = time.perf_counter()
-        test_rmse, test_r, test_ci, _, _ = self.evaluator.evaluate(test_loader, progress=1.0)
+        # test_rmse, test_r_val, test_ci_val, test_preds, test_targets
+        _, test_r, test_ci, test_preds, test_targets = self.evaluator.evaluate(test_loader, progress=1.0)
+
+        if self.config['dataset']['stats'] is not None:
+            stats = self.config['dataset']['stats']
+        else:
+            raise ValueError("Data are denormalized.")
+
+        test_preds_denorm = Utils.denormalize(test_preds, stats)
+        test_targets_denorm = Utils.denormalize(test_targets, stats)
+        test_rmse_denorm = Utils.calculate_rmse(test_targets_denorm, test_preds_denorm)
         self._log_memory_snapshot("test_after_eval")
         log_info(
-            f"FINAL TEST -> RMSE: {test_rmse:.4f} | Pearson R: {test_r:.4f} | CI: {test_ci:.4f} "
+            f"FINAL TEST -> RMSE: {test_rmse_denorm:.4f} | Pearson R: {test_r:.4f} | CI: {test_ci:.4f} "
             f"| eval_time={self._format_duration(time.perf_counter() - eval_started_at)}",
-            stage="TEST"
-        )
-        log_warn(
-            "Test RMSE is currently reported in evaluator/model scale, while validation RMSE in training logs "
-            "is denormalized to pKd units. Do not compare the two RMSE values directly until test denormalization is added.",
             stage="TEST"
         )
         
         # Сохраняем результаты теста
-        log_info("Saving final test results...", stage="TEST")
+        log_debug("Saving final test results.", stage="TEST")
         test_results_started_at = time.perf_counter()
         with open(f"{exp_dir}/test_results.json", 'w') as f:
             json.dump({
-                "RMSE": test_rmse,
+                "RMSE": test_rmse_denorm,
                 "Pearson_R": test_r,
                 "CI": test_ci
             }, f, indent=4)
-        log_info(
+        log_debug(
             f"Final test results saved in "
             f"{self._format_duration(time.perf_counter() - test_results_started_at)}",
             stage="TEST"

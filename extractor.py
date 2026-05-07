@@ -237,7 +237,7 @@ class PDBBindOrchestrator:
             return os.path.realpath(path).startswith(os.path.realpath(base))
 
         targets = self.get_complex_ids(subset)
-        log_info(f"Unpacking {len(targets)} complexes...", stage="EXTRACTION")
+        log_info(f"Unpacking {len(targets)} complexes.", stage="EXTRACTION")
         
         with tarfile.open(self.archive_path, 'r:gz') as tar:
             for member in tqdm(tar, desc=f"Extracting {subset}", unit="file"):
@@ -314,7 +314,7 @@ class PDBBindOrchestrator:
             DataFrame containing parsed molecular data and affinity labels.
         """
         results, errors = [], []
-        log_info(f"Starting parallel parsing on {n_jobs if n_jobs > 0 else os.cpu_count()} cores...", stage="BUILD")
+        log_info(f"Starting parallel parsing on {n_jobs if n_jobs > 0 else os.cpu_count()} cores.", stage="BUILD")
         with Pool(n_jobs if n_jobs > 0 else os.cpu_count()) as pool:
             for pid, data, err in tqdm(pool.imap(self._parse_single_complex, ids), total=len(ids)):
                 if data:
@@ -366,7 +366,7 @@ class PDBBindOrchestrator:
         self.full_path = os.path.join(save_dir, f"{name}.{fmt}")
 
         if os.path.exists(self.full_path):
-            log_info(f"Existing dataset found: {self.full_path}. Loading from cache...", stage="CACHE")
+            log_info(f"Existing dataset found: {self.full_path}. Loading from cache.", stage="CACHE")
             cached_df = self._load_dataset(fmt)
             if cached_df is not None:
                 return cached_df

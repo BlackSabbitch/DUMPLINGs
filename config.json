@@ -1,5 +1,6 @@
 {
-    "experiment_name": "DUMPLING_A1b_DimeNet_ESM_only_ESM",
+    "experiment_name": "DUMPLING_A15_logging_test_debug_mode_True",
+    "debug_mode": true,
     "splitter": {
         "selected": "random",
         "available": {
@@ -82,8 +83,8 @@
         }
     },
     "training": {
-        "epochs": 100,
-        "plot_every_n_epochs": 10,
+        "epochs": 10,
+        "plot_every_n_epochs": 4,
         "save_only_best_epoch": false,
         "early_stopping": {
             "enabled": true,

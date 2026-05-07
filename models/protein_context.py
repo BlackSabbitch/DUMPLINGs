@@ -268,11 +268,6 @@ def build_protein_context_encoder(config: dict, device: str) -> Optional[FrozenE
             cache_path=ctx_cfg.cache_path,
             max_length=ctx_cfg.max_length,
         )
-        log_info(
-            f"Protein context encoder ready: mode={ctx_cfg.mode}, model={ctx_cfg.model_name}, "
-            f"repr_layer={ctx_cfg.repr_layer}, pooling={ctx_cfg.pooling}, cache_path={ctx_cfg.cache_path}",
-            stage="PROTEIN_CONTEXT"
-        )
         return encoder
     raise ValueError(f"Unhandled protein_context mode: {ctx_cfg.mode}")
 
