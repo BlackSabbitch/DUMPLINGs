@@ -83,8 +83,8 @@
         }
     },
     "training": {
-        "epochs": 10,
-        "plot_every_n_epochs": 4,
+        "epochs": 100,
+        "plot_every_n_epochs": 10,
         "save_only_best_epoch": false,
         "early_stopping": {
             "enabled": true,
