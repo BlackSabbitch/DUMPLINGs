@@ -87,6 +87,7 @@
         "plot_every_n_epochs": 10,
         "save_only_best_epoch": false,
         "memory_log_every_n_batches": 0,
+        "slow_batch_warn_seconds": 5.0,
         "early_stopping": {
             "enabled": true,
             "patience": 10,

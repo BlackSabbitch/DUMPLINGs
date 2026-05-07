@@ -51,10 +51,12 @@ class Trainer:
         self.train_cfg = config['training']
         self.evaluator = evaluator or Evaluator(model, device)
 
-        q_keys = ["qlayer", "final_layer"]
+        q_prefixes = ["qlayer.", "final_layer."]
         all_params = list(model.named_parameters())
-        quantum_named_params = [(n, p) for n, p in all_params if any(k in n for k in q_keys)]
-        classic_named_params = [(n, p) for n, p in all_params if not any(k in n for k in q_keys)]
+        quantum_named_params = [
+            (n, p) for n, p in all_params if any(n.startswith(prefix) for prefix in q_prefixes)]
+        classic_named_params = [
+            (n, p) for n, p in all_params if not any(n.startswith(prefix) for prefix in q_prefixes)]
         self._log_parameter_summary(all_params, classic_named_params, quantum_named_params)
 
         quantum_params = [p for _, p in quantum_named_params]
@@ -432,6 +434,9 @@ class Trainer:
     def _memory_log_every_n_batches(self) -> int:
         return int(self.train_cfg.get("memory_log_every_n_batches", 0))
 
+    def _slow_batch_warn_seconds(self) -> float:
+        return float(self.train_cfg.get("slow_batch_warn_seconds", 5.0))
+
     def _log_memory_snapshot(self, label: str, batch_idx: int | None = None, total_batches: int | None = None) -> None:
         process_rss = self._read_proc_status_value_bytes("VmRSS")
         process_hwm = self._read_proc_status_value_bytes("VmHWM")
@@ -502,6 +507,7 @@ class Trainer:
         self.model.train()
         epoch_loss = 0
         self.large_loss_events_in_epoch = 0
+        slow_batch_warn_seconds = self._slow_batch_warn_seconds()
         memory_log_every_n_batches = self._memory_log_every_n_batches()
         total_batches = len(loader) if hasattr(loader, "__len__") else None
         if self.device == 'cuda' and torch.cuda.is_available():
@@ -511,6 +517,7 @@ class Trainer:
         pbar = tqdm(loader, desc="Training", unit="batch", leave=True)
         
         for i, batch in enumerate(pbar):
+            batch_started_at = time.perf_counter()
             # Transfer data to device (remember tuple structure)
             batch = [b.to(self.device) if hasattr(b, 'to') else b for b in batch]
             _, _, _, _, targets = batch
@@ -551,10 +558,19 @@ class Trainer:
             current_loss = loss.item()
             epoch_loss += current_loss
             avg_loss = epoch_loss / (i + 1)
+            batch_duration = time.perf_counter() - batch_started_at
             
             # Рендерим полоску и обновляем прогресс-бар
             l_bar = Utils.get_loss_bar(current_loss)
             pbar.set_postfix_str(f"Loss: {current_loss:.4f} {l_bar} Avg: {avg_loss:.4f}")
+
+            if slow_batch_warn_seconds > 0 and batch_duration > slow_batch_warn_seconds:
+                log_warn(
+                    f"Slow train batch {i}: duration={batch_duration:.2f}s | "
+                    f"loss={current_loss:.4f} | avg_loss={avg_loss:.4f} | "
+                    f"{self._batch_summary(batch)}",
+                    stage="TRAINER"
+                )
 
             if memory_log_every_n_batches > 0 and ((i + 1) % memory_log_every_n_batches == 0):
                 self._log_memory_snapshot(
