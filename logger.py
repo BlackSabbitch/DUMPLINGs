@@ -252,7 +252,6 @@ def get_overlay_ascii_plot(
         lines.append("1")
 
     return lines
-
 def get_residuals_hist_data(y_true, y_pred, bins=20):
     """Готовит данные для гистограммы"""
     if y_true is None or y_pred is None:
@@ -291,10 +290,23 @@ def log_side_by_side(data_left, title_left, data_right, title_right,
                                     width=DEFAULT_WIDTH_SIDE, height=DEFAULT_HEIGHT_SIDE,
                                     force_diagonal=is_scatter, stage=stage)
     
-    # Если справа гистограмма, рисуем ее линиями
-    right_lines = get_ascii_plot(data_right, title_right,
-                                 width=DEFAULT_WIDTH_SIDE, height=DEFAULT_HEIGHT_SIDE,
-                                 lines=is_hist, stage=stage)
+    if (
+        isinstance(data_right, list)
+        and data_right
+        and isinstance(data_right[0], tuple)
+        and len(data_right[0]) == 3
+    ):
+        right_lines = get_overlay_ascii_plot(
+            data_right,
+            title_right,
+            width=DEFAULT_WIDTH_SIDE,
+            height=DEFAULT_HEIGHT_SIDE,
+        )
+    else:
+        # Если справа гистограмма, рисуем ее линиями
+        right_lines = get_ascii_plot(data_right, title_right,
+                                     width=DEFAULT_WIDTH_SIDE, height=DEFAULT_HEIGHT_SIDE,
+                                     lines=is_hist, stage=stage)
 
     max_len = max(len(left_lines), len(right_lines))
     left_lines += [""] * (max_len - len(left_lines))
@@ -320,13 +332,22 @@ def console_plots(trainer_history, side_by_side=True, stage="SUMMARY"):
                 ("Train Loss", trainer_history["train_loss"], "▘"),
                 ("Val Loss", trainer_history.get("val_loss", []), "*"),
             ], "Learning Curve (Loss)",
-            trainer_history["val_rmse"], "Validation RMSE"
+            [
+                ("Train RMSE", trainer_history.get("train_rmse", []), "▘"),
+                ("Val RMSE", trainer_history["val_rmse"], "*"),
+            ], "Validation RMSE"
         )
         log_info(dashboard_loss_rmse, stage=stage)
 
         dashboard_r_ci = log_side_by_side(
-            trainer_history["val_pearson"], "Correlation (Pearson R)",
-            trainer_history["val_ci"], "Ranking Accuracy (CI)"
+            [
+                ("Train Pearson", trainer_history.get("train_pearson", []), "▘"),
+                ("Val Pearson", trainer_history["val_pearson"], "*"),
+            ], "Correlation (Pearson R)",
+            [
+                ("Train CI", trainer_history.get("train_ci", []), "▘"),
+                ("Val CI", trainer_history["val_ci"], "*"),
+            ], "Ranking Accuracy (CI)"
         )
         log_info(dashboard_r_ci, stage=stage)
 
@@ -359,13 +380,31 @@ def console_plots(trainer_history, side_by_side=True, stage="SUMMARY"):
         )
         log_info(f"Loss Curve:\n" + "\n".join(loss_chart), stage=stage)
 
-        rmse_chart = get_ascii_plot(trainer_history["val_rmse"], title="Validation RMSE")
+        rmse_chart = get_overlay_ascii_plot(
+            [
+                ("Train RMSE", trainer_history.get("train_rmse", []), "▘"),
+                ("Val RMSE", trainer_history["val_rmse"], "*"),
+            ],
+            title="Validation RMSE"
+        )
         log_info(f"RMSE Curve:\n" + "\n".join(rmse_chart), stage=stage)
 
-        r_chart = get_ascii_plot(trainer_history["val_pearson"], title="Correlation (Pearson R)")
+        r_chart = get_overlay_ascii_plot(
+            [
+                ("Train Pearson", trainer_history.get("train_pearson", []), "▘"),
+                ("Val Pearson", trainer_history["val_pearson"], "*"),
+            ],
+            title="Correlation (Pearson R)"
+        )
         log_info(f"Pearson (R) Curve:\n" + "\n".join(r_chart), stage=stage)
 
-        ci_chart = get_ascii_plot(trainer_history["val_ci"], title="Ranking Accuracy (CI)")
+        ci_chart = get_overlay_ascii_plot(
+            [
+                ("Train CI", trainer_history.get("train_ci", []), "▘"),
+                ("Val CI", trainer_history["val_ci"], "*"),
+            ],
+            title="Ranking Accuracy (CI)"
+        )
         log_info(f"Concordancy Index Curve:\n" + "\n".join(ci_chart), stage=stage)
 
         y_true = trainer_history.get('best_y_true')

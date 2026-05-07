@@ -5,7 +5,7 @@ import torch
 import numpy as np
 from matplotlib import pyplot as plt
 from typing import Tuple, List, Optional
-from logger import log_info
+from logger import *
 
 
 class Evaluator:
@@ -206,9 +206,11 @@ class Evaluator:
 
         # 1. Losses
         plt.subplot(3, 2, 1)
+        if not len(history['train_loss']) == len(history['val_loss']) == len(epochs):
+            log_error("Loss history lengths must match number of epochs")
+
         plt.plot(epochs, history['train_loss'], 'b-', label='Train Loss')
-        if 'val_loss' in history and len(history['val_loss']) == len(history['train_loss']):
-            plt.plot(epochs, history['val_loss'], 'k--', label='Val Loss')
+        plt.plot(epochs, history['val_loss'], 'k--', label='Val Loss')
         plt.title('Learning Curve (Loss)')
         plt.xlabel('Epochs')
         plt.ylabel('Loss')
@@ -217,26 +219,38 @@ class Evaluator:
 
         # 2. RMSE
         plt.subplot(3, 2, 2)
-        plt.plot(epochs, history['val_rmse'], 'r-', label='Val RMSE')
+        if not len(history['train_rmse']) == len(history['val_rmse']) == len(epochs):
+            log_error("RMSE history lengths must match number of epochs")
+        plt.plot(epochs, history['train_rmse'], 'b-', label='Train RMSE')
+        plt.plot(epochs, history['val_rmse'], 'k--', label='Val RMSE')
         plt.title('Validation RMSE')
         plt.xlabel('Epochs')
         plt.grid(True)
+        plt.legend()
 
         # 3. Pearson R
         plt.subplot(3, 2, 3)
-        plt.plot(epochs, history['val_pearson'], 'g-', label='Pearson R')
+        if not len(history['train_pearson']) == len(history['val_pearson']) == len(epochs):
+            log_error("Pearson R history lengths must match number of epochs")
+        plt.plot(epochs, history['train_pearson'], 'b-', label='Train Pearson')
+        plt.plot(epochs, history['val_pearson'], 'k--', label='Val Pearson')
         plt.title('Correlation (Pearson R)')
         plt.xlabel('Epochs')
         plt.ylabel('R')
         plt.grid(True)
+        plt.legend()
 
         # 4. CI
         plt.subplot(3, 2, 4)
-        plt.plot(epochs, history['val_ci'], 'm-', label='Concordance Index')
+        if not len(history['train_ci']) == len(history['val_ci']) == len(epochs):
+            log_error("CI history lengths must match number of epochs")
+        plt.plot(epochs, history['train_ci'], 'b-', label='Train CI')
+        plt.plot(epochs, history['val_ci'], 'k--', label='Val CI')
         plt.title('Ranking Accuracy (CI)')
         plt.xlabel('Epochs')
         plt.ylabel('CI')
         plt.grid(True)
+        plt.legend()
 
         if history.get('best_y_true') is None or history.get('best_y_pred') is None:
             plt.tight_layout()

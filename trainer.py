@@ -13,6 +13,7 @@ from typing import Tuple
 from evaluator import Evaluator
 import math
 import time
+from collections import defaultdict
 
 
 class Trainer:
@@ -50,26 +51,21 @@ class Trainer:
         self.train_cfg = config['training']
         self.evaluator = evaluator or Evaluator(model, device)
 
-        log_debug("--- FULL MODEL PARAMETERS SCAN ---", stage="DEBUG")
-        all_params = list(model.named_parameters())
-        for name, p in all_params:
-            log_debug(f"Name: {name} | Shape: {list(p.shape)} | RequiresGrad: {p.requires_grad}", stage="OPTIMIZER")
-
         q_keys = ["qlayer", "final_layer"]
-        quantum_params = [p for n, p in model.named_parameters() if any(k in n for k in q_keys)]
-        classic_params = [p for n, p in model.named_parameters() if not any(k in n for k in q_keys)]
+        all_params = list(model.named_parameters())
+        quantum_named_params = [(n, p) for n, p in all_params if any(k in n for k in q_keys)]
+        classic_named_params = [(n, p) for n, p in all_params if not any(k in n for k in q_keys)]
+        self._log_parameter_summary(all_params, classic_named_params, quantum_named_params)
+
+        quantum_params = [p for _, p in quantum_named_params]
+        classic_params = [p for _, p in classic_named_params]
 
         # 2. Initialize optimizers from config
         c_opt_cfg = self.train_cfg['optimizers']['classic']
         self.opt_classic = getattr(torch.optim, c_opt_cfg['type'])(classic_params, **c_opt_cfg['params'])
-        log_info(f"Classic: {c_opt_cfg['type']} with {sum(p.numel() for p in classic_params)}"
-                 f" parameters in {len(classic_params)} tensors", stage="OPTIMIZER")
-
         q_opt_cfg = self.train_cfg['optimizers']['quantum']
         if len(quantum_params) > 0:
             self.opt_quantum = getattr(torch.optim, q_opt_cfg['type'])(quantum_params, **q_opt_cfg['params'])
-            log_info(f"Quantum: {q_opt_cfg['type']} with {sum(p.numel() for p in quantum_params)}"
-                     f" parameters in {len(quantum_params)} tensors", stage="OPTIMIZER")
         else:
             self.opt_quantum = None
             log_warn(f"Quantum: No quantum parameters found, optimizer disabled", stage="OPTIMIZER")
@@ -121,6 +117,148 @@ class Trainer:
                 stage="SCHEDULER"
             )
         return sched_cls(optimizer, **valid_params)
+
+    @staticmethod
+    def _format_param_count(num_params: int) -> str:
+        if num_params >= 1_000_000_000:
+            return f"{num_params / 1_000_000_000:.2f}B"
+        if num_params >= 1_000_000:
+            return f"{num_params / 1_000_000:.2f}M"
+        if num_params >= 1_000:
+            return f"{num_params / 1_000:.2f}K"
+        return str(num_params)
+
+    @staticmethod
+    def _parameter_group_name(param_name: str) -> str:
+        if param_name.startswith("protein_context_encoder."):
+            return "protein_context_encoder"
+        if param_name.startswith("protein_context_projector."):
+            return "protein_context_projector"
+        if param_name.startswith("gnn."):
+            return "gnn"
+        if param_name.startswith("head."):
+            return "head"
+        if param_name.startswith("qlayer."):
+            return "qlayer"
+        if param_name.startswith("final_layer."):
+            return "final_layer"
+        return param_name.split(".", 1)[0]
+
+    @staticmethod
+    def _format_percentage(part: int, whole: int) -> str:
+        if whole <= 0:
+            return "0.0%"
+        return f"{100.0 * part / whole:.1f}%"
+
+    def _log_parameter_summary(self, named_params, classic_named_params, quantum_named_params) -> None:
+        group_stats = defaultdict(lambda: {
+            "tensor_count": 0,
+            "total_params": 0,
+            "trainable_params": 0,
+            "frozen_params": 0,
+            "trainable_tensors": 0,
+            "frozen_tensors": 0,
+            "classic_params": 0,
+            "quantum_params": 0,
+            "classic_tensors": 0,
+            "quantum_tensors": 0,
+        })
+
+        total_params = 0
+        total_trainable = 0
+        total_frozen = 0
+        classic_param_total = sum(int(param.numel()) for _, param in classic_named_params)
+        classic_tensor_total = len(classic_named_params)
+        quantum_param_total = sum(int(param.numel()) for _, param in quantum_named_params)
+        quantum_tensor_total = len(quantum_named_params)
+        quantum_names = {name for name, _ in quantum_named_params}
+
+        for name, param in named_params:
+            group = self._parameter_group_name(name)
+            param_count = int(param.numel())
+            stat = group_stats[group]
+            stat["tensor_count"] += 1
+            stat["total_params"] += param_count
+            total_params += param_count
+            if name in quantum_names:
+                stat["quantum_params"] += param_count
+                stat["quantum_tensors"] += 1
+            else:
+                stat["classic_params"] += param_count
+                stat["classic_tensors"] += 1
+            if param.requires_grad:
+                stat["trainable_params"] += param_count
+                stat["trainable_tensors"] += 1
+                total_trainable += param_count
+            else:
+                stat["frozen_params"] += param_count
+                stat["frozen_tensors"] += 1
+                total_frozen += param_count
+
+        log_info(
+            "Parameter summary: "
+            f"total={self._format_param_count(total_params)} | "
+            f"trainable={self._format_param_count(total_trainable)} | "
+            f"frozen={self._format_param_count(total_frozen)} | "
+            f"groups={len(group_stats)}",
+            stage="OPTIMIZER"
+        )
+        c_opt_pct = self._format_percentage(classic_param_total, total_params)
+        q_opt_pct = self._format_percentage(quantum_param_total, total_params)
+        log_info(
+            f"Optimizer split -> "
+            f"classic={self._format_param_count(classic_param_total)} params "
+            f"in {classic_tensor_total} tensors ({c_opt_pct}) | "
+            f"quantum={self._format_param_count(quantum_param_total)} params "
+            f"in {quantum_tensor_total} tensors ({q_opt_pct})",
+            stage="OPTIMIZER"
+        )
+
+        for group_name in sorted(group_stats.keys()):
+            stat = group_stats[group_name]
+            status = (
+                "trainable" if stat["frozen_params"] == 0 else
+                "frozen" if stat["trainable_params"] == 0 else
+                "mixed"
+            )
+            split = (
+                "classic" if stat["quantum_params"] == 0 else
+                "quantum" if stat["classic_params"] == 0 else
+                "mixed"
+            )
+            log_info(
+                f"{group_name:28} | split={split:7} | status={status:9} | "
+                f"params={self._format_param_count(stat['total_params']):>8} "
+                f"(trainable={self._format_param_count(stat['trainable_params'])}, "
+                f"frozen={self._format_param_count(stat['frozen_params'])})",
+                stage="OPTIMIZER"
+            )
+
+        for group_name in sorted(group_stats.keys()):
+            stat = group_stats[group_name]
+            status = (
+                "trainable" if stat["frozen_params"] == 0 else
+                "frozen" if stat["trainable_params"] == 0 else
+                "mixed"
+            )
+            split = (
+                "classic" if stat["quantum_params"] == 0 else
+                "quantum" if stat["classic_params"] == 0 else
+                "mixed"
+            )
+            log_debug(
+                f"{group_name:28} | split={split:7} | status={status:9} | "
+                f"tensors={stat['tensor_count']:3d} "
+                f"(trainable={stat['trainable_tensors']}, frozen={stat['frozen_tensors']}) | "
+                f"params={self._format_param_count(stat['total_params']):>8} | "
+                f"trainable={self._format_param_count(stat['trainable_params']):>8} "
+                f"({self._format_percentage(stat['trainable_params'], stat['total_params'])}) | "
+                f"frozen={self._format_param_count(stat['frozen_params']):>8} "
+                f"({self._format_percentage(stat['frozen_params'], stat['total_params'])}) | "
+                f"classic={self._format_param_count(stat['classic_params']):>8} | "
+                f"quantum={self._format_param_count(stat['quantum_params']):>8}",
+                stage="OPTIMIZER"
+            )
 
     @staticmethod
     def _collect_tensor_stats(params):
@@ -292,7 +430,7 @@ class Trainer:
         return None
 
     def _memory_log_every_n_batches(self) -> int:
-        return int(self.train_cfg.get("memory_log_every_n_batches", 250))
+        return int(self.train_cfg.get("memory_log_every_n_batches", 0))
 
     def _log_memory_snapshot(self, label: str, batch_idx: int | None = None, total_batches: int | None = None) -> None:
         process_rss = self._read_proc_status_value_bytes("VmRSS")
@@ -454,8 +592,16 @@ class Trainer:
         # best_val_r = -1.0
         best_epoch = 0
         self.history = {
-            'train_loss': [], 'val_loss': [], 'val_rmse': [], 'val_pearson': [], 
-            'val_ci': [], 'best_y_true': None, 'best_y_pred': None
+            'train_loss': [],
+            'val_loss': [],
+            'train_rmse': [],
+            'val_rmse': [],
+            'train_pearson': [],
+            'val_pearson': [],
+            'train_ci': [],
+            'val_ci': [],
+            'best_y_true': None,
+            'best_y_pred': None
             }
         if self.es_enabled:
             self.es_counter = 0
@@ -478,11 +624,23 @@ class Trainer:
                 stage="TRAINER"
             )
             log_info(f"[EPOCH {epoch_id}/{total_number_of_epochs}] Validation.", stage="TRAINER")
+
             val_started_at = time.perf_counter()
-            val_loss, _, r_val, ci_val, preds, targets = self.validate(val_loader, progress=progress)
+            val_loss, _, r_val, ci_val, val_preds, val_targets = self.validate(val_loader, progress=progress)
             val_duration = time.perf_counter() - val_started_at
             epoch_duration = time.perf_counter() - epoch_started_at
             self._log_memory_snapshot(f"epoch_{epoch_id}_after_val")
+
+            log_debug(
+                f"[EPOCH {epoch_id}/{total_number_of_epochs}] Preparing train-set evaluation metrics.",
+                stage="TRAINER"
+            )
+            train_eval_started_at = time.perf_counter()
+            _, _, train_r_val, train_ci_val, train_preds, train_targets = self.validate(
+                train_loader,
+                progress=progress
+            )
+            train_eval_duration = time.perf_counter() - train_eval_started_at
 
             log_info(
                 f"[EPOCH {epoch_id}/{total_number_of_epochs}] Train Loss: {train_loss:.4f}, "
@@ -492,6 +650,7 @@ class Trainer:
             log_debug(f"[EPOCH {epoch_id}/{total_number_of_epochs}] "
                       f"Train_time={self._format_duration(train_duration)} "
                       f"| Val_time={self._format_duration(val_duration)} "
+                      f"| Train_eval_time={self._format_duration(train_eval_duration)} "
                       f"| epoch_time={self._format_duration(epoch_duration)}",
                       stage="TRAINER")
             if self.large_loss_events_in_epoch:
@@ -510,28 +669,37 @@ class Trainer:
                 stage="TRAINER"
             )
             metric_post_started_at = time.perf_counter()
-            preds_denorm = Utils.denormalize(preds, stats)
-            targets_denorm = Utils.denormalize(targets, stats)
-            rmse_denorm = Utils.calculate_rmse(targets_denorm, preds_denorm)
+            val_preds_denorm = Utils.denormalize(val_preds, stats)
+            val_targets_denorm = Utils.denormalize(val_targets, stats)
+            val_rmse_denorm = Utils.calculate_rmse(val_targets_denorm, val_preds_denorm)
+            train_preds_denorm = Utils.denormalize(train_preds, stats)
+            train_targets_denorm = Utils.denormalize(train_targets, stats)
+            train_rmse_denorm = Utils.calculate_rmse(train_targets_denorm, train_preds_denorm)
             log_debug(
                 f"[EPOCH {epoch_id}/{total_number_of_epochs}] Denormalized validation metrics prepared in "
                 f"{self._format_duration(time.perf_counter() - metric_post_started_at)}",
                 stage="TRAINER"
             )
-            log_debug(f"{type(train_loss)}, {type(rmse_denorm)}, {type(r_val)}, {type(ci_val)}", stage="TRAINER")
-            log_debug(f"{type(preds_denorm)}, {type(targets_denorm)}, {type(preds_denorm[0])}, {type(targets_denorm[0])}", stage="TRAINER")
-            log_debug(f"{train_loss}, {rmse_denorm}, {r_val}, {ci_val}", stage="TRAINER")
-            log_debug(f"{preds_denorm}, {targets_denorm}, {preds_denorm[0]}, {targets_denorm[0]}", stage="TRAINER")
+
             self.history['train_loss'].append(float(train_loss))
             self.history['val_loss'].append(float(val_loss))
-            self.history['val_rmse'].append(float(rmse_denorm))
+            self.history['train_rmse'].append(float(train_rmse_denorm))
+            self.history['val_rmse'].append(float(val_rmse_denorm))
+            self.history['train_pearson'].append(float(train_r_val))
             self.history['val_pearson'].append(float(r_val))
+            self.history['train_ci'].append(float(train_ci_val))
             self.history['val_ci'].append(float(ci_val))
-            log_info(f"[EPOCH {epoch_id}/{total_number_of_epochs}] Valid: RMSE {rmse_denorm:.4f} | R {r_val:.4f} | CI {ci_val:.4f}", stage="TRAINER")
+            log_info(
+                f"[EPOCH {epoch_id}/{total_number_of_epochs}] Train(eval): "
+                f"RMSE {train_rmse_denorm:.4f} | R {train_r_val:.4f} | CI {train_ci_val:.4f}",
+                stage="TRAINER"
+            )
+            log_info(f"[EPOCH {epoch_id}/{total_number_of_epochs}] Valid: "
+                f"RMSE {val_rmse_denorm:.4f} | R {r_val:.4f} | CI {ci_val:.4f}", stage="TRAINER")
 
             current_metrics = {
                 "val_pearson": r_val,
-                "val_rmse": rmse_denorm,
+                "val_rmse": val_rmse_denorm,
                 "train_loss": train_loss,
                 "val_ci": ci_val
             }
@@ -575,8 +743,8 @@ class Trainer:
                 )
                 best_save_started_at = time.perf_counter()
                 torch.save(self._build_checkpoint_payload(), f"{exp_dir}/best_model.pt")
-                self.history['best_y_true'] = targets_denorm.tolist()
-                self.history['best_y_pred'] = preds_denorm.tolist()
+                self.history['best_y_true'] = val_targets_denorm.tolist()
+                self.history['best_y_pred'] = val_preds_denorm.tolist()
                 log_debug(
                     f"[EPOCH {epoch_id}/{total_number_of_epochs}] Best model checkpoint saved in "
                     f"{self._format_duration(time.perf_counter() - best_save_started_at)}",
@@ -600,10 +768,6 @@ class Trainer:
                         log_info(f"[EPOCH {epoch_id}/{total_number_of_epochs}]"
                         f" Early stopping triggered", stage="TRAINER")
                         self.early_stop = True
-
-            for k in ['train_loss', 'val_loss', 'val_rmse', 'val_pearson', 'val_ci']:
-                data = self.history[k]
-                log_debug(f"Key: {k}, Length: {len(data)}, Types: {[type(x) for x in data]}", stage="DEBUG_PLOT")
 
             log_debug(
                 f"[EPOCH {epoch_id}/{total_number_of_epochs}] Saving history.json.",
