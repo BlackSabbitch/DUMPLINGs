@@ -1,6 +1,6 @@
 {
-    "experiment_name": "DUMPLING_A15_logging_test_debug_mode_False",
-    "debug_mode": false,
+    "experiment_name": "DUMPLING_A15_esm_DimeNet",
+    "debug_mode": true,
     "splitter": {
         "selected": "random",
         "available": {
@@ -49,7 +49,7 @@
             }
         },
         "protein_context": {
-            "selected": "esm_only",
+            "selected": "esm_frozen_whole",
             "available": {
                 "none": {},
                 "esm_frozen_whole": {

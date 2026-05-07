@@ -648,7 +648,7 @@ class Trainer:
 
             # if it is the last epoch, the runner anyway will draw the results
             if (epoch_id % plot_every_n_epochs == 0) and (epoch_id != total_number_of_epochs):
-                log_info(
+                log_debug(
                     f"[EPOCH {epoch_id}/{total_number_of_epochs}] Rendering ASCII dashboard.",
                     stage="TRAINER"
                 )
