@@ -1,6 +1,6 @@
 {
-    "experiment_name": "DUMPLING_A15_logging_test_debug_mode_True",
-    "debug_mode": true,
+    "experiment_name": "DUMPLING_A15_logging_test_debug_mode_False",
+    "debug_mode": false,
     "splitter": {
         "selected": "random",
         "available": {
