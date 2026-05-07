@@ -236,7 +236,7 @@ class Trainer:
             stage="TRAINER"
         )
         if q_stats is not None:
-            log_info(
+            log_debug(
                 f"[EPOCH {epoch_id}/{total_epochs}] quantum_params={sum(p.numel() for p in q_params)}"
                 f" in {q_param_count} tensors mean={q_stats['mean']:.6f} "
                 f"std={q_stats['std']:.6f} min={q_stats['min']:.6f} max={q_stats['max']:.6f}",
@@ -461,7 +461,6 @@ class Trainer:
             self.es_counter = 0
         
         total_number_of_epochs = self.train_cfg['epochs']
-        log_info("=" * 50 + " *** STAGE: TRAINING *** " + "=" * 50 + "\n" + "=" * 125, stage="EXPERIMENT")
         for epoch in range(total_number_of_epochs):
             epoch_started_at = time.perf_counter()
             epoch_id = epoch + 1
@@ -660,7 +659,7 @@ class Trainer:
                     f"{self._format_duration(time.perf_counter() - plot_started_at)}",
                     stage="TRAINER"
                 )
-                log_info("-" * 75, stage="TRAINER")
+            log_info(get_divider("-"), stage="TRAINER")
 
         log_info(
             f"Training completed. Best {self.primary_metric}: "
@@ -670,7 +669,6 @@ class Trainer:
         return best_epoch, self.best_scores[self.primary_metric]
 
     def test(self, test_loader, exp_dir, best_epoch, show_plots=False, save_plots=True):
-        log_info("=" * 50 + " *** STAGE: TESTING *** " + "=" * 50 + "\n" + "=" * 125, stage="EXPERIMENT")
         if hasattr(self, 'history'):
             log_debug("Preparing final performance report plot.", stage="TEST")
             plot_started_at = time.perf_counter()
@@ -683,7 +681,6 @@ class Trainer:
         else:
             log_debug("No training history available for plotting.", stage="TEST")
 
-        log_info("FINAL TEST (CORE SET)", stage="TEST")
         self._log_memory_snapshot("test_start")
         # Подгружаем веса лучшей эпохи (в идеале нужно написать логику загрузки лучшего .pt,
         # но пока протестируем на весах последней эпохи)

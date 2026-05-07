@@ -72,7 +72,8 @@ class ExperimentRunner:
         assert all([self.train_dataset_path, self.test_dataset_path, self.val_dataset_path]) or not any([self.train_dataset_path, self.test_dataset_path, self.val_dataset_path])
 
     def prepare_folders(self):
-        log_info("=" * 50 + " *** STAGE: INITIALIZING *** " + "=" * 50 + "\n" + "=" * 125, stage="EXPERIMENT")
+        log_info(get_stage_banner("INITIALIZING"), stage="EXPERIMENT")
+        log_info(get_divider("="), stage="EXPERIMENT")
         if self.exp_dir is not None:
             self.exp_run_dir = self.exp_dir
         elif self.temp_run:
@@ -126,7 +127,8 @@ class ExperimentRunner:
             raise ValueError("Unsupported file format. Use .csv, .pkl, or .parquet")
 
     def prepare_datasets(self):
-        log_info("=" * 50 + " *** STAGE: DATASET *** " + "=" * 50 + "\n" + "=" * 125, stage="EXPERIMENT")
+        log_info(get_stage_banner("DATASET"), stage="EXPERIMENT")
+        log_info(get_divider("="), stage="EXPERIMENT")
         prepare_started_at = time.perf_counter()
         if self.train_dataset_path is not None:
             log_info("Preparing custom train/test/val datasets.", stage="EXPERIMENT")
@@ -231,7 +233,7 @@ class ExperimentRunner:
         self.config['dataset']['stats'] = stats
         for df in [train_df, val_df, test_df]:
             df['pkd'] = Utils.normalize(df['pkd'].values, stats)
-        log_info(
+        log_debug(
             f"Data normalization completed in {self._format_duration(time.perf_counter() - norm_started_at)}",
             stage="NORMALIZATION"
         )
@@ -381,7 +383,8 @@ class ExperimentRunner:
 
     def run(self, train_df, val_df, test_df):
         run_started_at = time.perf_counter()
-        log_info("=" * 50 + " *** STAGE: ENRICHMENT *** " + "=" * 50 + "\n" + "=" * 125, stage="EXPERIMENT")
+        log_info(get_stage_banner("ENRICHMENT"), stage="EXPERIMENT")
+        log_info(get_divider("="), stage="EXPERIMENT")
         log_info("Preparing training datasets and loaders.", stage="EXPERIMENT")
         self.precompute_protein_context_embeddings(train_df, val_df, test_df)
         train_ds = UniversalPDBBindDataset(train_df, self.config)
@@ -416,8 +419,16 @@ class ExperimentRunner:
         hidden_dim = dimenet_cfg.get('hidden_channels', 128)
         protein_context_mode = get_protein_context_mode(self.config)
         protein_context_cfg = ProteinContextConfig.from_config(self.config)
+        self.prewarm_protein_context()
+        log_info(
+            f"Protein context settings -> mode={protein_context_cfg.mode}, model={protein_context_cfg.model_name}, "
+            f"repr_layer={protein_context_cfg.repr_layer}, pooling={protein_context_cfg.pooling}, "
+            f"cache_path={protein_context_cfg.cache_path}, max_length={protein_context_cfg.max_length}",
+            stage="PROTEIN_CONTEXT"
+        )
         splitter_seed = self.config['splitter']['available'][self.config['splitter']['selected']].get('seed', 'na')
-        log_info("=" * 50 + " *** STAGE: RUN SETTINGS *** " + "=" * 50 + "\n" + "=" * 125, stage="EXPERIMENT")
+        log_info(get_stage_banner("RUN SETTINGS"), stage="EXPERIMENT")
+        log_info(get_divider("="), stage="EXPERIMENT")
         log_info(
             f"Run settings -> source_subset={self.source_subset}, core_as_test={self.core_as_test}, "
             f"splitter={self.config['splitter']['selected']}, batch_size={self.config['dataset']['batch_size']}, "
@@ -432,12 +443,6 @@ class ExperimentRunner:
             f"protein_context={protein_context_mode}",
             stage="MODEL"
         )
-        log_info(
-            f"Protein context settings -> mode={protein_context_cfg.mode}, model={protein_context_cfg.model_name}, "
-            f"repr_layer={protein_context_cfg.repr_layer}, pooling={protein_context_cfg.pooling}, "
-            f"cache_path={protein_context_cfg.cache_path}, max_length={protein_context_cfg.max_length}",
-            stage="PROTEIN_CONTEXT"
-        )
         classic_opt_cfg = self.config['training']['optimizers']['classic']
         log_info(
             f"Optimizer settings -> type={classic_opt_cfg['type']}, "
@@ -445,7 +450,6 @@ class ExperimentRunner:
             f"weight_decay={classic_opt_cfg['params'].get('weight_decay', 0.0)}",
             stage="OPTIMIZER"
         )
-        self.prewarm_protein_context()
         log_info("Preparing model initialization.", stage="MODEL")
         model_init_started_at = time.perf_counter()
         model = A1DimeNet(
@@ -467,15 +471,17 @@ class ExperimentRunner:
         log_info(f"Launch on: {self.device}", stage="EXPERIMENT")
 
         self.trainer = Trainer(model, evaluator, self.config, self.device)
-        log_info("Preparing training loop.", stage="EXPERIMENT")
         train_started_at = time.perf_counter()
+        log_info(get_stage_banner("TRAINING"), stage="EXPERIMENT")
+        log_info(get_divider("="), stage="EXPERIMENT")
         best_epoch, _ = self.trainer.train(train_loader, val_loader, self.exp_run_dir, self.config['training']['save_only_best_epoch'])
         log_debug(
             f"Training loop completed in {self._format_duration(time.perf_counter() - train_started_at)}",
             stage="EXPERIMENT"
         )
-        log_info("Preparing final test evaluation.", stage="TEST")
         test_started_at = time.perf_counter()
+        log_info(get_stage_banner("TESTING"), stage="EXPERIMENT")
+        log_info(get_divider("="), stage="EXPERIMENT")
         self.trainer.test(test_loader, self.exp_run_dir, best_epoch)
         log_debug(
             f"Final test evaluation completed in "

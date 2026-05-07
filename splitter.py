@@ -277,7 +277,7 @@ class PDBBindSplitter:
             raise ValueError(f"Unknown split strategy: {strategy}")
         
         # Log split results
-        log_info(f"Total: {len(df)} | Train: {len(train_df)} | Val: {len(val_df)}", stage="SPLIT")
+        log_debug(f"Total: {len(df)} | Train: {len(train_df)} | Val: {len(val_df)}", stage="SPLIT")
         
         return train_df, val_df
 

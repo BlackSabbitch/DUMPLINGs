@@ -12,7 +12,7 @@ from multiprocessing import Pool
 from hashlib import md5
 from collections import Counter
 from typing import List, Optional, Dict, Any, Tuple
-from logger import log_info, log_warn
+from logger import *
 from parsers.cnn_parser import CNNParser
 from models.protein_context import get_protein_context_mode
 
@@ -246,7 +246,7 @@ class PDBBindOrchestrator:
                     target_path = os.path.join(self.dest_path, member.name)
                     if not os.path.exists(target_path) and is_safe_path(self.dest_path, target_path):
                         tar.extract(member, path=self.dest_path)
-        log_info("Unpacking completed.", stage="EXTRACTION")
+        log_debug("Unpacking completed.", stage="EXTRACTION")
 
     def _parse_single_complex(self, pdb_id: str) -> Tuple[str, Optional[Any], Optional[str]]:
         """

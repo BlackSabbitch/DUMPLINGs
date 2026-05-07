@@ -12,6 +12,13 @@ DEFAULT_WIDTH_SIDE = 50
 DEFAULT_HEIGHT_SIDE = 15
 # 50 (width) + 10 (labels/padding) = 60
 LEFT_COLUMN_TOTAL_WIDTH = DEFAULT_WIDTH_SIDE + 10
+RIGHT_COLUMN_TOTAL_WIDTH = DEFAULT_WIDTH_SIDE + 6
+SIDE_BY_SIDE_SEPARATOR = " " * 4
+SIDE_BY_SIDE_TOTAL_WIDTH = (
+    LEFT_COLUMN_TOTAL_WIDTH
+    + len(SIDE_BY_SIDE_SEPARATOR)
+    + RIGHT_COLUMN_TOTAL_WIDTH
+)
 
 
 class StageFormatter(logging.Formatter):
@@ -73,6 +80,26 @@ def setup_file_logging(log_path):
     
     # Добавляем к существующему логгеру
     logger.addHandler(fh)
+
+
+def get_plot_line_width() -> int:
+    return SIDE_BY_SIDE_TOTAL_WIDTH
+
+
+def get_divider(char: str = "=", width: int | None = None) -> str:
+    width = width or get_plot_line_width()
+    return char * max(1, width)
+
+
+def get_stage_banner(title: str, width: int | None = None, fill_char: str = "=") -> str:
+    width = width or get_plot_line_width()
+    label = f" *** STAGE: {title} *** "
+    if len(label) >= width:
+        return label
+    remaining = width - len(label)
+    left = remaining // 2
+    right = remaining - left
+    return f"{fill_char * left}{label}{fill_char * right}"
 
 def get_ascii_plot(data, title,
                    width=DEFAULT_WIDTH_SINGLE,
@@ -276,7 +303,7 @@ def log_side_by_side(data_left, title_left, data_right, title_right,
     max_w_left = max(len(line) for line in left_lines) if left_lines else DEFAULT_WIDTH_SIDE
 
     combined = [""]
-    separator = " " * 4
+    separator = SIDE_BY_SIDE_SEPARATOR
     for left, right in zip(left_lines, right_lines):
         left_padded = left.ljust(LEFT_COLUMN_TOTAL_WIDTH)
         combined.append(f"{left_padded}{separator}{right}")
