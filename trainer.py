@@ -365,23 +365,11 @@ class Trainer:
         classic_lr = self._optimizer_lrs(self.opt_classic)
         quantum_lr = self._optimizer_lrs(self.opt_quantum)
 
-        q_keys = ["qlayer", "final_layer"]
-        q_params = [p for n, p in self.model.named_parameters() if any(k in n for k in q_keys)]
-        q_param_count = len(q_params)
-        q_stats = self._collect_tensor_stats(q_params)
-
         log_info(
             f"[EPOCH {epoch_id}/{total_epochs}] progress={progress:.3f} classic_lr={classic_lr}"
             f" quantum_lr={quantum_lr} ",
             stage="TRAINER"
         )
-        if q_stats is not None:
-            log_debug(
-                f"[EPOCH {epoch_id}/{total_epochs}] quantum_params={sum(p.numel() for p in q_params)}"
-                f" in {q_param_count} tensors mean={q_stats['mean']:.6f} "
-                f"std={q_stats['std']:.6f} min={q_stats['min']:.6f} max={q_stats['max']:.6f}",
-                stage="TRAINER"
-            )
 
     @staticmethod
     def _format_duration(seconds: float) -> str:
