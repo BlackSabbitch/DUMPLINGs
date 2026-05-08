@@ -2,69 +2,124 @@
 
 **Different Unsorted Models of Protein-Ligand Interaction using Graphs**
 
-`DUMPLINGs` is a compact research sandbox for protein-ligand binding affinity
-prediction on PDBBind 2016. The current baseline builds a fused ligand-pocket
-3D interaction representation and trains a DimeNet++ model to predict `pKd`.
+`DUMPLINGs` is a research-oriented sandbox for protein-ligand binding affinity
+prediction on **PDBBind 2016**. The current working baseline combines:
 
-This repository was split out of the broader `ELIQSIR-QDL` framework so the
-3D interaction-graph baseline can be developed, debugged, and evaluated without
-the extra weight of the full hybrid classical/quantum pipeline.
+- a fused **ligand-pocket 3D interaction graph**,
+- a **DimeNet++** geometric encoder,
+- an optional frozen **ESM protein-context branch**,
+- an optional lightweight **ligand-context branch** based on cached RDKit
+  physicochemical descriptors.
 
-## Project Overview
+The repository was split out of the broader `ELIQSIR-QDL` codebase so the
+interaction-graph line of work could evolve quickly without carrying the full
+hybrid classical/quantum stack.
 
-The current pipeline:
+## Project Status
 
-1. reads PDBBind index files,
-2. filters complexes by resolution and valid affinity,
-3. parses molecular files into reusable representations,
-4. builds a cached `refined` dataset,
-5. derives the PDBBind `core` test set from `refined`,
-6. splits non-core refined complexes into train/validation,
-7. trains a DimeNet++ baseline,
-8. evaluates on the core set.
+The active experiment family is the `A1` line, centered on
+[`models/a1.py`](models/a1.py).
 
-The project is research-oriented. It favors clear experiment tracking and
-reusable molecular parsing over production packaging.
+The current code supports:
+
+- cached dataset extraction and parsing from the PDBBind 2016 archive,
+- fused ligand-pocket graph construction,
+- frozen-sequence protein enrichment via ESM,
+- cached ligand enrichment via compact RDKit descriptors,
+- experiment tracking, checkpointing, early stopping, and ASCII dashboards,
+- richer evaluation diagnostics, including validation-scatter agreement
+  summaries and PCA-axis overlays.
+
+This project is intentionally optimized for experimentation rather than
+production packaging.
+
+## High-Level Pipeline
+
+The default pipeline is:
+
+1. read PDBBind index files,
+2. filter complexes by resolution and valid affinity,
+3. extract raw molecular files from the archive when needed,
+4. parse and cache a reusable dataset under `datasets/`,
+5. derive train / validation / test splits,
+6. precompute protein-context embeddings if enabled,
+7. precompute ligand-context descriptor vectors if enabled,
+8. train the model,
+9. evaluate the best checkpoint and save plots, metrics, and diagnostics.
 
 ## Current Model
 
-The active model is `A1DimeNet` in `models/a1.py`.
+The active model class is [`A1DimeNet`](models/a1.py).
 
 It uses:
 
-- `torch_geometric.nn.DimeNetPlusPlus`,
+- `torch_geometric.nn.DimeNetPlusPlus` for geometry-aware message passing,
 - atomic numbers from `complex_graph.x[:, 0]`,
 - 3D coordinates from `complex_graph.pos`,
-- PyG batch assignments from the data loader.
+- late fusion with optional global protein and ligand context vectors.
 
-DimeNet++ constructs its own geometric neighborhoods internally from positions
-and cutoff radius. The parser still stores `edge_index` and extra node features
-because the parsed dataset is intentionally model-agnostic: future GNN, EGNN,
-or message-passing baselines can consume richer features without rebuilding the
-raw molecular dataset.
+### Geometry Branch
+
+The geometric branch consumes the fused `complex_graph` produced by
+[`parsers/interaction_graph_parser.py`](parsers/interaction_graph_parser.py).
+DimeNet++ reconstructs radial and angular neighborhoods internally from
+positions, so the parser intentionally stores a richer graph than DimeNet++
+strictly requires. That keeps the dataset reusable for future EGNN or
+edge-aware baselines.
+
+### Protein Context Branch
+
+Protein context is implemented in
+[`models/protein_context.py`](models/protein_context.py).
+
+The current production-ready mode is:
+
+- `esm_frozen_whole`: frozen full-sequence ESM embedding with cached
+  sequence-level vectors.
+
+Cache files are stored under `protein_context_features/`. Each unique
+protein-sequence/configuration pair is cached as an individual `.pt` file.
+
+### Ligand Context Branch
+
+Ligand context is implemented in
+[`models/ligand_context.py`](models/ligand_context.py).
+
+The current first-wave mode is:
+
+- `basic_rdkit`: cached global RDKit descriptors
+  (`MW`, `logP`, `TPSA`, `HBD`, `HBA`, `Lipinski violations`,
+  `Wiener index`).
+
+Cache files are stored under `ligand_context_features/`. Each unique
+ligand/configuration pair is cached as an individual `.pt` file.
 
 ## Data Representation
 
-The default config uses `duo` mode with `NE`:
+The default config uses graph-encoder mode `duo` with parser signature `NE`:
 
-- `N` means no separate protein encoder,
-- `E` means an interaction parser builds one fused ligand-pocket graph.
+- `N` means no separate slot-specific protein encoder is built for the main
+  model input,
+- `E` means one fused ligand-pocket interaction graph is parsed.
 
-Each row can contain:
+Each dataframe row can contain:
 
-- `pdb_id` - PDBBind complex identifier,
-- `pkd` - binding affinity target,
-- `res` - structure resolution,
-- `protein`, `ligand`, `pocket` - optional slot representations,
-- `complex_graph` - fused ligand-pocket graph with atom features, coordinates,
+- `pdb_id`: PDBBind complex identifier,
+- `pkd`: binding-affinity target,
+- `res`: structure resolution,
+- `protein`: optional protein sequence or representation,
+- `ligand`: optional ligand representation,
+- `ligand_smiles`: canonical ligand SMILES when ligand context is enabled,
+- `pocket`: optional pocket representation,
+- `complex_graph`: fused ligand-pocket graph with node features, coordinates,
   and edges.
 
-For the DimeNet++ baseline, `complex_graph` is the main input.
+For the current A1 baseline, `complex_graph` is the primary geometric input.
 
 ## Dataset Flow
 
-`PDBBindOrchestrator` in `extractor.py` handles extraction, parsing, caching,
-and metadata.
+Dataset preparation is orchestrated by
+[`PDBBindOrchestrator`](extractor.py) in [`extractor.py`](extractor.py).
 
 The intended flow is:
 
@@ -72,7 +127,7 @@ The intended flow is:
 pdbbind_v2016.tar.gz
         |
         v
-data/v2016/... raw molecular files
+data/v2016/... raw extracted files
         |
         v
 datasets/pdbbds_ref_*.pickle
@@ -82,39 +137,74 @@ datasets/pdbbds_ref_*.pickle
         +--> test_core derived by PDB ID from refined
 ```
 
-Only the expensive parsed `refined` dataset is cached globally under
-`datasets/`. The core set is a deterministic slice of refined and is saved per
-experiment under `runs/<experiment>/datasets/test_core.pickle` when
+Only the expensive parsed source dataset is cached globally under `datasets/`.
+Per-run split snapshots are stored under `runs/<experiment>/datasets/` only if
 `save_train_test_val_datasets` is enabled.
 
-## Cache Safety
+## Cache Model
 
-Dataset cache names are based on a stable parser signature:
+### Dataset Cache
 
-- parser class name,
-- simple parser parameters such as `dist_threshold`, `ca_only`, `is_ligand`.
+Dataset cache names are derived from a stable signature that includes:
 
-Runtime objects such as Biopython parser instances are excluded from the hash,
-so repeated runs reuse the same cache file when the real parser configuration
-has not changed.
+- parser classes and simple parser parameters,
+- bad-complex registry contents,
+- enabled context modes,
+- parser-presence flags relevant to additional cached fields such as
+  `protein` and `ligand_smiles`.
 
-Dataset writes are atomic: the dataframe is first written to a temporary file
-and then moved into place. If a process is killed during serialization, the
-official cache file is not replaced by a partial pickle. Cached datasets are
-also validated on load; unreadable cache files are rebuilt.
+This lets the project safely rebuild cached datasets whenever the real parsing
+contract changes.
+
+### Protein Context Cache
+
+Protein context cache keys are derived from:
+
+- ESM model name,
+- representation layer,
+- pooling strategy,
+- raw protein sequence.
+
+### Ligand Context Cache
+
+Ligand context cache keys are derived from:
+
+- ligand-context descriptor-set name,
+- canonicalized ligand SMILES.
+
+## Train / Validation / Test Strategies
+
+Splitting is handled by [`splitter.py`](splitter.py).
+
+Supported validation strategies:
+
+- `random`
+- `scaffold`
+- `scaffold_balanced`
+- `cold_protein`
+
+Supported test strategies:
+
+- `core_as_test = true`: use PDBBind core as the final test set,
+- `core_as_test = false`: randomly carve out a held-out test split from the
+  configured source subset.
 
 ## Main Files
 
 | File | Purpose |
 |---|---|
-| `run.py` | Full experiment orchestration: parsing, splitting, training, testing. |
+| `run.py` | End-to-end experiment orchestration: parsing, splitting, context precompute, training, testing. |
 | `extractor.py` | PDBBind archive/index handling and parsed dataset caching. |
+| `trainer.py` | Training loop, optimizer/scheduler setup, checkpointing, early stopping, memory diagnostics. |
+| `evaluator.py` | Loader evaluation, metrics, plots, scatter diagnostics, and report generation. |
+| `tokenizer.py` | Converts dataframe rows into PyTorch/PyG inputs. |
+| `models/a1.py` | Current DimeNet++ baseline with optional protein and ligand context fusion. |
+| `models/protein_context.py` | Frozen ESM sequence encoder and cache utilities. |
+| `models/ligand_context.py` | Frozen RDKit ligand descriptor encoder and cache utilities. |
 | `parsers/interaction_graph_parser.py` | Fused ligand-pocket graph parser. |
-| `tokenizer.py` | Converts dataframe rows into PyTorch/PyG objects. |
-| `models/a1.py` | Current DimeNet++ baseline model with optional protein-context branch. |
-| `trainer.py` | Training loop, early stopping, checkpointing. |
-| `evaluator.py` | RMSE, Pearson R, concordance index, plots. |
-| `splitter.py` | Random, scaffold, scaffold-balanced, and cold-protein splits. |
+| `parsers/cnn_parser.py` | Protein-sequence and ligand-SMILES extraction helpers. |
+| `splitter.py` | Train/validation/test splitting utilities. |
+| `logger.py` | Structured logging and ASCII dashboard helpers. |
 | `config.json` | Default experiment configuration. |
 
 ## Setup
@@ -133,9 +223,9 @@ Install the regular dependencies:
 pip install -r requirements.txt
 ```
 
-PyTorch Geometric compiled extensions often need to be installed manually from
-the wheel index that matches the installed PyTorch and CPU/CUDA build. Example
-for a CPU PyTorch 2.11 environment:
+PyTorch Geometric compiled extensions often need manual installation from the
+wheel index that matches your installed PyTorch build. Example for a CPU
+PyTorch 2.11 environment:
 
 ```bash
 pip install torch-scatter -f https://data.pyg.org/whl/torch-2.11.0+cpu.html
@@ -143,25 +233,28 @@ pip install torch-sparse  -f https://data.pyg.org/whl/torch-2.11.0+cpu.html
 pip install torch-cluster -f https://data.pyg.org/whl/torch-2.11.0+cpu.html
 ```
 
-Adjust the wheel URL for your actual `torch` version and CUDA/CPU build.
+Adjust the wheel URL to match your actual PyTorch and CUDA/CPU build.
 
 ## Data
 
-Place the PDBBind archive in the repository root:
+Place the PDBBind 2016 archive in the repository root:
 
 ```text
 pdbbind_v2016.tar.gz
 ```
 
-The extractor expects the PDBBind 2016 archive layout and will populate:
+The pipeline populates:
 
 ```text
 data/v2016/
 datasets/
+protein_context_features/
+ligand_context_features/
 runs/
 ```
 
-The archive and generated datasets are intentionally not source-code assets.
+Generated datasets and cache directories are intentionally treated as runtime
+artifacts rather than source-controlled assets.
 
 ## Running
 
@@ -177,13 +270,13 @@ Use a custom config:
 ./run.sh --config config.json
 ```
 
-Force extraction before building datasets:
+Force extraction before rebuilding datasets:
 
 ```bash
 ./run.sh --extract
 ```
 
-Run with prebuilt train/test/validation dataframes:
+Run from prebuilt train / validation / test dataframes:
 
 ```bash
 ./run.sh --train_path runs/<exp>/datasets/train.pickle \
@@ -198,13 +291,10 @@ Choose the test-set strategy:
 ./run.sh --no-core-as-test
 ```
 
-`core_as_test` is configured in `config.json` and can be overridden from the
-CLI. When enabled, the PDBBind core subset is used as the final test set and
-the model trains/validates on `source_subset - core`. When disabled, the
-configured `source_subset` is randomly split into train/validation/test.
-`test_frac` and validation fractions live in `config.json`, not in shell flags.
-
-`run.sh` uses `pipefail`, so Python failures are not hidden by `tee`.
+`core_as_test` is configured in `config.json` and may be overridden from the
+CLI. When enabled, the model trains on `source_subset - core` and tests on the
+PDBBind core subset. When disabled, the configured source subset is split into
+train / validation / test according to `test_frac`.
 
 ## Experiment Outputs
 
@@ -214,33 +304,48 @@ Each run writes to:
 runs/<experiment_name>_<timestamp>/
 ```
 
-Typical outputs:
+Typical outputs include:
 
-- `config.json` - resolved config with dataset paths and normalization stats,
-- `log.txt` - experiment log,
-- `err_log.txt` - traceback if Python raises an exception,
-- `best_model.pt` - best checkpoint by primary validation metric,
-- `history.json` - training and validation history,
-- `test_results.json` - final test metrics,
-- `model_performance_report.png` - plots,
-- `datasets/*.pickle` - optional per-run train/val/test snapshots.
+- `config.json`: resolved config snapshot,
+- `log.txt`: experiment log,
+- `err_log.txt`: traceback if execution fails,
+- `best_model.pt`: best checkpoint by the configured primary validation metric,
+- `history.json`: train/validation history,
+- `test_results.json`: final test metrics,
+- `best_validation_scatter_diagnostics.json`: extended agreement diagnostics
+  for the best validation predictions,
+- `model_performance_report.png`: evaluation plots,
+- `datasets/*.pickle`: optional per-run split snapshots.
+
+## Diagnostics and Monitoring
+
+The project includes:
+
+- structured stage-aware logging (`[LEVEL][STAGE] ...`),
+- optional memory snapshots during training,
+- optional slow-batch warnings,
+- ASCII dashboards for train/validation curves,
+- validation scatter diagnostics including slope, intercept, bias,
+  concordance, orthogonal RMSE to the diagonal, and PCA-axis overlays.
 
 ## Notes
 
-- By default, `core` is treated as the final test set.
-- `source_subset - core` is split into train and validation.
-- Alternatively, `--no-core-as-test` splits the configured source subset into
-  train/validation/test using `dataset.test_frac`.
-- Targets are normalized using train-set statistics before training.
+- Targets are normalized with train-set statistics before training.
 - Validation RMSE is reported in denormalized `pKd` units.
-- The trainer still contains some hybrid/quantum scaffolding inherited from
-  `ELIQSIR-QDL`; it is inert for the current DimeNet++ baseline.
+- The trainer still contains some inherited classical/quantum optimizer
+  scaffolding, but the current DimeNet++ baseline uses only the classical path
+  unless a true quantum branch is introduced.
+- On constrained Colab runtimes, `num_workers = 0` is often the most stable
+  setting for this project because the dataloader can otherwise pressure host
+  RAM and stall batch delivery.
 
 ## Roadmap
 
-- Add a smoke test for one `DataLoader` batch and one forward/backward pass.
-- Add a small config for fast CPU debugging.
-- Add denormalized final test RMSE for consistency with validation reporting.
-- Add an EGNN or edge-aware GNN baseline that consumes the full parser output.
-- Port stable DimeNet/interaction-graph pieces back into `ELIQSIR-QDL` once the
-  baseline is experimentally useful.
+- Add a lightweight smoke-test config for one batch and one forward/backward pass.
+- Expand ligand context with optional ablations such as `SASA` and electronic
+  descriptors once the compact baseline is stable.
+- Add additional geometric baselines that consume richer parser output.
+- Tighten regression-test coverage around dataset cache signatures and runtime
+  diagnostics.
+- Port stable interaction-graph pieces back into the broader research stack
+  once the baseline line is experimentally mature.

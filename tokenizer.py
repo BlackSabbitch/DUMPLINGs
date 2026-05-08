@@ -94,13 +94,13 @@ class UniversalPDBBindDataset(Dataset):
         for key, value in graph_dict.items():
             if key == 'edge_index':
                 ei = torch.tensor(value, dtype=torch.long)
-                # Исправляем размерность для PyG [2, num_edges]
+                # Normalize edge-index layout to PyG's [2, num_edges].
                 if ei.numel() > 0 and ei.shape[1] == 2 and ei.shape[0] != 2:
                     ei = ei.t().contiguous()
                 tensor_kwargs[key] = ei
             elif isinstance(value, (list, np.ndarray)):
-                # Если это целочисленные данные (например, атомные номера) -> long
-                # Если с плавающей точкой (координаты, заряды) -> float32
+                # Integer-valued features such as atomic numbers stay in `long`,
+                # while coordinates or continuous features are cast to float32.
                 arr = np.array(value)
                 dtype = torch.long if arr.dtype.kind in 'iu' else torch.float32
                 tensor_kwargs[key] = torch.tensor(arr, dtype=dtype)

@@ -9,7 +9,17 @@ class ParserFactory:
     @classmethod
     def _build_one(cls, mode, is_ligand=False, **kwargs):
         """
-        mode: 'C' (CNN), 'G' (GNN), 'E' (EGNN)
+        Build a single parser instance from a one-letter parser code.
+
+        Args:
+            mode: Parser family code: `C` (sequence/SMILES), `G` (graph),
+                or `E` (fused interaction graph).
+            is_ligand: Whether the parser should interpret its input as a
+                ligand rather than a protein-side object.
+            **kwargs: Parser-specific keyword arguments.
+
+        Returns:
+            A configured parser instance.
         """
         if mode == 'C':
             return CNNParser(is_ligand=is_ligand)
@@ -25,8 +35,17 @@ class ParserFactory:
     @classmethod
     def build_chain(cls, config_dict):
         """
-        На вход: "CGC" и словарь с параметрами из конфига.
-        На выход: [prot_parser, lig_parser, pock_parser]
+        Build the parser chain described by the selected graph-encoder config.
+
+        The configuration uses a short string such as `CGC` or `NE` to
+        describe which parser should be attached to the protein, ligand, and
+        pocket/complex slots.
+
+        Args:
+            config_dict: Full experiment configuration dictionary.
+
+        Returns:
+            Ordered list of parser instances matching the configured signature.
         """
         pairing = {'C': "cnn_params", 'G': "gnn_params", 'E': "egnn_params"}
         mode = config_dict['model']['graph_encoder']['selected']

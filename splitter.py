@@ -109,7 +109,8 @@ class PDBBindSplitter:
             if scaffold is None:
                 return None
 
-            # Канонизация без стереохимии (стандартная практика)
+            # Canonicalize without stereochemistry, which is standard for
+            # Murcko-scaffold grouping in dataset splits.
             return Chem.MolToSmiles(scaffold, isomericSmiles=False)
 
         except Exception:

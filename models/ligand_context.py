@@ -119,19 +119,24 @@ class FrozenLigandDescriptorEncoder(nn.Module):
                 stage="LIGAND_CONTEXT"
             )
             return cls._zero_descriptor_vector()
+        mw = float(Descriptors.MolWt(mol))
+        logp = float(Crippen.MolLogP(mol))
         hbd = float(rdMolDescriptors.CalcNumHBD(mol))
         hba = float(rdMolDescriptors.CalcNumHBA(mol))
+        lipinski_violations = int(sum([
+            hba > 10.0,
+            hbd > 5.0,
+            mw > 500.0,
+            logp > 5.0,
+        ]))
         vector = torch.tensor(
             [
-                float(Descriptors.MolWt(mol)),
-                float(Crippen.MolLogP(mol)),
+                mw,
+                logp,
                 float(rdMolDescriptors.CalcTPSA(mol)),
                 hbd,
                 hba,
-                float(Lipinski.NumLipinskiHBA(mol) > 10)
-                + float(Lipinski.NumLipinskiHBD(mol) > 5)
-                + float(Descriptors.MolWt(mol) > 500.0)
-                + float(Crippen.MolLogP(mol) > 5.0),
+                float(lipinski_violations),
                 cls._wiener_index(mol),
             ],
             dtype=torch.float32,

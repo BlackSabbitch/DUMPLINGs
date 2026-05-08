@@ -34,8 +34,13 @@ LIGAND_CONTEXT_FEATURES_DIR = "ligand_context_features"
 
 class ExperimentRunner:
     """
-    Orchestrates the full pipeline: data extraction, parsing, splitting,
-    training, and evaluation based on a configuration file.
+    Orchestrate dataset preparation, context precompute, training, and testing.
+
+    `ExperimentRunner` is the project-level entry point. It binds together the
+    parser/orchestrator layer, split logic, context caches, model construction,
+    trainer lifecycle, and experiment-folder management. The intent is to keep
+    the notebook and shell entrypoints extremely thin while preserving one
+    explicit place where the end-to-end experiment contract is documented.
     """
 
     def __init__(self, config_path: str, extract: bool = False,
@@ -74,6 +79,13 @@ class ExperimentRunner:
         assert all([self.train_dataset_path, self.test_dataset_path, self.val_dataset_path]) or not any([self.train_dataset_path, self.test_dataset_path, self.val_dataset_path])
 
     def prepare_folders(self):
+        """
+        Create runtime folders for datasets, caches, and run artifacts.
+
+        This method is called before any expensive work begins so that logs and
+        generated outputs have a stable destination even if the run fails
+        midway through parsing or training.
+        """
         log_info(get_stage_banner("INITIALIZING"), stage="EXPERIMENT")
         log_info(get_divider("="), stage="EXPERIMENT")
         if self.exp_dir is not None:
@@ -124,6 +136,15 @@ class ExperimentRunner:
         return f"{int(hours)}h {int(minutes)}m {rem:.1f}s"
 
     def _get_dataset_from_path(self, path: str):
+        """
+        Load a dataframe from one of the supported on-disk formats.
+
+        Args:
+            path: Path to a `.csv`, `.pickle`/`.pkl`, or `.parquet` file.
+
+        Returns:
+            A pandas dataframe loaded from the requested file.
+        """
         if path.endswith('.csv'):
             return pd.read_csv(path)
         elif path.endswith(('.pkl', '.pickle')):
@@ -134,6 +155,19 @@ class ExperimentRunner:
             raise ValueError("Unsupported file format. Use .csv, .pkl, or .parquet")
 
     def prepare_datasets(self):
+        """
+        Build or load the train/validation/test dataframes for a run.
+
+        This method supports two modes:
+
+        - use externally provided split dataframes from disk,
+        - rebuild the source dataset from the PDBBind archive and derive splits
+          from the configured strategy.
+
+        Returns:
+            Tuple of `(train_df, val_df, test_df)` with normalization stats
+            already attached to the configuration.
+        """
         log_info(get_stage_banner("DATASET"), stage="EXPERIMENT")
         log_info(get_divider("="), stage="EXPERIMENT")
         prepare_started_at = time.perf_counter()
@@ -247,15 +281,15 @@ class ExperimentRunner:
         log_info(f"Data Stats: {stats}", stage="NORMALIZATION")
         log_info(f"min value: {train_df['pkd'].min()}, max value: {train_df['pkd'].max()}", stage="NORMALIZATION")
 
-        # Запуск минимальной проверки после работы оркестратора
+        # Run a lightweight sanity check after dataset orchestration completes.
         sample = train_df.iloc[0]
         complex_dict = sample['complex_graph']
 
         log_debug("Performing quick data checks on the first training sample.", stage="CHECK")
-        log_debug(f"ID комплекса: {sample['pdb_id']}", stage="CHECK")
-        log_debug(f"Атомов в графе: {len(complex_dict['x'])}", stage="CHECK")
-        log_debug(f"Размерность признаков: {len(complex_dict['x'][0])}", stage="CHECK")
-        log_debug(f"Наличие координат (pos): {'pos' in complex_dict}", stage="CHECK")
+        log_debug(f"Complex ID: {sample['pdb_id']}", stage="CHECK")
+        log_debug(f"Graph atoms: {len(complex_dict['x'])}", stage="CHECK")
+        log_debug(f"Feature dimension: {len(complex_dict['x'][0])}", stage="CHECK")
+        log_debug(f"Coordinates present (pos): {'pos' in complex_dict}", stage="CHECK")
         if 'orchestrator' in locals() and orchestrator.bad_complexes_registry:
             log_info(
                 f"Data quality registry active: {orchestrator.bad_complexes_path} "
@@ -271,6 +305,13 @@ class ExperimentRunner:
         return train_df, val_df, test_df
 
     def prewarm_protein_context(self) -> None:
+        """
+        Warm up the frozen ESM encoder weights before the main training phase.
+
+        The goal is not to compute any real embeddings here, but to pull model
+        weights into the runtime once so later context precompute and forward
+        passes do not pay the first-load penalty at an awkward moment.
+        """
         protein_context_cfg = ProteinContextConfig.from_config(self.config)
         if protein_context_cfg.mode == "none":
             return
@@ -331,6 +372,14 @@ class ExperimentRunner:
         val_df: pd.DataFrame,
         test_df: pd.DataFrame,
     ) -> None:
+        """
+        Precompute and cache protein-context vectors for all active splits.
+
+        Args:
+            train_df: Training dataframe.
+            val_df: Validation dataframe.
+            test_df: Test dataframe.
+        """
         protein_context_cfg = ProteinContextConfig.from_config(self.config)
         if protein_context_cfg.mode == "none":
             return
@@ -406,6 +455,14 @@ class ExperimentRunner:
         val_df: pd.DataFrame,
         test_df: pd.DataFrame,
     ) -> None:
+        """
+        Precompute and cache ligand-context descriptor vectors for all splits.
+
+        Args:
+            train_df: Training dataframe.
+            val_df: Validation dataframe.
+            test_df: Test dataframe.
+        """
         ligand_context_cfg = LigandContextConfig.from_config(self.config)
         if ligand_context_cfg.mode == "none":
             return
@@ -473,6 +530,14 @@ class ExperimentRunner:
         )
 
     def run(self, train_df, val_df, test_df):
+        """
+        Execute the full experiment after dataframes have been prepared.
+
+        Args:
+            train_df: Training dataframe.
+            val_df: Validation dataframe.
+            test_df: Test dataframe.
+        """
         run_started_at = time.perf_counter()
         log_info(get_stage_banner("ENRICHMENT"), stage="EXPERIMENT")
         log_info(get_divider("="), stage="EXPERIMENT")
@@ -604,7 +669,7 @@ if __name__ == "__main__":
     parser.add_argument('--config', type=str, default='config.json', 
                         help='Path to the configuration JSON file')
     
-    # Флаг экстракции (если указан в bash — станет True)
+    # Extraction flag: if present on the CLI, extraction is forced before build.
     parser.add_argument('--extract', action='store_true', 
                         help='Extract subset before building dataset')
     

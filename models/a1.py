@@ -18,6 +18,21 @@ from models.ligand_context import (
 
 
 class A1DimeNet(nn.Module):
+    """
+    DimeNet++ baseline with optional global protein and ligand context fusion.
+
+    Genealogy:
+    - the geometry branch descends from the original A1 DimeNet++ baseline,
+    - the protein branch adds frozen ESM sequence embeddings,
+    - the ligand branch adds frozen RDKit descriptor vectors,
+    - the final prediction head performs late fusion over whichever branches
+      are enabled by configuration.
+
+    The class is intentionally conservative: each auxiliary context branch is
+    projected into the same hidden width as the geometric embedding before
+    concatenation. That keeps the fusion contract simple and makes ablations
+    easier to interpret.
+    """
     def __init__(
         self,
         config: dict,
@@ -85,12 +100,24 @@ class A1DimeNet(nn.Module):
         )
 
     def checkpoint_exclude_prefixes(self) -> tuple[str, ...]:
+        """
+        Return state-dict prefixes that should be omitted from lightweight checkpoints.
+
+        Frozen ESM weights are reloaded from the source model definition and do
+        not need to be duplicated in every experiment artifact.
+        """
         prefixes: list[str] = []
         if self.protein_context_encoder is not None:
             prefixes.append("protein_context_encoder.model.")
         return tuple(prefixes)
 
     def build_checkpoint_payload(self) -> dict:
+        """
+        Build a checkpoint payload that omits known frozen weights when possible.
+
+        Returns:
+            Serializable checkpoint dictionary used by the trainer.
+        """
         state = self.state_dict()
         excluded_prefixes = self.checkpoint_exclude_prefixes()
         filtered_state = {
@@ -106,6 +133,13 @@ class A1DimeNet(nn.Module):
         }
 
     def load_checkpoint_payload(self, payload) -> None:
+        """
+        Load either a lightweight payload or a raw `state_dict`.
+
+        Args:
+            payload: Checkpoint payload produced by `build_checkpoint_payload`
+                or a plain `state_dict` for backwards compatibility.
+        """
         if isinstance(payload, dict) and "state_dict" in payload:
             state_dict = payload["state_dict"]
             excluded_prefixes = tuple(payload.get("excluded_prefixes", []))
@@ -126,6 +160,15 @@ class A1DimeNet(nn.Module):
 
     @staticmethod
     def _extract_protein_sequences(complex_data) -> Sequence[str]:
+        """
+        Extract batch-aligned protein sequences from the fused complex object.
+
+        Args:
+            complex_data: Batched PyG `Data` object produced by the tokenizer.
+
+        Returns:
+            List of protein sequences aligned with the batch dimension.
+        """
         sequences = getattr(complex_data, "protein_sequence", None)
         if sequences is None:
             raise ValueError("protein_context mode requires complex_data.protein_sequence")
@@ -135,6 +178,15 @@ class A1DimeNet(nn.Module):
 
     @staticmethod
     def _extract_ligand_smiles(complex_data) -> Sequence[str]:
+        """
+        Extract batch-aligned ligand SMILES strings from the fused complex object.
+
+        Args:
+            complex_data: Batched PyG `Data` object produced by the tokenizer.
+
+        Returns:
+            List of canonical or parser-produced ligand SMILES strings.
+        """
         smiles = getattr(complex_data, "ligand_smiles", None)
         if smiles is None:
             raise ValueError("ligand_context mode requires complex_data.ligand_smiles")
@@ -143,6 +195,18 @@ class A1DimeNet(nn.Module):
         return [str(smi) for smi in smiles]
 
     def forward(self, batch_list, progress: float = 0.0):
+        """
+        Run the configured geometry/context branches and return affinity logits.
+
+        Args:
+            batch_list: Tuple-style batch emitted by `UniversalPDBBindDataset`
+                and collated by the PyG dataloader.
+            progress: Normalized training progress in `[0, 1]`. It is currently
+                unused by the DimeNet path but kept for interface compatibility.
+
+        Returns:
+            One scalar prediction per complex in the batch.
+        """
         _, _, _, complex_data, _ = batch_list
 
         fused_parts = []

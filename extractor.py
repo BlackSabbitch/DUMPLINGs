@@ -466,7 +466,7 @@ class PDBBindOrchestrator:
             "graph_encoder_mode": self.graph_encoder_mode,
             "format": fmt,
             "compression": str(actual_comp),
-            # Вкладываем детальное описание парсеров
+            # Persist parser details so cache provenance remains inspectable.
             "parsers_config": parsers_info,
             "orchestrator_params": {
                 "dest_path": self.dest_path,

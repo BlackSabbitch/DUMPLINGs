@@ -23,24 +23,29 @@ SIDE_BY_SIDE_TOTAL_WIDTH = (
 
 class StageFormatter(logging.Formatter):
     def format(self, record):
-        # Если префикс не передан, ставим пустую заглушку, 
-        # чтобы форматтер не выкинул ошибку
+        # Provide a default stage so formatting never fails on plain log calls.
         if not hasattr(record, 'stage'):
             record.stage = "GENERAL"
         return super().format(record)
 
-# Настройка
+# Logger setup
 logger = logging.getLogger("AppCore")
 handler = logging.StreamHandler()
 level = None
 
-# Вот здесь задаем твою схему [LEVEL][STAGE]
+# Use the structured `[LEVEL][STAGE] message` scheme everywhere.
 formatter = StageFormatter('[%(levelname)s][%(stage)s] %(message)s')
 
 handler.setFormatter(formatter)
 logger.addHandler(handler)
-# подтягиваем debug_mode из конфига и устанавливаем соответствующий уровень логов
+
 def get_level():
+    """
+    Read the current log level from `config.json`.
+
+    Returns:
+        The `logging` level implied by the `debug_mode` flag.
+    """
     global level
     with open("config.json") as f:
         import json
@@ -56,7 +61,7 @@ logger.setLevel(level or get_level())
 def _log(msg, stage, level):
     logger.log(level, msg, extra={'stage': stage})
 
-# Публичный API твоего логгера
+# Public logging helpers
 def log_info(msg, stage="GENERAL"):
     _log(msg, stage, logging.INFO)
 
@@ -70,15 +75,21 @@ def log_debug(msg, stage="GENERAL"):
     _log(msg, stage, logging.DEBUG)
 
 def setup_file_logging(log_path):
-    # Создаем обработчик для файла
+    """
+    Attach a file handler that mirrors console logging format and level.
+
+    Args:
+        log_path: Destination log file path for the current experiment run.
+    """
+    # Add a dedicated file handler for the experiment log.
     fh = logging.FileHandler(log_path)
     fh.setLevel(level or get_level())
     
-    # Применяем тот же форматтер
+    # Reuse the same stage-aware formatter as the console logger.
     formatter = StageFormatter('[%(levelname)s][%(stage)s] %(message)s')
     fh.setFormatter(formatter)
     
-    # Добавляем к существующему логгеру
+    # Attach the handler to the shared project logger.
     logger.addHandler(fh)
 
 
@@ -92,6 +103,17 @@ def get_divider(char: str = "=", width: int | None = None) -> str:
 
 
 def get_stage_banner(title: str, width: int | None = None, fill_char: str = "=") -> str:
+    """
+    Build a centered stage banner aligned with the ASCII dashboard width.
+
+    Args:
+        title: Human-readable stage title such as `DATASET` or `TRAINING`.
+        width: Total banner width. Defaults to the dashboard width.
+        fill_char: Character used to pad both sides of the banner.
+
+    Returns:
+        A centered banner string.
+    """
     width = width or get_plot_line_width()
     label = f" *** STAGE: {title} *** "
     if len(label) >= width:
@@ -107,10 +129,17 @@ def get_ascii_plot(data, title,
                    lines=False,
                    force_diagonal=False,
                    stage="SUMMARY"):
+    """
+    Render a single ASCII plot through `uniplot`.
+
+    This helper is used for the console dashboard and supports both standard
+    line plots and the small scatter / histogram special cases used in the
+    evaluator summary.
+    """
     if data is None: return ["No data"]
     
     buf = io.StringIO()
-    # Словарь аргументов для uplot
+    # Arguments passed through to `uniplot.plot`.
     uplot_args = {
         "title": title,
         "width": width,
@@ -119,7 +148,7 @@ def get_ascii_plot(data, title,
         "lines": lines
     }
 
-    # 1. Логика для Scatter Plot (Actual vs Predicted)
+    # Special handling for scatter inputs such as Actual vs Predicted.
     if isinstance(data, list) and len(data) == 2 and isinstance(data[0], (list, np.ndarray)):
         xs_raw, ys_raw = np.array(data[0]), np.array(data[1])
         if xs_raw.size == 0 or ys_raw.size == 0:
@@ -135,20 +164,20 @@ def get_ascii_plot(data, title,
             low = min(xs_raw.min(), ys_raw.min())
             high = max(xs_raw.max(), ys_raw.max())
             
-            # Устанавливаем жесткие границы квадрата
+            # Force a square scatter domain when the diagonal should be visible.
             uplot_args.update({
                 "x_min": low, "x_max": high,
                 "y_min": low, "y_max": high,
                 "xs": [xs_raw, np.array([low, high])],
                 "ys": [ys_raw, np.array([low, high])],
-                "lines": [False, True] # Точки для данных, линия для диагонали
+                "lines": [False, True]  # data points + diagonal line
             })
         else:
             uplot_args.update({"xs": xs_raw, "ys": ys_raw})
             
-    # 2. Логика для обычных графиков (Loss, RMSE и Histogram)
+    # Standard handling for line-series and histogram-like inputs.
     else:
-        # Если это гистограмма, пришедшая как [bins, counts]
+        # Histogram inputs are passed as `[bin_centers, counts]`.
         if isinstance(data, list) and len(data) == 2 and isinstance(data[0], (list, np.ndarray)):
              xs = np.array(data[0])
              ys = np.array(data[1])
@@ -171,7 +200,7 @@ def get_ascii_plot(data, title,
 
     try:
         with redirect_stdout(buf):
-            uplot(**uplot_args) # Распаковываем только нужные аргументы
+            uplot(**uplot_args)
         return buf.getvalue().splitlines()
     except Exception as e:
         log_error(f"{title} Plot Error: {e}", stage=stage)
@@ -253,7 +282,17 @@ def get_overlay_ascii_plot(
 
     return lines
 def get_residuals_hist_data(y_true, y_pred, bins=20):
-    """Готовит данные для гистограммы"""
+    """
+    Convert residuals into histogram coordinates for ASCII plotting.
+
+    Args:
+        y_true: Reference values.
+        y_pred: Predicted values.
+        bins: Number of histogram bins.
+
+    Returns:
+        Tuple of `(bin_centers, counts)`.
+    """
     if y_true is None or y_pred is None:
         return np.array([]), np.array([])
     y_true = np.array(y_true)
@@ -272,7 +311,22 @@ def get_residuals_hist_data(y_true, y_pred, bins=20):
 
 def log_side_by_side(data_left, title_left, data_right, title_right, 
                      is_scatter=False, is_hist=False, stage="SUMMARY"):
-    # Если слева scatter, включаем диагональ
+    """
+    Render two ASCII plots side by side using a shared text layout.
+
+    Args:
+        data_left: Left-panel payload.
+        title_left: Left-panel title.
+        data_right: Right-panel payload.
+        title_right: Right-panel title.
+        is_scatter: Whether the left panel is a scatter plot.
+        is_hist: Whether the right panel is a histogram plot.
+        stage: Logging stage for downstream plot errors.
+
+    Returns:
+        Combined multi-line string with both panels.
+    """
+    # Force the diagonal for left-side scatter panels.
     if (
         isinstance(data_left, list)
         and data_left
@@ -303,7 +357,7 @@ def log_side_by_side(data_left, title_left, data_right, title_right,
             height=DEFAULT_HEIGHT_SIDE,
         )
     else:
-        # Если справа гистограмма, рисуем ее линиями
+        # Histograms are drawn as line plots in the right-hand panel.
         right_lines = get_ascii_plot(data_right, title_right,
                                      width=DEFAULT_WIDTH_SIDE, height=DEFAULT_HEIGHT_SIDE,
                                      lines=is_hist, stage=stage)
@@ -319,11 +373,18 @@ def log_side_by_side(data_left, title_left, data_right, title_right,
     for left, right in zip(left_lines, right_lines):
         left_padded = left.ljust(LEFT_COLUMN_TOTAL_WIDTH)
         combined.append(f"{left_padded}{separator}{right}")
-        # combined.append(f"{left.ljust(DEFAULT_WIDTH_SIDE + 5)}{separator}{right}")
     
     return "\n".join(combined)
 
 def console_plots(trainer_history, side_by_side=True, stage="SUMMARY"):
+    """
+    Emit the ASCII training dashboard to the experiment log.
+
+    Args:
+        trainer_history: History dictionary produced by `Trainer.train`.
+        side_by_side: Whether to render the compact two-column layout.
+        stage: Logging stage under which the dashboard should be written.
+    """
     if side_by_side:
         log_info("Generating Multi-column ASCII Dashboard.", stage=stage)
 

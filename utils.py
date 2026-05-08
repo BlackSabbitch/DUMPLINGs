@@ -77,12 +77,30 @@ class Utils:
 
     @staticmethod
     def normalize(values, stats: dict):
-        """Приводит значения к Z-score: (x - mean) / std"""
+        """
+        Normalize values with dataset statistics using Z-score scaling.
+
+        Args:
+            values: Scalar, NumPy array, or tensor-like values to normalize.
+            stats: Dictionary with `mean` and `std` entries.
+
+        Returns:
+            Normalized values in the same array/tensor family as the input.
+        """
         return (values - stats['mean']) / stats['std']
 
     @staticmethod
     def denormalize(values, stats: dict):
-        """Возвращает значения к реальному масштабу: x * std + mean"""
+        """
+        Restore normalized values to the original target scale.
+
+        Args:
+            values: Scalar, list, NumPy array, or tensor-like normalized values.
+            stats: Dictionary with `mean` and `std` entries.
+
+        Returns:
+            Values mapped back to the original target scale.
+        """
         if isinstance(values, list):
             import numpy as np
             values = np.array(values)
@@ -90,9 +108,18 @@ class Utils:
 
     @staticmethod
     def calculate_rmse(y_true, y_pred):
-        """Считает RMSE без sklearn"""
+        """
+        Compute RMSE without depending on scikit-learn.
+
+        Args:
+            y_true: Reference targets as tensors, arrays, or lists.
+            y_pred: Predicted values with the same structure as `y_true`.
+
+        Returns:
+            Root-mean-square error as a Python float.
+        """
         if torch.is_tensor(y_true):
             return torch.sqrt(torch.mean((y_true - y_pred)**2)).item()
         else:
-            # Для numpy или списков
+            # Handle NumPy arrays or Python lists.
             return np.sqrt(np.mean((np.array(y_true) - np.array(y_pred))**2))

@@ -18,30 +18,27 @@ from collections import defaultdict
 
 class Trainer:
     """
-    Trainer class for hybrid classical-quantum models.
+    Coordinate model optimization, validation, checkpointing, and diagnostics.
 
-    Handles training loop with separate optimizers for classical and quantum components,
-    validation, and experiment tracking. Supports different loss functions and
-    learning rate schedules.
+    The class still exposes a classical/quantum optimizer split inherited from
+    earlier hybrid experiments, but the current DimeNet-based baseline usually
+    operates entirely through the classical path. Beyond optimization, the
+    trainer is also responsible for:
 
-    Attributes:
-        model: The UniversalHybridSlotModel to train.
-        device: Device for training (cuda/cpu).
-        config: Training configuration dictionary.
-        classic_optimizer: Optimizer for classical parameters.
-        quantum_optimizer: Optimizer for quantum parameters (if quantum branch enabled).
-
-    Example:
-        >>> trainer = HybridTrainer(model, config, device='cuda')
-        >>> trainer.train(train_loader, val_loader)
+    - parameter-group summaries at startup,
+    - optional memory and slow-batch diagnostics,
+    - early stopping and monitored-metric tracking,
+    - history serialization and checkpoint payload management,
+    - feeding validation outputs into evaluator plots and summaries.
     """
 
     def __init__(self, model: nn.Module, evaluator: Evaluator, config: dict, device: str = 'cuda') -> None:
         """
-        Initialize the hybrid trainer.
+        Initialize the trainer and construct all optimization-side utilities.
 
         Args:
             model: Model instance to train.
+            evaluator: Evaluation helper bound to the same model/device family.
             config: Configuration dictionary with training parameters.
             device: Device for training ('cuda' or 'cpu').
         """
@@ -62,7 +59,7 @@ class Trainer:
         quantum_params = [p for _, p in quantum_named_params]
         classic_params = [p for _, p in classic_named_params]
 
-        # 2. Initialize optimizers from config
+        # Initialize optimizers from config after parameter grouping.
         c_opt_cfg = self.train_cfg['optimizers']['classic']
         self.opt_classic = getattr(torch.optim, c_opt_cfg['type'])(classic_params, **c_opt_cfg['params'])
         q_opt_cfg = self.train_cfg['optimizers']['quantum']
@@ -75,7 +72,7 @@ class Trainer:
         self.sched_classic = self._build_scheduler(self.opt_classic, c_opt_cfg.get('scheduler'))
         self.sched_quantum = self._build_scheduler(self.opt_quantum, q_opt_cfg.get('scheduler')) if self.opt_quantum else None
 
-        # 3. Loss function
+        # Build the configured loss function after optimizer setup.
         self.criterion = get_loss_function(config['training'])
 
         es_cfg = config['training']['early_stopping']
@@ -108,7 +105,7 @@ class Trainer:
     def _build_scheduler(self, optimizer, sched_cfg):
         if not sched_cfg:
             return None
-        # Например: ReduceLROnPlateau или CosineAnnealingLR
+        # Common examples include ReduceLROnPlateau and CosineAnnealingLR.
         sched_cls = getattr(torch.optim.lr_scheduler, sched_cfg['type'])
         params = sched_cfg.get('params', {}) or {}
         valid_params = Utils.filter_kwargs(sched_cls.__init__, params)
@@ -472,9 +469,15 @@ class Trainer:
         self.model.load_state_dict(payload)
 
     def step_schedulers(self, metrics):
-        """Обновление шага обучения"""
+        """
+        Advance configured learning-rate schedulers.
+
+        Args:
+            metrics: Validation metric or loss value needed by schedulers such
+                as `ReduceLROnPlateau`.
+        """
         if self.sched_classic:
-            # ReduceLROnPlateau требует метрику (loss)
+            # ReduceLROnPlateau expects an explicit metric argument.
             if isinstance(self.sched_classic, torch.optim.lr_scheduler.ReduceLROnPlateau):
                 self.sched_classic.step(metrics)
             else:
@@ -550,7 +553,7 @@ class Trainer:
             avg_loss = epoch_loss / (i + 1)
             batch_duration = time.perf_counter() - batch_started_at
             
-            # Рендерим полоску и обновляем прогресс-бар
+            # Render the compact loss bar and refresh the progress display.
             l_bar = Utils.get_loss_bar(current_loss)
             pbar.set_postfix_str(f"Loss: {current_loss:.4f} {l_bar} Avg: {avg_loss:.4f}")
 
@@ -852,8 +855,7 @@ class Trainer:
             log_debug("No training history available for plotting.", stage="TEST")
 
         self._log_memory_snapshot("test_start")
-        # Подгружаем веса лучшей эпохи (в идеале нужно написать логику загрузки лучшего .pt,
-        # но пока протестируем на весах последней эпохи)
+        # Reload the best checkpoint before the final test pass.
 
         best_model_path = f"{exp_dir}/best_model.pt"
         if os.path.exists(best_model_path):
@@ -869,7 +871,6 @@ class Trainer:
 
         log_debug("Preparing final test metric evaluation.", stage="TEST")
         eval_started_at = time.perf_counter()
-        # test_rmse, test_r_val, test_ci_val, test_preds, test_targets
         _, test_r, test_ci, test_preds, test_targets = self.evaluator.evaluate(test_loader, progress=1.0)
 
         if self.config['dataset']['stats'] is not None:
@@ -887,7 +888,7 @@ class Trainer:
             stage="TEST"
         )
         
-        # Сохраняем результаты теста
+        # Persist the final test metrics in a compact machine-readable file.
         log_debug("Saving final test results.", stage="TEST")
         test_results_started_at = time.perf_counter()
         with open(f"{exp_dir}/test_results.json", 'w') as f:
