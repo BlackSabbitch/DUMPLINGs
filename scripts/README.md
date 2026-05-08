@@ -17,7 +17,8 @@ The repo currently has two layers:
    - staging code from Drive into `/content`,
    - installing Colab-specific PyG wheels,
    - syncing `runs/` back to Drive,
-   - syncing `protein_context_features/` back to Drive.
+   - syncing `protein_context_features/` back to Drive,
+   - running smoke checks on cluster/Slurm environments.
 
 Those helpers are notebook/runtime concerns rather than experiment logic, so
 they live in `scripts/`.
@@ -35,6 +36,20 @@ cells instead of inventing a new workflow:
   - mirrors the background `rsync` loop for `runs/`
 - `colab_finalize_sync.sh`
   - mirrors the final one-shot sync of `runs/` and `protein_context_features/`
+
+## Cluster Helpers
+
+The cluster-side helpers are intentionally lightweight. They do not replace
+`run.py`; they only make it easier to sanity-check a new Slurm environment
+before launching a long experiment.
+
+- `cluster_env_smoke.py`
+  - checks imports, CUDA visibility, filesystem readiness, and archive presence
+- `cluster_make_smoke_config.py`
+  - derives a tiny smoke-test config from the main `config.json`
+- `cluster_sbatch_smoke.sh`
+  - sample `sbatch` wrapper that runs the environment smoke test and can
+    optionally launch a very short pipeline run once the archive is present
 
 ## Why `run.py` stays in the repo root
 
