@@ -1,6 +1,6 @@
 {
-    "experiment_name": "DUMPLING_A15_esm_DimeNet",
-    "debug_mode": true,
+    "experiment_name": "DUMPLING_A15_esm_DimeNet_ligand_context_test",
+    "debug_mode": false,
     "splitter": {
         "selected": "random",
         "available": {
