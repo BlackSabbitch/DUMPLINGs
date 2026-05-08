@@ -58,10 +58,10 @@ class CNNParser(BaseParser):
             )
             Chem.AssignStereochemistry(mol, cleanIt=True, force=True)
             try:
-                Chem.Kekulize(mol, clearAromaticFlags=True)
+                return Chem.MolToSmiles(mol, isomericSmiles=True), None
             except Exception:
-                pass
-            return Chem.MolToSmiles(mol, isomericSmiles=True), None
+                relaxed = Chem.Mol(mol)
+                return Chem.MolToSmiles(relaxed, isomericSmiles=True, kekuleSmiles=False), None
         except Exception as e:
             log_warn(f"Ligand processing failed: {e}", stage="CNNParser")
             return None, str(e)

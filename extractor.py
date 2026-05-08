@@ -369,6 +369,7 @@ class PDBBindOrchestrator:
         parsers_signature = [self._parser_signature(parser) for parser in self.parsers]
         parsers_str_id = md5(
             json.dumps({
+                "dataset_signature_version": 2,
                 "parsers": parsers_signature,
                 "bad_complexes_registry": self.bad_complexes_registry,
                 "protein_context_mode": self.protein_context_mode,

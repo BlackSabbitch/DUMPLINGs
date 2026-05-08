@@ -11,6 +11,7 @@ from rdkit import Chem
 from rdkit.Chem import Crippen, Descriptors, Lipinski, rdMolDescriptors
 from torch import nn
 from tqdm import tqdm
+from logger import log_warn
 
 
 SUPPORTED_LIGAND_CONTEXT_MODES = {
@@ -77,11 +78,65 @@ class FrozenLigandDescriptorEncoder(nn.Module):
             self.cache_path.mkdir(parents=True, exist_ok=True)
 
     @staticmethod
-    def _canonicalize_smiles(smiles: str) -> str:
+    def _mol_from_smiles_relaxed(smiles: str) -> Optional[Chem.Mol]:
         mol = Chem.MolFromSmiles(smiles)
+        if mol is not None:
+            return mol
+        mol = Chem.MolFromSmiles(smiles, sanitize=False)
         if mol is None:
-            raise ValueError(f"Invalid ligand SMILES: {smiles}")
-        return Chem.MolToSmiles(mol, isomericSmiles=True, canonical=True)
+            return None
+        try:
+            Chem.SanitizeMol(
+                mol,
+                sanitizeOps=Chem.SanitizeFlags.SANITIZE_ALL ^ Chem.SanitizeFlags.SANITIZE_PROPERTIES,
+            )
+        except Exception:
+            return None
+        Chem.AssignStereochemistry(mol, cleanIt=True, force=True)
+        return mol
+
+    @classmethod
+    def _canonicalize_smiles(cls, smiles: str) -> str:
+        mol = cls._mol_from_smiles_relaxed(smiles)
+        if mol is None:
+            return smiles
+        try:
+            return Chem.MolToSmiles(mol, isomericSmiles=True, canonical=True)
+        except Exception:
+            return smiles
+
+    @staticmethod
+    def _zero_descriptor_vector() -> torch.Tensor:
+        return torch.zeros(7, dtype=torch.float32)
+
+    @classmethod
+    def _compute_descriptor_vector(cls, smiles: str) -> torch.Tensor:
+        canonical = cls._canonicalize_smiles(smiles)
+        mol = cls._mol_from_smiles_relaxed(canonical)
+        if mol is None:
+            log_warn(
+                f"Ligand context fallback to zero descriptor vector for unparsable SMILES: {smiles}",
+                stage="LIGAND_CONTEXT"
+            )
+            return cls._zero_descriptor_vector()
+        hbd = float(rdMolDescriptors.CalcNumHBD(mol))
+        hba = float(rdMolDescriptors.CalcNumHBA(mol))
+        vector = torch.tensor(
+            [
+                float(Descriptors.MolWt(mol)),
+                float(Crippen.MolLogP(mol)),
+                float(rdMolDescriptors.CalcTPSA(mol)),
+                hbd,
+                hba,
+                float(Lipinski.NumLipinskiHBA(mol) > 10)
+                + float(Lipinski.NumLipinskiHBD(mol) > 5)
+                + float(Descriptors.MolWt(mol) > 500.0)
+                + float(Crippen.MolLogP(mol) > 5.0),
+                cls._wiener_index(mol),
+            ],
+            dtype=torch.float32,
+        )
+        return vector
 
     def _cache_file_for_smiles(self, smiles: str) -> Optional[Path]:
         if self.cache_path is None:
@@ -109,32 +164,6 @@ class FrozenLigandDescriptorEncoder(nn.Module):
             return 0.0
         upper = np.triu(dist, k=1)
         return float(upper.sum())
-
-    @classmethod
-    def _compute_descriptor_vector(cls, smiles: str) -> torch.Tensor:
-        canonical = cls._canonicalize_smiles(smiles)
-        mol = Chem.MolFromSmiles(canonical)
-        if mol is None:
-            raise ValueError(f"Failed to rebuild canonical ligand SMILES: {smiles}")
-
-        hbd = float(rdMolDescriptors.CalcNumHBD(mol))
-        hba = float(rdMolDescriptors.CalcNumHBA(mol))
-        vector = torch.tensor(
-            [
-                float(Descriptors.MolWt(mol)),
-                float(Crippen.MolLogP(mol)),
-                float(rdMolDescriptors.CalcTPSA(mol)),
-                hbd,
-                hba,
-                float(Lipinski.NumLipinskiHBA(mol) > 10)
-                + float(Lipinski.NumLipinskiHBD(mol) > 5)
-                + float(Descriptors.MolWt(mol) > 500.0)
-                + float(Crippen.MolLogP(mol) > 5.0),
-                cls._wiener_index(mol),
-            ],
-            dtype=torch.float32,
-        )
-        return vector
 
     def encode_smiles_batch(self, smiles_batch: Sequence[str]) -> torch.Tensor:
         canonical_batch = [self._canonicalize_smiles(smiles) for smiles in smiles_batch]
