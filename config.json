@@ -80,6 +80,18 @@
                     "precompute_batch_size": 16
                 }
             }
+        },
+        "ligand_context": {
+            "selected": "basic_rdkit",
+            "available": {
+                "none": {},
+                "basic_rdkit": {
+                    "cache_path": "ligand_context_features",
+                    "descriptor_set": "basic_physchem_v1",
+                    "embedding_dim": 7,
+                    "precompute_batch_size": 256
+                }
+            }
         }
     },
     "training": {

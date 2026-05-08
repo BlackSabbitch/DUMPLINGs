@@ -15,6 +15,7 @@ from typing import List, Optional, Dict, Any, Tuple
 from logger import *
 from parsers.cnn_parser import CNNParser
 from models.protein_context import get_protein_context_mode
+from models.ligand_context import get_ligand_context_mode
 
 
 class PDBBindOrchestrator:
@@ -60,7 +61,9 @@ class PDBBindOrchestrator:
         self.bad_complexes_path = config_dict.get('dataset', {}).get('bad_complexes_path', 'bad_complexes.toml')
         self.bad_complexes_registry = self._load_bad_complexes_registry()
         self.protein_context_mode = get_protein_context_mode(config_dict)
+        self.ligand_context_mode = get_ligand_context_mode(config_dict)
         self.protein_sequence_parser = CNNParser(is_ligand=False) if self.protein_context_mode != "none" else None
+        self.ligand_smiles_parser = CNNParser(is_ligand=True) if self.ligand_context_mode != "none" else None
         if self.bad_complexes_registry:
             log_info(
                 f"Loaded bad complexes registry from {self.bad_complexes_path} "
@@ -267,7 +270,8 @@ class PDBBindOrchestrator:
             if p is not None and not os.path.exists(p):
                 return (pdb_id, None, f"missing_file: {os.path.basename(p)}")
 
-        data_results = {'protein': None, 'ligand': None, 'pocket': None, 'complex_graph': None}
+        data_results = {'protein': None, 'ligand': None, 'ligand_smiles': None, 'pocket': None, 'complex_graph': None}
+        ligand_path = paths[1] if len(paths) >= 2 else None
         try:
             if len(self.parsers) == 3:
                 # mode Trio (CCC, CGC, etc.)
@@ -278,6 +282,8 @@ class PDBBindOrchestrator:
                     name_of_object = list(self.file_suffix_map.keys())[i] # protein / ligand / pocket
                     if err: return (pdb_id, None, f"{name_of_object}_parse_error: {err}")
                     data_results[name_of_object] = res
+                    if name_of_object == 'ligand' and isinstance(res, str):
+                        data_results['ligand_smiles'] = res
 
             elif len(self.parsers) == 2:
                 # mode Duo (NE, CE, GE)
@@ -296,7 +302,13 @@ class PDBBindOrchestrator:
 
                 complex_res, complex_err = complex_parser.parse_file(ligand_path, pocket_path)
                 if complex_err: return (pdb_id, None, f"complex_parse_error: {complex_err}")
-                data_results['complex_graph'] = complex_res        
+                data_results['complex_graph'] = complex_res
+
+            if self.ligand_smiles_parser is not None and ligand_path is not None and data_results['ligand_smiles'] is None:
+                ligand_smiles, lig_err = self.ligand_smiles_parser.parse_file(ligand_path)
+                if lig_err:
+                    return (pdb_id, None, f"ligand_context_error: {lig_err}")
+                data_results['ligand_smiles'] = ligand_smiles
             return (pdb_id, data_results, None)
         except Exception as e:
             return (pdb_id, None, f"exception: {str(e)}")
@@ -359,6 +371,10 @@ class PDBBindOrchestrator:
             json.dumps({
                 "parsers": parsers_signature,
                 "bad_complexes_registry": self.bad_complexes_registry,
+                "protein_context_mode": self.protein_context_mode,
+                "ligand_context_mode": self.ligand_context_mode,
+                "has_protein_sequence_parser": self.protein_sequence_parser is not None,
+                "has_ligand_smiles_parser": self.ligand_smiles_parser is not None,
             }, sort_keys=True).encode()
         ).hexdigest()
 
@@ -385,7 +401,7 @@ class PDBBindOrchestrator:
                 "See BUILD warnings above for the dominant parse errors."
             )
 
-        ideal_order = ['pdb_id', 'pkd', 'res', 'ligand', 'protein', 'pocket', 'complex_graph']
+        ideal_order = ['pdb_id', 'pkd', 'res', 'ligand', 'ligand_smiles', 'protein', 'pocket', 'complex_graph']
         existing_cols = [col for col in ideal_order if col in df.columns]
         remaining_cols = [col for col in df.columns if col not in existing_cols]
         df = df[existing_cols + remaining_cols]

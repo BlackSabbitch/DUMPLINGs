@@ -24,10 +24,12 @@ from parsers.cnn_parser import CNNParser
 from parsers.gnn_parser import GNNParser
 from utils import Utils
 from models.protein_context import FrozenESMEncoder, ProteinContextConfig, get_protein_context_mode
+from models.ligand_context import FrozenLigandDescriptorEncoder, LigandContextConfig, get_ligand_context_mode
 
 
 DATASETS_DIR = "datasets"
 PROTEIN_CONTEXT_FEATURES_DIR = "protein_context_features"
+LIGAND_CONTEXT_FEATURES_DIR = "ligand_context_features"
 
 
 class ExperimentRunner:
@@ -91,6 +93,11 @@ class ExperimentRunner:
         os.makedirs(PROTEIN_CONTEXT_FEATURES_DIR, exist_ok=True)
         log_info(
             f"Base protein context features folder: {PROTEIN_CONTEXT_FEATURES_DIR}",
+            stage="EXPERIMENT"
+        )
+        os.makedirs(LIGAND_CONTEXT_FEATURES_DIR, exist_ok=True)
+        log_info(
+            f"Base ligand context features folder: {LIGAND_CONTEXT_FEATURES_DIR}",
             stage="EXPERIMENT"
         )
 
@@ -306,6 +313,18 @@ class ExperimentRunner:
             sequences.append(str(value))
         return sequences
 
+    @staticmethod
+    def _extract_split_ligand_smiles(df: pd.DataFrame) -> list[str]:
+        source_col = 'ligand_smiles' if 'ligand_smiles' in df.columns else 'ligand'
+        if source_col not in df.columns:
+            return []
+        smiles_list: list[str] = []
+        for value in df[source_col].tolist():
+            if value is None or pd.isna(value) or not isinstance(value, str):
+                continue
+            smiles_list.append(str(value))
+        return smiles_list
+
     def precompute_protein_context_embeddings(
         self,
         train_df: pd.DataFrame,
@@ -381,12 +400,85 @@ class ExperimentRunner:
             stage="PROTEIN_CONTEXT"
         )
 
+    def precompute_ligand_context_embeddings(
+        self,
+        train_df: pd.DataFrame,
+        val_df: pd.DataFrame,
+        test_df: pd.DataFrame,
+    ) -> None:
+        ligand_context_cfg = LigandContextConfig.from_config(self.config)
+        if ligand_context_cfg.mode == "none":
+            return
+
+        started_at = time.perf_counter()
+        batch_size = int(ligand_context_cfg.precompute_batch_size)
+        log_info(
+            f"Preparing ligand context embedding precompute: mode={ligand_context_cfg.mode}, "
+            f"descriptor_set={ligand_context_cfg.descriptor_set}, batch_size={batch_size}, "
+            f"cache_path={ligand_context_cfg.cache_path}",
+            stage="LIGAND_CONTEXT"
+        )
+
+        encoder = FrozenLigandDescriptorEncoder(
+            cache_path=ligand_context_cfg.cache_path,
+            descriptor_set=ligand_context_cfg.descriptor_set,
+            device=self.device,
+        )
+
+        split_frames = [
+            ("train", train_df),
+            ("val", val_df),
+            ("test", test_df),
+        ]
+
+        total_unique = 0
+        total_cached_before = 0
+        total_computed_now = 0
+
+        for split_name, split_df in split_frames:
+            split_smiles = self._extract_split_ligand_smiles(split_df)
+            log_debug(
+                f"Preparing ligand context precompute for split '{split_name}' "
+                f"with {len(split_smiles)} ligands.",
+                stage="LIGAND_CONTEXT"
+            )
+            split_started_at = time.perf_counter()
+            stats = encoder.precompute_smiles(
+                split_smiles,
+                batch_size=batch_size,
+                progress_desc=f"Ligand context precompute ({split_name})",
+            )
+            total_unique += stats["total_unique"]
+            total_cached_before += stats["cached_before"]
+            total_computed_now += stats["computed_now"]
+            log_debug(
+                f"Ligand context precompute for split '{split_name}' completed in "
+                f"{self._format_duration(time.perf_counter() - split_started_at)} "
+                f"(unique={stats['total_unique']}, cached_before={stats['cached_before']}, "
+                f"computed_now={stats['computed_now']})",
+                stage="LIGAND_CONTEXT"
+            )
+
+        del encoder
+        gc.collect()
+        if self.device == 'cuda':
+            torch.cuda.empty_cache()
+
+        log_debug(
+            f"Ligand context embedding precompute completed in "
+            f"{self._format_duration(time.perf_counter() - started_at)} "
+            f"(split_unique_total={total_unique}, cached_before_total={total_cached_before}, "
+            f"computed_now_total={total_computed_now})",
+            stage="LIGAND_CONTEXT"
+        )
+
     def run(self, train_df, val_df, test_df):
         run_started_at = time.perf_counter()
         log_info(get_stage_banner("ENRICHMENT"), stage="EXPERIMENT")
         log_info(get_divider("="), stage="EXPERIMENT")
         log_info("Preparing training datasets and loaders.", stage="EXPERIMENT")
         self.precompute_protein_context_embeddings(train_df, val_df, test_df)
+        self.precompute_ligand_context_embeddings(train_df, val_df, test_df)
         train_ds = UniversalPDBBindDataset(train_df, self.config)
         test_ds = UniversalPDBBindDataset(test_df, self.config)
         val_ds   = UniversalPDBBindDataset(val_df, self.config)
@@ -418,13 +510,20 @@ class ExperimentRunner:
         dimenet_cfg = self.config['model']['graph_encoder']['available']['duo']['egnn_params']
         hidden_dim = dimenet_cfg.get('hidden_channels', 128)
         protein_context_mode = get_protein_context_mode(self.config)
+        ligand_context_mode = get_ligand_context_mode(self.config)
         protein_context_cfg = ProteinContextConfig.from_config(self.config)
+        ligand_context_cfg = LigandContextConfig.from_config(self.config)
         self.prewarm_protein_context()
         log_info(
             f"Protein context settings -> mode={protein_context_cfg.mode}, model={protein_context_cfg.model_name}, "
             f"repr_layer={protein_context_cfg.repr_layer}, pooling={protein_context_cfg.pooling}, "
             f"cache_path={protein_context_cfg.cache_path}, max_length={protein_context_cfg.max_length}",
             stage="PROTEIN_CONTEXT"
+        )
+        log_info(
+            f"Ligand context settings -> mode={ligand_context_cfg.mode}, descriptor_set={ligand_context_cfg.descriptor_set}, "
+            f"cache_path={ligand_context_cfg.cache_path}, embedding_dim={ligand_context_cfg.embedding_dim}",
+            stage="LIGAND_CONTEXT"
         )
         splitter_seed = self.config['splitter']['available'][self.config['splitter']['selected']].get('seed', 'na')
         log_info(get_stage_banner("RUN SETTINGS"), stage="EXPERIMENT")
@@ -440,7 +539,7 @@ class ExperimentRunner:
             f"DimeNet settings -> hidden_channels={hidden_dim}, cutoff={dimenet_cfg.get('dist_threshold', 5.0)}, "
             f"max_num_neighbors={dimenet_cfg.get('max_num_neighbors', 32)}, "
             f"num_blocks={dimenet_cfg.get('num_blocks', 3)}, ca_only={dimenet_cfg.get('ca_only', False)}, "
-            f"protein_context={protein_context_mode}",
+            f"protein_context={protein_context_mode}, ligand_context={ligand_context_mode}",
             stage="MODEL"
         )
         classic_opt_cfg = self.config['training']['optimizers']['classic']

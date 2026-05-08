@@ -154,6 +154,13 @@ class UniversalPDBBindDataset(Dataset):
         complex_data.pdb_id = str(row['pdb_id'])
         if 'protein' in row and row['protein'] is not None and not pd.isna(row['protein']):
             complex_data.protein_sequence = str(row['protein'])
+        ligand_smiles = None
+        if 'ligand_smiles' in row and row['ligand_smiles'] is not None and not pd.isna(row['ligand_smiles']):
+            ligand_smiles = str(row['ligand_smiles'])
+        elif 'ligand' in row and isinstance(row['ligand'], str) and not pd.isna(row['ligand']):
+            ligand_smiles = str(row['ligand'])
+        if ligand_smiles is not None:
+            complex_data.ligand_smiles = ligand_smiles
 
         # Target (affinity)
         target = torch.tensor(row['pkd'], dtype=torch.float32)
