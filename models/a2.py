@@ -48,9 +48,11 @@ class A2DimeNet(A1DimeNet):
 
         self.local_gnn = None
         self.local_cutoff = None
+        self.local_output_norm = None
         if self.local_encoder_cfg is not None and self.local_graph_mode != "none":
             self.local_gnn = build_dimenet_backbone(self.local_encoder_cfg)
             self.local_cutoff = float(self.local_graph_cfg.get("dist_threshold", 3.5))
+            self.local_output_norm = nn.LayerNorm(self.local_encoder_cfg.hidden_channels)
 
         head_in_dim = self._infer_global_head_input_dim()
         if self.local_gnn is not None:
@@ -94,6 +96,51 @@ class A2DimeNet(A1DimeNet):
         selected[pocket_indices[close_pocket_mask]] = True
         return selected
 
+    @staticmethod
+    def _stabilize_local_coordinates(
+        coords: torch.Tensor,
+        eps: float = 1e-3,
+    ) -> torch.Tensor:
+        """
+        Re-apply duplicate-coordinate stabilization on the selected local subgraph.
+
+        The full interaction graph is already stabilized during parsing, but the
+        tighter local branch can still surface numerically awkward coordinate
+        patterns. Repeating the nudge here is cheap and helps keep the local
+        DimeNet branch away from catastrophic explosions on a few outlier
+        complexes.
+        """
+        if coords.size(0) < 2:
+            return coords
+
+        adjusted = coords.clone()
+        directions = torch.tensor(
+            [
+                [1.0, 0.0, 0.0],
+                [0.0, 1.0, 0.0],
+                [0.0, 0.0, 1.0],
+                [1.0, 1.0, 0.0],
+                [1.0, 0.0, 1.0],
+                [0.0, 1.0, 1.0],
+                [1.0, 1.0, 1.0],
+            ],
+            dtype=adjusted.dtype,
+            device=adjusted.device,
+        )
+        directions = directions / directions.norm(dim=1, keepdim=True)
+
+        seen: dict[tuple[float, float, float], int] = {}
+        for idx in range(adjusted.size(0)):
+            coord = adjusted[idx]
+            key = tuple(round(float(value), 6) for value in coord.tolist())
+            dup_count = seen.get(key, 0)
+            if dup_count > 0:
+                direction = directions[(dup_count - 1) % directions.size(0)]
+                adjusted[idx] = coord + direction * (eps * dup_count)
+            seen[key] = dup_count + 1
+
+        return adjusted
+
     def _build_local_branch_inputs(self, complex_data) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         batch = complex_data.batch
         x = complex_data.x
@@ -110,7 +157,7 @@ class A2DimeNet(A1DimeNet):
             graph_pos = pos[graph_mask]
             selected = self._select_local_mask_for_graph(graph_x, graph_pos, self.local_cutoff)
             local_z_chunks.append(graph_x[selected, 0].long())
-            local_pos_chunks.append(graph_pos[selected])
+            local_pos_chunks.append(self._stabilize_local_coordinates(graph_pos[selected]))
             local_batch_chunks.append(
                 torch.full(
                     (int(selected.sum().item()),),
@@ -149,7 +196,8 @@ class A2DimeNet(A1DimeNet):
 
         if self.local_gnn is not None:
             local_z, local_pos, local_batch = self._build_local_branch_inputs(complex_data)
-            fused_parts.append(self.local_gnn(local_z, local_pos, local_batch))
+            local_repr = self.local_gnn(local_z, local_pos, local_batch)
+            fused_parts.append(self.local_output_norm(local_repr))
 
         fused = fused_parts[0] if len(fused_parts) == 1 else torch.cat(fused_parts, dim=-1)
         return self.head(fused).view(-1)
