@@ -698,6 +698,8 @@ class ExperimentRunner:
             f"{self._format_duration(time.perf_counter() - test_started_at)}",
             stage="TEST"
         )
+        if hasattr(model, "log_local_guard_summary"):
+            model.log_local_guard_summary()
 
         log_info("Generating ASCII performance summary.", stage="SUMMARY")
         console_plots(self.trainer.history, side_by_side=False, stage="SUMMARY")

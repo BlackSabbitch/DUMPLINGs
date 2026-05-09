@@ -67,3 +67,57 @@ Current policy:
   (2) conclude from broader study that the complex should remain filtered for
       this family of 3D geometric baselines.
 """
+
+[complexes.2iw4]
+status = "skip"
+applies_to = "all"
+stage = "training"
+reason = """
+Complex 2iw4 is temporarily excluded because it behaves as a recurrent
+numerical outlier for the current interaction-graph + DimeNet++ family,
+especially once the A2 local branch is enabled.
+
+Observed context:
+- Project: DUMPLING A1/A2 experiments on the PDBBind 2016 refined/core setup.
+- Representation: ligand + pocket all-atom interaction graph, with A2 adding a
+  tighter radius-based local subgraph and a second DimeNet++ encoder.
+- Training regime where the issue was reproduced repeatedly:
+  batch_size = 2, learning_rate = 1e-4, dist_threshold = 5.0 for the global
+  graph, local radius/cutoff = 3.5 for the local branch.
+
+Observed symptoms:
+- 2iw4 repeatedly appears in batches that trigger either extremely large finite
+  losses or directly non-finite predictions.
+- The issue persisted after several stabilizing interventions:
+  parser-side duplicate-coordinate nudging, local-branch coordinate
+  re-stabilization, LayerNorm on the local output, and a per-complex local
+  fallback path.
+- In crash logs, the failing batches consistently reported min_pair_dist = 0.0,
+  which suggests that the local geometry remains pathological for this family of
+  3D message-passing models.
+
+Why this surfaced more clearly in A2 than in earlier A1 runs:
+- The A1 baseline already consumed the same pocket-level geometry, but only
+  through a single global interaction-graph branch, so the pathological local
+  region could remain diluted inside a larger pocket representation.
+- A2 adds an explicit tighter local subgraph and a second DimeNet++ encoder,
+  which places much more emphasis on the immediate interaction zone around the
+  ligand.
+- As a result, the same structural defect became easier to expose once the
+  model began processing that region twice: once globally and once again through
+  the local branch.
+
+Interpretation:
+- At the moment, 2iw4 looks less like ordinary optimizer noise and more like a
+  structure-specific geometric outlier that destabilizes angle-sensitive
+  processing in DimeNet++-style models.
+- Filtering it is the fastest way to obtain a stable A2 baseline and to
+  separate "is the A2 idea viable?" from "can we eventually repair this one
+  problematic complex?"
+
+Current policy:
+- Exclude 2iw4 from automatic dataset construction for the current research
+  line.
+- Revisit later if we derive a principled structural repair or a more robust
+  local-geometry handling strategy.
+"""

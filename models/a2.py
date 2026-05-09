@@ -6,7 +6,7 @@ import torch
 from torch import nn
 
 from models.a1 import A1DimeNet
-from logger import log_warn
+from logger import log_info, log_warn
 from models.graph_components import (
     build_dimenet_backbone,
     build_head,
@@ -55,6 +55,8 @@ class A2DimeNet(A1DimeNet):
             self.local_cutoff = float(self.local_graph_cfg.get("dist_threshold", 3.5))
             self.local_output_norm = nn.LayerNorm(self.local_encoder_cfg.hidden_channels)
         self.local_nonfinite_warned_ids: set[str] = set()
+        self.local_guard_activation_count = 0
+        self.local_guard_activation_ids: set[str] = set()
 
         head_in_dim = self._infer_global_head_input_dim()
         if self.local_gnn is not None:
@@ -155,6 +157,28 @@ class A2DimeNet(A1DimeNet):
     def _safe_local_zero(self, device: torch.device) -> torch.Tensor:
         return torch.zeros(self.local_encoder_cfg.hidden_channels, device=device, dtype=torch.float32)
 
+    def get_local_guard_summary(self) -> dict[str, object]:
+        return {
+            "activations": self.local_guard_activation_count,
+            "pdb_ids": sorted(self.local_guard_activation_ids),
+        }
+
+    def log_local_guard_summary(self) -> None:
+        summary = self.get_local_guard_summary()
+        activations = int(summary["activations"])
+        pdb_ids = summary["pdb_ids"]
+        if activations == 0:
+            log_info(
+                "Local branch guard summary -> no non-finite local fallback activations observed.",
+                stage="MODEL"
+            )
+            return
+
+        log_warn(
+            f"Local branch guard summary -> activations={activations}, affected_pdb_ids={pdb_ids}",
+            stage="MODEL"
+        )
+
     def _encode_local_branch(self, complex_data) -> torch.Tensor:
         batch = complex_data.batch
         x = complex_data.x
@@ -179,6 +203,8 @@ class A2DimeNet(A1DimeNet):
 
             if not torch.isfinite(local_repr).all():
                 pdb_id = self._graph_pdb_id(complex_data, batch_id)
+                self.local_guard_activation_count += 1
+                self.local_guard_activation_ids.add(pdb_id)
                 if pdb_id not in self.local_nonfinite_warned_ids:
                     self.local_nonfinite_warned_ids.add(pdb_id)
                     log_warn(
