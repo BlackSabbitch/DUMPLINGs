@@ -36,6 +36,15 @@ hybrid classical/quantum stack.
 - [Evaluation Artifacts](#evaluation-artifacts)
   - [`test_results.json`](#test_resultsjson)
   - [`best_validation_scatter_diagnostics.json`](#best_validation_scatter_diagnosticsjson)
+- [Experiment Journal](#experiment-journal)
+  - [Stage 0: Fused-Graph Baseline Setup](#stage-0-fused-graph-baseline-setup)
+  - [Stage 1: A1 as the Coarse Baseline](#stage-1-a1-as-the-coarse-baseline)
+  - [Stage 2: A2 and the Explicit Local Branch](#stage-2-a2-and-the-explicit-local-branch)
+  - [Stage 3: Data Quality and the 2iw4 Lesson](#stage-3-data-quality-and-the-2iw4-lesson)
+  - [Stage 4: A3 and the Linear Coarse-plus-Local Test](#stage-4-a3-and-the-linear-coarse-plus-local-test)
+  - [Stage 5: What A3 Actually Taught Us](#stage-5-what-a3-actually-taught-us)
+  - [Current Working Interpretation](#current-working-interpretation)
+  - [Immediate Next Questions](#immediate-next-questions)
 - [Experimental Appendix](#experimental-appendix)
   - [Why the Architecture Was Split into Stages](#why-the-architecture-was-split-into-stages)
   - [A1](#a1)
@@ -374,6 +383,221 @@ Important fields include:
   diagonal
 - `orthogonal_rmse_to_diagonal`: cloud distance to the ideal diagonal measured
   orthogonally rather than vertically
+
+## Experiment Journal
+
+This section is a working lab-book summary for the current line of
+experiments. It is intentionally narrative. The goal is to preserve not only
+what the code does, but what we learned while moving from one architectural
+step to the next.
+
+### Stage 0: Fused-Graph Baseline Setup
+
+The first major structural decision of the current repository line was to move
+away from multi-object pipelines and toward one **fused ligand-pocket graph**
+as the main geometric object.
+
+That choice had several motivations:
+
+- it keeps the geometric input contract simple,
+- it allows one DimeNet++ branch to see both ligand atoms and nearby pocket
+  atoms together,
+- it keeps the cached dataset reusable for later graph models,
+- it reduces architectural noise when asking whether context branches or local
+  corrections help.
+
+At the same time, sequence and ligand metadata were retained as optional side
+channels:
+
+- protein context via frozen ESM sequence embeddings,
+- ligand context via cached RDKit descriptor vectors.
+
+So even before the A1/A2/A3 ladder was formalized, the project already had one
+important separation of concerns:
+
+- geometry comes from the fused graph,
+- context comes from optional cached side branches.
+
+### Stage 1: A1 as the Coarse Baseline
+
+`A1` was the deliberate conservative baseline:
+
+- one global DimeNet++ encoder over the fused interaction graph,
+- optional protein context,
+- optional ligand context,
+- a small late-fusion prediction head.
+
+The point of `A1` was not to be "the final model", but to answer a clean
+question:
+
+> how much affinity signal can already be extracted from one whole-complex
+> geometric representation, possibly enriched by frozen side context?
+
+This stage was important because it created the coarse reference point for
+later work. Without that anchor, every later architectural change would be much
+harder to interpret.
+
+### Stage 2: A2 and the Explicit Local Branch
+
+`A2` introduced the first major architectural hypothesis:
+
+> perhaps the whole-complex estimate is not enough, and a dedicated local
+> ligand-pocket correction branch helps.
+
+This led to:
+
+- a ligand-centered local subgraph,
+- a second DimeNet++ encoder over that tighter zone,
+- concatenation of global and local representations before the final MLP.
+
+This was the first place where the repository became explicitly about
+**coarse-plus-local structure**, even though the final readout was still a
+generic nonlinear head.
+
+The most important outcome of this stage was empirical:
+
+- the local branch appeared useful,
+- the model remained trainable and stable,
+- the project now had a strong reason to take "local correction" seriously.
+
+### Stage 3: Data Quality and the `2iw4` Lesson
+
+One of the most practically important lessons of the A2 stage was that not all
+instability is architectural. Some of it is simply data quality.
+
+In particular, pathological behavior around `2iw4` pushed the project toward a
+more explicit data-quality workflow:
+
+- temporary numerical safeguards inside the local branch,
+- a persistent `bad_complexes.toml` registry,
+- explicit logging of excluded complexes and local-guard activations.
+
+This stage mattered because it separated two very different failure modes:
+
+- "the model idea is bad",
+- "the dataset contains a toxic example for this parser/encoder combination".
+
+The exclusion of `2iw4` and related cleanup substantially improved confidence
+that later model comparisons were about architecture rather than hidden data
+corruption.
+
+### Stage 4: A3 and the Linear Coarse-plus-Local Test
+
+Once `A2` suggested that the local branch mattered, the next question became
+sharper:
+
+> is the local branch really acting like a correction, or is A2 simply winning
+> because the final concat-head is more expressive?
+
+That question motivated `A3`.
+
+`A3` keeps the same branch encoders as `A2`, but changes the readout:
+
+- `y_global = global_head(h_global)`
+- `y_local = local_head(h_local)`
+- `y = alpha * y_global + beta * y_local`
+
+This was intentionally more restrictive than `A2`.
+
+The intention was not merely to chase performance, but to ask whether the model
+could sustain an interpretable decomposition:
+
+- one branch for a coarse estimate,
+- one branch for a local correction,
+- one linear mixer at the end.
+
+To support that reading, `A3` also introduced explicit readout diagnostics into
+`test_results.json`.
+
+### Stage 5: What A3 Actually Taught Us
+
+The first serious `A3` run produced a result that was highly informative even
+though it did not beat `A2`.
+
+Best validation checkpoint:
+
+- epoch `19`
+- `val RMSE = 1.3776`
+- `val Pearson R = 0.7497`
+- `val CI = 0.7752`
+
+Final held-out test:
+
+- `RMSE = 1.5104`
+- `Pearson R = 0.7208`
+- `CI = 0.7595`
+
+Those numbers were respectable enough to show that `A3` is a real model rather
+than a broken toy. But the readout diagnostics told the more important story.
+
+The key observations were:
+
+- `y_global` had large sample-dependent variation,
+- `y_local` was almost constant across the test set,
+- the effective local contribution was tiny compared with the global one.
+
+In the recorded diagnostics:
+
+- `global_branch_output.mean_abs ~= 6.50`
+- `local_branch_output.mean_abs ~= 0.0837`
+- `global_contribution.mean_abs ~= 0.619`
+- `local_contribution.mean_abs ~= 0.0119`
+- mean local/global absolute contribution ratio `~= 0.019`
+
+This means that the local branch did **not** survive as a meaningful
+sample-specific correction term in this formulation.
+
+Instead, it nearly collapsed into a small constant offset.
+
+### Current Working Interpretation
+
+The first A3 result suggests a very specific reading:
+
+1. local information may still be useful, because `A2` previously benefited
+   from it,
+2. but the current **scalar local readout + bias-free linear mixer** is too
+   restrictive,
+3. in practice the local branch almost behaved like a surrogate bias term.
+
+This is a subtle but important distinction.
+
+The result does **not** cleanly say:
+
+> local information is useless
+
+It says something closer to:
+
+> this particular attempt to force locality into one scalar correction channel
+> caused the local branch to collapse
+
+That is why the first A3 run is treated as a useful negative result rather than
+as a dead end.
+
+### Immediate Next Questions
+
+The current working questions after the first A3 run are:
+
+1. would an explicit mixer bias (`gamma`) free the local branch from having to
+   impersonate a constant offset?
+2. if an `A3 + bias` variant keeps the local term alive, does the local branch
+   then become more interpretable?
+3. only after that, does it make sense to move toward pair-scoring
+   local-correction experiments (`A3a`)?
+
+This ordering matters.
+
+If the local branch is already collapsed at the scalar-readout level, then
+moving immediately to pair scoring risks building additional machinery on top of
+a branch that is not currently carrying the intended signal.
+
+So the present interpretation of the roadmap is:
+
+- `A2` showed that locality may matter,
+- first `A3` showed that a too-restrictive linear scalar decomposition can
+  suppress that locality,
+- the next experiments should test whether the local branch can be revived in a
+  more faithful coarse-plus-correction formulation before attention- or
+  pair-based refinement is added.
 
 ## Experimental Appendix
 
