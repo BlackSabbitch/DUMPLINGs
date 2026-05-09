@@ -41,8 +41,9 @@ hybrid classical/quantum stack.
   - [Stage 1: A1 as the Coarse Baseline](#stage-1-a1-as-the-coarse-baseline)
   - [Stage 2: A2 and the Explicit Local Branch](#stage-2-a2-and-the-explicit-local-branch)
   - [Stage 3: Data Quality and the 2iw4 Lesson](#stage-3-data-quality-and-the-2iw4-lesson)
-  - [Stage 4: A3 and the Linear Coarse-plus-Local Test](#stage-4-a3-and-the-linear-coarse-plus-local-test)
-  - [Stage 5: What A3 Actually Taught Us](#stage-5-what-a3-actually-taught-us)
+  - [Stage 4: Colab Workflow Hardening and Experiment Operations](#stage-4-colab-workflow-hardening-and-experiment-operations)
+  - [Stage 5: A3 and the Linear Coarse-plus-Local Test](#stage-5-a3-and-the-linear-coarse-plus-local-test)
+  - [Stage 6: What A3 Actually Taught Us](#stage-6-what-a3-actually-taught-us)
   - [Current Working Interpretation](#current-working-interpretation)
   - [Immediate Next Questions](#immediate-next-questions)
 - [Experimental Appendix](#experimental-appendix)
@@ -481,7 +482,43 @@ The exclusion of `2iw4` and related cleanup substantially improved confidence
 that later model comparisons were about architecture rather than hidden data
 corruption.
 
-### Stage 4: A3 and the Linear Coarse-plus-Local Test
+The registry eventually stabilized around the current explicitly excluded
+complexes, including `2iw4` and `4bps`. In the project narrative, `2iw4` is
+remembered as the most diagnostic case, but the real lesson is broader: the
+pipeline needed a formal mechanism for known-bad complexes rather than
+one-off local hacks.
+
+### Stage 4: Colab Workflow Hardening and Experiment Operations
+
+In parallel with model work, the project also became much more operationally
+structured.
+
+Originally, a larger fraction of the workflow lived directly inside notebook
+cells. Over time, repeated friction around Colab runs pushed the repository
+toward a clearer separation between:
+
+- experiment logic in `run.py`,
+- notebook control flow in `colab_launch_main.ipynb`,
+- reusable environment helpers under `scripts/`.
+
+This produced a small but important tooling layer for:
+
+- staging the workspace from Drive into `/content`,
+- installing Colab-specific dependencies cleanly,
+- background syncing of `runs/`,
+- final syncing of `runs/`, `protein_context_features/`, and
+  `ligand_context_features/`,
+- lightweight smoke checks for non-Colab environments.
+
+This part of the evolution was not scientifically glamorous, but it improved
+the real experimental loop:
+
+- fewer manual notebook edits,
+- better cache reuse,
+- cleaner reruns,
+- less risk of losing artifacts at the end of long jobs.
+
+### Stage 5: A3 and the Linear Coarse-plus-Local Test
 
 Once `A2` suggested that the local branch mattered, the next question became
 sharper:
@@ -509,7 +546,7 @@ could sustain an interpretable decomposition:
 To support that reading, `A3` also introduced explicit readout diagnostics into
 `test_results.json`.
 
-### Stage 5: What A3 Actually Taught Us
+### Stage 6: What A3 Actually Taught Us
 
 The first serious `A3` run produced a result that was highly informative even
 though it did not beat `A2`.
