@@ -380,7 +380,8 @@ class PDBBindOrchestrator:
             }, sort_keys=True).encode()
         ).hexdigest()
 
-        graph_tag = f"{self.global_graph_mode}{self.global_graph_config.get('dist_threshold', 'na')}"
+        dist_tag = str(self.global_graph_config.get('dist_threshold', 'na')).replace('.', 'p')
+        graph_tag = f"{self.global_graph_mode}{dist_tag}"
         name = file_name if file_name else f"pdbbds_{subset[:3]}_{self.global_encoder}_{graph_tag}_{parsers_str_id}"
         self.full_path = os.path.join(save_dir, f"{name}.{fmt}")
 

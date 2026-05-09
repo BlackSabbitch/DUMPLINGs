@@ -1,5 +1,5 @@
 {
-    "experiment_name": "DUMPLING_A2_sanity_run_of_A1_from_new_codebase",
+    "experiment_name": "DUMPLING_A2_first_run",
     "debug_mode": true,
     "splitter": {
         "selected": "random",
@@ -33,7 +33,7 @@
         "lig_vocab": "?ABCDEFGHIKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-=[]()#%@+./\\:,;^$"
     },
     "model": {
-        "selected": "A1",
+        "selected": "A2",
         "global_graph": {
             "selected": "interaction",
             "available": {
