@@ -6,6 +6,7 @@ import torch
 from torch import nn
 
 from models.a1 import A1DimeNet
+from logger import log_warn
 from models.graph_components import (
     build_dimenet_backbone,
     build_head,
@@ -53,6 +54,7 @@ class A2DimeNet(A1DimeNet):
             self.local_gnn = build_dimenet_backbone(self.local_encoder_cfg)
             self.local_cutoff = float(self.local_graph_cfg.get("dist_threshold", 3.5))
             self.local_output_norm = nn.LayerNorm(self.local_encoder_cfg.hidden_channels)
+        self.local_nonfinite_warned_ids: set[str] = set()
 
         head_in_dim = self._infer_global_head_input_dim()
         if self.local_gnn is not None:
@@ -141,14 +143,23 @@ class A2DimeNet(A1DimeNet):
 
         return adjusted
 
-    def _build_local_branch_inputs(self, complex_data) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    @staticmethod
+    def _graph_pdb_id(complex_data, batch_id: int) -> str:
+        pdb_ids = getattr(complex_data, "pdb_id", None)
+        if isinstance(pdb_ids, (list, tuple)) and batch_id < len(pdb_ids):
+            return str(pdb_ids[batch_id])
+        if isinstance(pdb_ids, str):
+            return pdb_ids
+        return f"batch_{batch_id}"
+
+    def _safe_local_zero(self, device: torch.device) -> torch.Tensor:
+        return torch.zeros(self.local_encoder_cfg.hidden_channels, device=device, dtype=torch.float32)
+
+    def _encode_local_branch(self, complex_data) -> torch.Tensor:
         batch = complex_data.batch
         x = complex_data.x
         pos = complex_data.pos.float()
-
-        local_z_chunks: list[torch.Tensor] = []
-        local_pos_chunks: list[torch.Tensor] = []
-        local_batch_chunks: list[torch.Tensor] = []
+        outputs: list[torch.Tensor] = []
 
         unique_batches = torch.unique(batch, sorted=True)
         for batch_id in unique_batches.tolist():
@@ -156,21 +167,31 @@ class A2DimeNet(A1DimeNet):
             graph_x = x[graph_mask]
             graph_pos = pos[graph_mask]
             selected = self._select_local_mask_for_graph(graph_x, graph_pos, self.local_cutoff)
-            local_z_chunks.append(graph_x[selected, 0].long())
-            local_pos_chunks.append(self._stabilize_local_coordinates(graph_pos[selected]))
-            local_batch_chunks.append(
-                torch.full(
-                    (int(selected.sum().item()),),
-                    int(batch_id),
-                    dtype=batch.dtype,
-                    device=batch.device,
-                )
-            )
+            local_pos = self._stabilize_local_coordinates(graph_pos[selected])
+            local_z = graph_x[selected, 0].long()
 
-        local_z = torch.cat(local_z_chunks, dim=0)
-        local_pos = torch.cat(local_pos_chunks, dim=0)
-        local_batch = torch.cat(local_batch_chunks, dim=0)
-        return local_z, local_pos, local_batch
+            if local_pos.size(0) < 2:
+                outputs.append(self._safe_local_zero(device=graph_pos.device))
+                continue
+
+            local_batch = torch.zeros(local_pos.size(0), dtype=batch.dtype, device=batch.device)
+            local_repr = self.local_gnn(local_z, local_pos, local_batch).view(-1)
+
+            if not torch.isfinite(local_repr).all():
+                pdb_id = self._graph_pdb_id(complex_data, batch_id)
+                if pdb_id not in self.local_nonfinite_warned_ids:
+                    self.local_nonfinite_warned_ids.add(pdb_id)
+                    log_warn(
+                        f"Local branch produced non-finite values for {pdb_id}; "
+                        "falling back to a zero local representation for this complex.",
+                        stage="MODEL"
+                    )
+                outputs.append(self._safe_local_zero(device=graph_pos.device))
+                continue
+
+            outputs.append(self.local_output_norm(local_repr))
+
+        return torch.stack(outputs, dim=0)
 
     def forward(self, batch_list, progress: float = 0.0):
         _, _, _, complex_data, _ = batch_list
@@ -195,9 +216,7 @@ class A2DimeNet(A1DimeNet):
             fused_parts.append(self.ligand_context_projector(ligand_context))
 
         if self.local_gnn is not None:
-            local_z, local_pos, local_batch = self._build_local_branch_inputs(complex_data)
-            local_repr = self.local_gnn(local_z, local_pos, local_batch)
-            fused_parts.append(self.local_output_norm(local_repr))
+            fused_parts.append(self._encode_local_branch(complex_data))
 
         fused = fused_parts[0] if len(fused_parts) == 1 else torch.cat(fused_parts, dim=-1)
         return self.head(fused).view(-1)
