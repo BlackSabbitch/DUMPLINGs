@@ -14,6 +14,7 @@ from collections import Counter
 from typing import List, Optional, Dict, Any, Tuple
 from logger import *
 from parsers.cnn_parser import CNNParser
+from models.graph_components import get_global_graph_config, get_global_graph_mode
 from models.protein_context import get_protein_context_mode
 from models.ligand_context import get_ligand_context_mode
 
@@ -23,21 +24,20 @@ class PDBBindOrchestrator:
     Orchestrator for extracting and processing PDBBind dataset complexes.
 
     Handles dataset preparation, file extraction, and parallel processing of
-    protein-ligand complexes. Supports different dataset subsets (core, refined, general)
-    and configurable parsers for molecular data processing.
+    protein-ligand complexes. Supports different dataset subsets (core,
+    refined, general) and the current fused interaction-graph parsing path.
 
     Attributes:
-        parsers: List of parsers for processing different molecular components.
-        mode: Selected encoder mode ('trio' or 'duo').
+        parsers: List of parsers for processing molecular components.
+        global_graph_mode: Selected global graph construction mode.
         archive_path: Path to the PDBBind archive file.
         dest_path: Destination directory for extracted data.
         index_map: Mapping of subset names to index file paths.
         file_suffix_map: Mapping of component types to file suffixes.
 
     Example:
-        >>> from parsers.cnn_parser import CNNParser
-        >>> from parsers.gnn_parser import GNNParser
-        >>> parsers = [CNNParser(is_ligand=False), CNNParser(is_ligand=True), GNNParser(is_ligand=False)]
+        >>> from parsers.interaction_graph_parser import InteractionGraphParser
+        >>> parsers = [None, InteractionGraphParser(dist_threshold=5.0, ca_only=False)]
         >>> orchestrator = PDBBindOrchestrator(parsers, config)
         >>> orchestrator.extract_subset("refined")
         >>> df = orchestrator.build_dataset("refined")
@@ -54,8 +54,9 @@ class PDBBindOrchestrator:
             dest_path: Directory where data will be extracted.
         """
         self.parsers = parsers
-        self.graph_encoder = config_dict['model']['graph_encoder']['selected']
-        self.graph_encoder_mode = config_dict['model']['graph_encoder']['available'][self.graph_encoder]['protein_ligand_pocket_encoders'] 
+        self.global_graph_mode = get_global_graph_mode(config_dict)
+        self.global_graph_config = get_global_graph_config(config_dict)
+        self.global_encoder = config_dict['model']['global_encoder']['selected']
         self.archive_path = archive_path
         self.dest_path = dest_path
         self.bad_complexes_path = config_dict.get('dataset', {}).get('bad_complexes_path', 'bad_complexes.toml')
@@ -178,14 +179,14 @@ class PDBBindOrchestrator:
         protein_needed = bool(self.parsers and self.parsers[0]) or self.protein_sequence_parser is not None
         
         if len(self.parsers) == 3:
-            # TRIO: account for parsers that might be None (mode 'N')
+            # Legacy three-slot parser chain support.
             return [
                 os.path.join(folder, f"{pdb_id}{self.file_suffix_map['protein']}") if protein_needed else None,
                 os.path.join(folder, f"{pdb_id}{self.file_suffix_map['ligand']}") if self.parsers[1] else None,
                 os.path.join(folder, f"{pdb_id}{self.file_suffix_map['pocket']}") if self.parsers[2] else None
             ]
         elif len(self.parsers) == 2:
-            # EGNN / Interaction (Duo)
+            # fused interaction-graph pipeline
             return [
                 os.path.join(folder, f"{pdb_id}{self.file_suffix_map['protein']}") if protein_needed else None,
                 os.path.join(folder, f"{pdb_id}{self.file_suffix_map['ligand']}"),
@@ -274,7 +275,7 @@ class PDBBindOrchestrator:
         ligand_path = paths[1] if len(paths) >= 2 else None
         try:
             if len(self.parsers) == 3:
-                # mode Trio (CCC, CGC, etc.)
+                # Legacy three-slot parser chain support.
                 for i, parser, path in zip(range(3), self.parsers, paths):
                     if path is None: continue
 
@@ -286,7 +287,7 @@ class PDBBindOrchestrator:
                         data_results['ligand_smiles'] = res
 
             elif len(self.parsers) == 2:
-                # mode Duo (NE, CE, GE)
+                # current fused interaction-graph mode
                 protein_parser, complex_parser = self.parsers
                 protein_path, ligand_path, pocket_path = paths
 
@@ -379,7 +380,8 @@ class PDBBindOrchestrator:
             }, sort_keys=True).encode()
         ).hexdigest()
 
-        name = file_name if file_name else f"pdbbds_{subset[:3]}_{self.graph_encoder}{self.graph_encoder_mode}_{parsers_str_id}"
+        graph_tag = f"{self.global_graph_mode}{self.global_graph_config.get('dist_threshold', 'na')}"
+        name = file_name if file_name else f"pdbbds_{subset[:3]}_{self.global_encoder}_{graph_tag}_{parsers_str_id}"
         self.full_path = os.path.join(save_dir, f"{name}.{fmt}")
 
         if os.path.exists(self.full_path):
@@ -462,8 +464,9 @@ class PDBBindOrchestrator:
             "timestamp": datetime.now().strftime("%Y%m%d_%H%M%S"),
             "subset": subset,
             "n_complexes": n_complexes,
-            "graph_encoder": self.graph_encoder,
-            "graph_encoder_mode": self.graph_encoder_mode,
+            "global_graph_mode": self.global_graph_mode,
+            "global_graph_config": self.global_graph_config,
+            "global_encoder": self.global_encoder,
             "format": fmt,
             "compression": str(actual_comp),
             # Persist parser details so cache provenance remains inspectable.

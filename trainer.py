@@ -135,6 +135,10 @@ class Trainer:
             return "protein_context_projector"
         if param_name.startswith("ligand_context_projector."):
             return "ligand_context_projector"
+        if param_name.startswith("global_gnn."):
+            return "global_gnn"
+        if param_name.startswith("local_gnn."):
+            return "local_gnn"
         if param_name.startswith("gnn."):
             return "gnn"
         if param_name.startswith("head."):

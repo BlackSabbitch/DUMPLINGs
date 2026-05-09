@@ -1,6 +1,6 @@
 {
-    "experiment_name": "DUMPLING_A15_esm_DimeNet_ligand_context_test",
-    "debug_mode": false,
+    "experiment_name": "DUMPLING_A2_sanity_run_of_A1_from_new_codebase",
+    "debug_mode": true,
     "splitter": {
         "selected": "random",
         "available": {
@@ -33,19 +33,57 @@
         "lig_vocab": "?ABCDEFGHIKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-=[]()#%@+./\\:,;^$"
     },
     "model": {
-        "graph_encoder": {
-            "selected": "duo",
+        "selected": "A1",
+        "global_graph": {
+            "selected": "interaction",
             "available": {
-                "duo": {
-                    "protein_ligand_pocket_encoders": "NE",
-                    "egnn_params": {
-                        "hidden_channels": 128,
-                        "dist_threshold": 5.0,
-                        "ca_only": false,
-                        "max_num_neighbors": 12,
-                        "num_blocks": 3
-                    }
+                "interaction": {
+                    "dist_threshold": 5.0,
+                    "ca_only": false
                 }
+            }
+        },
+        "global_encoder": {
+            "selected": "DimeNet",
+            "available": {
+                "DimeNet": {
+                    "hidden_channels": 128,
+                    "cutoff": 5.0,
+                    "max_num_neighbors": 12,
+                    "num_blocks": 3
+                }
+            }
+        },
+        "local_graph": {
+            "selected": "radius",
+            "available": {
+                "none": {},
+                "radius": {
+                    "dist_threshold": 3.5
+                }
+            }
+        },
+        "local_encoder": {
+            "selected": "DimeNet",
+            "available": {
+                "none": {},
+                "DimeNet": {
+                    "hidden_channels": 128,
+                    "cutoff": 3.5,
+                    "max_num_neighbors": 12,
+                    "num_blocks": 3,
+                    "pooling_mode": "mean"
+                }
+            }
+        },
+        "head": {
+            "selected": "global_local_concat",
+            "available": {
+                "global_local_concat": {
+                    "hidden_dim": 64,
+                    "dropout": 0.0
+                },
+                "global_local_linear": {}
             }
         },
         "protein_context": {
@@ -97,7 +135,7 @@
     "training": {
         "epochs": 100,
         "plot_every_n_epochs": 10,
-        "save_only_best_epoch": false,
+        "save_only_best_epoch": true,
         "memory_log_every_n_batches": 0,
         "slow_batch_warn_seconds": 5.0,
         "early_stopping": {

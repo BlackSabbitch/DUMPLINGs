@@ -17,11 +17,21 @@ from extractor import PDBBindOrchestrator
 from trainer import Trainer
 from evaluator import Evaluator
 from models.a1 import A1DimeNet
+from models.a2 import A2DimeNet
+from models.graph_components import (
+    get_global_encoder_config,
+    get_global_graph_config,
+    get_global_graph_mode,
+    get_head_mode,
+    get_local_encoder_config,
+    get_local_encoder_mode,
+    get_local_graph_config,
+    get_local_graph_mode,
+    get_model_family,
+)
 from parsers.interaction_graph_parser import InteractionGraphParser
 from tokenizer import UniversalPDBBindDataset
 from splitter import PDBBindSplitter
-from parsers.cnn_parser import CNNParser
-from parsers.gnn_parser import GNNParser
 from utils import Utils
 from models.protein_context import FrozenESMEncoder, ProteinContextConfig, get_protein_context_mode
 from models.ligand_context import FrozenLigandDescriptorEncoder, LigandContextConfig, get_ligand_context_mode
@@ -189,22 +199,14 @@ class ExperimentRunner:
             )
 
         else:
-            mode = self.config['model']['graph_encoder']['selected']
-            available_cfg = self.config['model']['graph_encoder']['available'][mode]
-            mode_str = available_cfg['protein_ligand_pocket_encoders']
-            parsers = []
-            for i, char in enumerate(mode_str):
-                is_lig = (i == 1)
-                if char == 'C': parsers.append(CNNParser(is_ligand=is_lig))
-                elif char == 'G': parsers.append(GNNParser(is_ligand=is_lig))
-                elif char == 'E':
-                    egnn_params = available_cfg.get('egnn_params', {})
-                    parsers.append(InteractionGraphParser(
-                        dist_threshold=egnn_params.get('dist_threshold', 5.0),
-                        ca_only=egnn_params.get('ca_only', False)
-                    ))
-                elif char == 'N': parsers.append(None)
-                else: log_info(f"Unknown symbol {char} in the architecture description.", stage="EXPERIMENT")
+            global_graph_cfg = get_global_graph_config(self.config)
+            parsers = [
+                None,
+                InteractionGraphParser(
+                    dist_threshold=float(global_graph_cfg.get('dist_threshold', 5.0)),
+                    ca_only=bool(global_graph_cfg.get('ca_only', False)),
+                ),
+            ]
 
             orchestrator = PDBBindOrchestrator(parsers, self.config)
             if self.extract:
@@ -572,8 +574,17 @@ class ExperimentRunner:
         with open(f"{self.exp_run_dir}/config.json", 'w') as f:
             json.dump(self.config, f, indent=4)
 
-        dimenet_cfg = self.config['model']['graph_encoder']['available']['duo']['egnn_params']
-        hidden_dim = dimenet_cfg.get('hidden_channels', 128)
+        model_family = get_model_family(self.config)
+        if model_family not in {"A1", "A2"}:
+            raise ValueError(f"Unsupported model.selected={model_family!r}. Expected 'A1' or 'A2'.")
+        global_graph_mode = get_global_graph_mode(self.config)
+        global_graph_cfg = get_global_graph_config(self.config)
+        global_encoder_cfg = get_global_encoder_config(self.config)
+        local_encoder_cfg = get_local_encoder_config(self.config)
+        local_graph_mode = get_local_graph_mode(self.config)
+        local_graph_cfg = get_local_graph_config(self.config)
+        head_mode = get_head_mode(self.config)
+        hidden_dim = global_encoder_cfg.hidden_channels
         protein_context_mode = get_protein_context_mode(self.config)
         ligand_context_mode = get_ligand_context_mode(self.config)
         protein_context_cfg = ProteinContextConfig.from_config(self.config)
@@ -596,17 +607,49 @@ class ExperimentRunner:
         log_info(
             f"Run settings -> source_subset={self.source_subset}, core_as_test={self.core_as_test}, "
             f"splitter={self.config['splitter']['selected']}, batch_size={self.config['dataset']['batch_size']}, "
-            f"num_workers={num_workers}, splitter_seed={splitter_seed}, "
+            f"num_workers={num_workers}, splitter_seed={splitter_seed}, model={model_family}, "
             f"epochs={self.config['training']['epochs']}",
             stage="EXPERIMENT"
         )
         log_info(
-            f"DimeNet settings -> hidden_channels={hidden_dim}, cutoff={dimenet_cfg.get('dist_threshold', 5.0)}, "
-            f"max_num_neighbors={dimenet_cfg.get('max_num_neighbors', 32)}, "
-            f"num_blocks={dimenet_cfg.get('num_blocks', 3)}, ca_only={dimenet_cfg.get('ca_only', False)}, "
+            f"Global graph settings -> mode={global_graph_mode}, "
+            f"dist_threshold={global_graph_cfg.get('dist_threshold', 'na')}, "
+            f"ca_only={global_graph_cfg.get('ca_only', 'na')}",
+            stage="MODEL"
+        )
+        log_info(
+            f"Global encoder settings -> hidden_channels={hidden_dim}, cutoff={global_encoder_cfg.cutoff}, "
+            f"max_num_neighbors={global_encoder_cfg.max_num_neighbors}, "
+            f"num_blocks={global_encoder_cfg.num_blocks}, "
             f"protein_context={protein_context_mode}, ligand_context={ligand_context_mode}",
             stage="MODEL"
         )
+        log_info(
+            f"Head settings -> mode={head_mode}",
+            stage="MODEL"
+        )
+        if model_family == "A2":
+            local_encoder_mode = get_local_encoder_mode(self.config)
+            if local_encoder_cfg is None or local_graph_mode == "none":
+                log_info(
+                    f"Local branch settings -> local_graph={local_graph_mode}, local_encoder={local_encoder_mode}",
+                    stage="MODEL"
+                )
+            else:
+                log_info(
+                    f"Local branch settings -> local_graph={local_graph_mode} "
+                    f"(dist_threshold={local_graph_cfg.get('dist_threshold', 'na')}), "
+                    f"local_encoder={local_encoder_mode}, hidden_channels={local_encoder_cfg.hidden_channels}, "
+                    f"cutoff={local_encoder_cfg.cutoff}, max_num_neighbors={local_encoder_cfg.max_num_neighbors}, "
+                    f"num_blocks={local_encoder_cfg.num_blocks}",
+                    stage="MODEL"
+                )
+        elif local_graph_mode != "none" or get_local_encoder_mode(self.config) != "none":
+            log_info(
+                f"Local branch configuration present but ignored because model={model_family}: "
+                f"local_graph={local_graph_mode}, local_encoder={get_local_encoder_mode(self.config)}",
+                stage="MODEL"
+            )
         classic_opt_cfg = self.config['training']['optimizers']['classic']
         log_info(
             f"Optimizer settings -> type={classic_opt_cfg['type']}, "
@@ -616,15 +659,18 @@ class ExperimentRunner:
         )
         log_info("Preparing model initialization.", stage="MODEL")
         model_init_started_at = time.perf_counter()
-        model = A1DimeNet(
-            config=self.config,
-            device=self.device,
-            hidden_channels=hidden_dim,
-            out_channels=1,
-            cutoff=dimenet_cfg.get('dist_threshold', 5.0),
-            max_num_neighbors=dimenet_cfg.get('max_num_neighbors', 32),
-            num_blocks=dimenet_cfg.get('num_blocks', 3),
-        )
+        if model_family == "A2":
+            model = A2DimeNet(
+                config=self.config,
+                device=self.device,
+                out_channels=1,
+            )
+        else:
+            model = A1DimeNet(
+                config=self.config,
+                device=self.device,
+                out_channels=1,
+            )
         log_debug(
             f"Model initialization completed in "
             f"{self._format_duration(time.perf_counter() - model_init_started_at)}",

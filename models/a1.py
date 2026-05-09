@@ -4,8 +4,8 @@ from typing import Sequence
 
 import torch
 from torch import nn
-from torch_geometric.nn import DimeNetPlusPlus
 
+from models.graph_components import build_dimenet_backbone, build_head, get_global_encoder_config
 from models.protein_context import (
     ProteinContextProjector,
     build_protein_context_encoder,
@@ -37,31 +37,16 @@ class A1DimeNet(nn.Module):
         self,
         config: dict,
         device: str,
-        hidden_channels: int = 128,
         out_channels: int = 1,
-        cutoff: float = 5.0,
-        max_num_neighbors: int = 32,
-        num_blocks: int = 3,
     ) -> None:
         super().__init__()
         self.device_name = device
-        self.hidden_channels = hidden_channels
+        self.global_encoder_cfg = get_global_encoder_config(config)
+        self.hidden_channels = self.global_encoder_cfg.hidden_channels
         self.protein_context_mode = get_protein_context_mode(config)
         self.ligand_context_mode = get_ligand_context_mode(config)
 
-        self.gnn = DimeNetPlusPlus(
-            hidden_channels=hidden_channels,
-            out_channels=hidden_channels,
-            num_blocks=num_blocks,
-            int_emb_size=64,
-            basis_emb_size=8,
-            out_emb_channels=128,
-            num_spherical=7,
-            num_radial=6,
-            cutoff=cutoff,
-            max_num_neighbors=max_num_neighbors,
-            envelope_exponent=5,
-        )
+        self.gnn = build_dimenet_backbone(self.global_encoder_cfg)
 
         self.protein_context_encoder = build_protein_context_encoder(config, device)
         self.protein_context_projector = None
@@ -70,7 +55,7 @@ class A1DimeNet(nn.Module):
 
         head_in_dim = 0
         if self.protein_context_mode != "esm_only":
-            head_in_dim += hidden_channels
+            head_in_dim += self.hidden_channels
 
         if self.protein_context_mode != "none":
             if self.protein_context_encoder is None:
@@ -80,24 +65,20 @@ class A1DimeNet(nn.Module):
             else:
                 self.protein_context_projector = ProteinContextProjector(
                     in_dim=self.protein_context_encoder.output_dim,
-                    out_dim=hidden_channels,
+                    out_dim=self.hidden_channels,
                 )
-                head_in_dim += hidden_channels
+                head_in_dim += self.hidden_channels
 
         if self.ligand_context_mode != "none":
             if self.ligand_context_encoder is None:
                 raise ValueError(f"{self.ligand_context_mode} requires a ligand context encoder")
             self.ligand_context_projector = ProteinContextProjector(
                 in_dim=self.ligand_context_encoder.output_dim,
-                out_dim=hidden_channels,
+                out_dim=self.hidden_channels,
             )
-            head_in_dim += hidden_channels
+            head_in_dim += self.hidden_channels
 
-        self.head = nn.Sequential(
-            nn.Linear(head_in_dim, hidden_channels // 2),
-            nn.SiLU(),
-            nn.Linear(hidden_channels // 2, out_channels),
-        )
+        self.head = build_head(config, head_in_dim, self.hidden_channels, out_channels)
 
     def checkpoint_exclude_prefixes(self) -> tuple[str, ...]:
         """

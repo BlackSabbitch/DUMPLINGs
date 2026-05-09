@@ -49,7 +49,13 @@ The default pipeline is:
 
 ## Current Model
 
-The active model class is [`A1DimeNet`](models/a1.py).
+The active model family is selected through `model.selected` in `config.json`.
+At the moment the repo ships with:
+
+- [`A1DimeNet`](models/a1.py): one global geometry branch plus optional
+  protein/ligand context fusion
+- [`A2DimeNet`](models/a2.py): A1-style global fusion plus an optional tighter
+  local DimeNet++ branch over a ligand-pocket subgraph
 
 It uses:
 
@@ -96,11 +102,12 @@ ligand/configuration pair is cached as an individual `.pt` file.
 
 ## Data Representation
 
-The default config uses graph-encoder mode `duo` with parser signature `NE`:
+The default config separates graph construction from graph encoding:
 
-- `N` means no separate slot-specific protein encoder is built for the main
-  model input,
-- `E` means one fused ligand-pocket interaction graph is parsed.
+- `model.global_graph.selected = "interaction"` builds one fused
+  ligand-pocket graph,
+- `model.global_encoder.selected = "DimeNet"` encodes that graph with the
+  main DimeNet++ branch.
 
 Each dataframe row can contain:
 
