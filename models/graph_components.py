@@ -28,7 +28,11 @@ def get_model_family(config: dict) -> str:
     Return the selected high-level model family.
 
     Older configs did not carry `model.selected`, so A1 remains the implicit
-    default for backwards compatibility.
+    default for backwards compatibility. The current research ladder is:
+
+    - `A1`: one global graph encoder plus optional protein/ligand context
+    - `A2`: A1 + explicit local geometric branch
+    - `A3`: A2 + linear combination of branch-level scalar outputs
     """
 
     return str(config.get("model", {}).get("selected", "A1"))
@@ -101,6 +105,11 @@ def build_dimenet_backbone(
 ) -> DimeNetPlusPlus:
     """
     Build the shared DimeNet++ backbone used by the global and local branches.
+
+    The project intentionally reuses the same geometric primitive for the
+    global and local branches so architectural comparisons stay focused on
+    *where* information is read from and *how* branches are combined, rather
+    than on changes in the message-passing family itself.
     """
 
     out_dim = encoder_cfg.hidden_channels if out_channels is None else out_channels

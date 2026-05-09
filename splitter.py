@@ -14,11 +14,13 @@ from logger import *
 
 class PDBBindSplitter:
     """
-    Collection of splitting strategies for PDBBind refined dataset.
+    Collection of splitting strategies for parsed PDBBind dataframes.
 
-    Provides various methods for splitting molecular datasets into train/validation sets,
-    including random, scaffold-based, and scaffold-balanced splits. All methods
-    return (train_df, val_df) tuples.
+    The splitter now supports both:
+
+    - validation splitting inside a train/validation pool,
+    - creation of a held-out test set either from PDBBind core or from a
+      random split of the configured source subset.
 
     Example:
         >>> train_df, val_df = PDBBindSplitter.random_split(df, val_frac=0.15, seed=42)
@@ -126,7 +128,7 @@ class PDBBindSplitter:
         train or validation.
 
         Args:
-            df: DataFrame with 'smiles' column.
+            df: DataFrame with ligand SMILES under `ligand_smiles` or `ligand`.
             val_frac: Target fraction for validation.
             seed: Random seed.
 
@@ -137,7 +139,8 @@ class PDBBindSplitter:
 
         scaffold_to_indices = defaultdict(list)
 
-        for i, smi in enumerate(df['smiles']):
+        smiles_col = 'ligand_smiles' if 'ligand_smiles' in df.columns else 'ligand'
+        for i, smi in enumerate(df[smiles_col]):
             scaf = PDBBindSplitter._get_scaffold(smi)
 
             if scaf is None:
@@ -168,7 +171,7 @@ class PDBBindSplitter:
         validation fraction. May split some scaffold groups if necessary.
 
         Args:
-            df: DataFrame with 'smiles' column.
+            df: DataFrame with ligand SMILES under `ligand_smiles` or `ligand`.
             val_frac: Target fraction for validation.
             seed: Random seed.
 
@@ -179,7 +182,8 @@ class PDBBindSplitter:
 
         scaffold_to_indices = defaultdict(list)
 
-        for i, smi in enumerate(df['smiles']):
+        smiles_col = 'ligand_smiles' if 'ligand_smiles' in df.columns else 'ligand'
+        for i, smi in enumerate(df[smiles_col]):
             scaf = PDBBindSplitter._get_scaffold(smi)
 
             if scaf is None:
@@ -209,7 +213,7 @@ class PDBBindSplitter:
         Groups complexes by protein sequence and assigns entire groups.
 
         Args:
-            df: DataFrame with 'seq' column containing protein sequences.
+            df: DataFrame with protein sequences under the `protein` column.
             val_frac: Target fraction for validation.
             seed: Random seed.
 
@@ -220,7 +224,7 @@ class PDBBindSplitter:
 
         protein_to_indices = defaultdict(list)
 
-        for i, seq in enumerate(df['seq']):
+        for i, seq in enumerate(df['protein']):
             protein_to_indices[seq].append(i)
 
         groups = list(protein_to_indices.values())
@@ -243,13 +247,11 @@ class PDBBindSplitter:
     @staticmethod
     def split(df: pd.DataFrame, conf_splitter: dict) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """
-        Unified interface for all splitting strategies.
+        Unified interface for validation splitting strategies.
 
         Args:
             df: DataFrame to split.
-            strategy: Splitting strategy ('random', 'scaffold', 'scaffold_balanced', 'cold_protein').
-            val_frac: Validation fraction.
-            seed: Random seed.
+            conf_splitter: Splitter configuration block from `config.json`.
 
         Returns:
             Tuple of (train_df, val_df).
@@ -293,6 +295,14 @@ class PDBBindSplitter:
     ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, str]:
         """
         Split a source dataframe into train, validation, and test sets.
+
+        Two top-level regimes are supported:
+
+        - `core_as_test=True`: train/val on the source subset minus PDBBind
+          core, test on core
+        - `core_as_test=False`: carve out a random held-out test slice from the
+          configured source subset, then apply the configured validation split
+          to the remainder
         """
         strategy = conf_splitter['selected']
         split_params = conf_splitter['available'][strategy]

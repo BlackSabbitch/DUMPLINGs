@@ -10,11 +10,21 @@ from models.a2 import A2DimeNet
 
 class A3DimeNet(A2DimeNet):
     """
-    A3 model: separate branch-level scalar heads plus a learned linear mixture.
+    A3 model: explicit coarse estimate plus explicit local correction estimate.
 
     Relative to A2, the global and local branches are left untouched. Only the
     final readout changes: each branch produces its own scalar prediction, and
     the model learns how strongly to weight both contributions.
+
+    Current form:
+
+    - `y_global = global_head(h_global)`
+    - `y_local = local_head(h_local)`
+    - `y = alpha * y_global + beta * y_local`
+
+    The mixer is intentionally bias-free at this stage so the local term is
+    easier to interpret as a genuine correction rather than as a hidden global
+    offset.
     """
 
     def __init__(
@@ -32,6 +42,7 @@ class A3DimeNet(A2DimeNet):
         self.head = self._build_head(out_channels=out_channels)
 
     def _build_global_head(self, out_channels: int = 1) -> nn.Module:
+        """Build the scalar head that maps the coarse global branch to `y_global`."""
         global_in_dim = self._infer_global_head_input_dim()
         global_hidden = max(self.global_encoder_cfg.hidden_channels // 2, 1)
         return nn.Sequential(
@@ -41,6 +52,7 @@ class A3DimeNet(A2DimeNet):
         )
 
     def _build_local_head(self, out_channels: int = 1) -> nn.Module:
+        """Build the scalar head that maps the local branch to `y_local`."""
         local_in_dim = self.local_encoder_cfg.hidden_channels
         local_hidden = max(local_in_dim // 2, 1)
         return nn.Sequential(
@@ -50,9 +62,21 @@ class A3DimeNet(A2DimeNet):
         )
 
     def _build_output_mixer(self, out_channels: int = 1) -> nn.Module:
+        """
+        Build the final linear mixer over branch-level scalar outputs.
+
+        Bias is intentionally disabled so the readout remains interpretable as
+        a pure weighted sum of coarse and local terms.
+        """
         return nn.Linear(2, out_channels, bias=False)
 
     def _build_head(self, input_dim: int | None = None, out_channels: int = 1) -> nn.ModuleDict:
+        """
+        Assemble the full A3 readout block.
+
+        A `ModuleDict` is used here because the "head" is no longer one simple
+        MLP: it is a structured collection of semantically different subheads.
+        """
         del input_dim
         return nn.ModuleDict(
             {
@@ -63,6 +87,7 @@ class A3DimeNet(A2DimeNet):
         )
 
     def _compute_branch_outputs(self, complex_data) -> tuple[torch.Tensor, torch.Tensor]:
+        """Return the per-complex scalar outputs of the coarse and local branches."""
         global_repr = self._encode_global_representation(complex_data)
         local_repr = self._encode_local_branch(complex_data)
         global_pred = self.head["global"](global_repr).view(-1)
@@ -71,6 +96,7 @@ class A3DimeNet(A2DimeNet):
 
     @staticmethod
     def _tensor_stats(values: torch.Tensor) -> dict[str, float]:
+        """Summarize one diagnostic tensor for JSON export."""
         flat = values.detach().view(-1).float()
         if flat.numel() == 0:
             return {
@@ -95,6 +121,16 @@ class A3DimeNet(A2DimeNet):
         device: str,
         progress: float = 1.0,
     ) -> dict[str, Any]:
+        """
+        Export A3-specific diagnostics for `test_results.json`.
+
+        These diagnostics are intentionally verbose in the current research
+        phase. They help answer questions such as:
+
+        - did one branch collapse?
+        - is the local term really a correction rather than the dominant term?
+        - how large are the effective contributions after weighting by the mixer?
+        """
         self.eval()
 
         global_outputs: list[torch.Tensor] = []
@@ -106,6 +142,8 @@ class A3DimeNet(A2DimeNet):
         mixer = self.head["mixer"]
         alpha = float(mixer.weight[0, 0].item())
         beta = float(mixer.weight[0, 1].item())
+        # Bias is currently disabled, but the field is kept in the payload so a
+        # future biased mixer can be compared without changing the JSON schema.
         gamma = float(mixer.bias[0].item()) if mixer.bias is not None else None
 
         with torch.no_grad():
@@ -124,6 +162,9 @@ class A3DimeNet(A2DimeNet):
                 local_outputs.append(local_pred.cpu())
                 global_contribs.append(global_contrib.cpu())
                 local_contribs.append(local_contrib.cpu())
+                # Ratio is tracked per sample so later analysis can ask whether
+                # the local term is occasionally dominant even if its global
+                # average looks modest.
                 abs_ratio_values.append(local_contrib.abs().cpu() / (global_contrib.abs().cpu() + 1e-12))
 
         global_output_tensor = torch.cat(global_outputs, dim=0) if global_outputs else torch.empty(0)
@@ -156,6 +197,11 @@ class A3DimeNet(A2DimeNet):
         }
 
     def forward(self, batch_list, progress: float = 0.0):
+        """
+        Predict affinity as a weighted sum of coarse and local scalar terms.
+
+        This is the main architectural distinction of A3 relative to A2.
+        """
         _, _, _, complex_data, _ = batch_list
 
         global_pred, local_pred = self._compute_branch_outputs(complex_data)

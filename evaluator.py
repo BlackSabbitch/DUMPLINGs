@@ -11,18 +11,19 @@ from logger import *
 
 class Evaluator:
     """
-    Evaluator class for protein-ligand binding affinity prediction models.
+    Evaluate binding-affinity regressors and summarize prediction geometry.
 
-    Provides comprehensive evaluation metrics including RMSE, Pearson correlation,
-    Concordance Index (CI), and visualization capabilities. Tracks model
-    performance across training epochs.
+    The evaluator is shared by training-time validation and final held-out
+    testing. Besides standard scalar metrics such as RMSE, Pearson correlation,
+    and Concordance Index (CI), it also provides scatter-oriented diagnostics
+    used to understand calibration, bias, and diagonal agreement.
 
     Attributes:
         model: The model to evaluate.
         device: Device for evaluation computations.
 
     Example:
-        >>> evaluator = EValuator(model, device='cuda')
+        >>> evaluator = Evaluator(model, device='cuda')
         >>> rmse, pearson, ci, preds, targets = evaluator.evaluate(val_loader)
         >>> print(f"RMSE: {rmse:.3f}, Pearson: {pearson:.3f}, CI: {ci:.3f}")
     """
@@ -56,7 +57,7 @@ class Evaluator:
         Example:
             >>> true_vals = np.array([1.0, 2.0, 3.0])
             >>> pred_vals = np.array([1.1, 2.1, 2.9])
-            >>> ci = EValuator.concordance_index(true_vals, pred_vals)
+            >>> ci = Evaluator.concordance_index(true_vals, pred_vals)
             >>> print(f"CI: {ci:.3f}")  # CI: 1.000
         """
         y_true = y_true.flatten()
@@ -219,6 +220,17 @@ class Evaluator:
 
     @staticmethod
     def scatter_diagnostics(y_true: np.ndarray, y_pred: np.ndarray) -> dict:
+        """
+        Compute extended scatter-geometry diagnostics for one prediction set.
+
+        This intentionally goes beyond one-number performance summaries and is
+        used to describe whether predictions:
+
+        - align with the ideal diagonal `y = x`,
+        - show systematic offset,
+        - compress or stretch the target range,
+        - deviate in orientation from the ideal agreement line.
+        """
         y_true, y_pred = Evaluator._filter_finite_pairs(y_true, y_pred)
         diagnostics = {
             "num_points": int(y_true.size),

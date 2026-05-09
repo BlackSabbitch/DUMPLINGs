@@ -18,12 +18,13 @@ The repo currently has two layers:
    - installing Colab-specific PyG wheels,
    - syncing `runs/` back to Drive,
    - syncing `protein_context_features/` back to Drive,
+   - syncing `ligand_context_features/` back to Drive,
    - running smoke checks on cluster/Slurm environments.
 
 Those helpers are notebook/runtime concerns rather than experiment logic, so
 they live in `scripts/`.
 
-## Mapping from `main.ipynb`
+## Mapping from `colab_launch_main.ipynb`
 
 The current Colab notebook already has a working flow. These scripts mirror its
 cells instead of inventing a new workflow:
@@ -35,7 +36,8 @@ cells instead of inventing a new workflow:
 - `colab_start_sync.sh`
   - mirrors the background `rsync` loop for `runs/`
 - `colab_finalize_sync.sh`
-  - mirrors the final one-shot sync of `runs/` and `protein_context_features/`
+  - mirrors the final one-shot sync of `runs/`, `protein_context_features/`,
+    and any optional cached feature directory passed to it
 
 ## Cluster Helpers
 

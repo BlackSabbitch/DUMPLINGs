@@ -11,11 +11,15 @@ from logger import logger
 
 class UniversalPDBBindDataset(Dataset):
     """
-    Universal dataset class for PDBBind protein-ligand complexes.
+    Dataset adapter that converts dataframe rows into model-ready objects.
 
-    Handles loading and preprocessing of molecular data from various formats,
-    supporting both sequence-based (CNN) and graph-based (GNN) representations.
-    Automatically detects file format and applies appropriate loading method.
+    Historically this project experimented with multiple representation
+    families, so the dataset class still carries a "universal" shape. In the
+    current A1/A2/A3 line, however, its main job is simpler:
+
+    - convert cached graph dictionaries into PyG `Data`,
+    - attach metadata such as `pdb_id`, protein sequence, and ligand SMILES,
+    - preserve legacy sequence tensors for compatibility with older branches.
 
     Attributes:
         df: DataFrame containing molecular data and affinity labels.
@@ -38,11 +42,8 @@ class UniversalPDBBindDataset(Dataset):
         Initialize the dataset.
 
         Args:
-            filepath: Path to dataset file (.csv, .pkl, .parquet).
+            df: Prepared dataframe containing parsed complexes and labels.
             config_dict: Configuration dictionary with dataset parameters.
-
-        Raises:
-            ValueError: If file format is not supported.
         """
         self.df = df
         ds_cfg = config_dict['dataset']
@@ -59,7 +60,7 @@ class UniversalPDBBindDataset(Dataset):
 
     def _encode_sequence(self, text: Optional[str], vocab: Dict[str, int], max_len: int) -> torch.Tensor:
         """
-        Encode text sequence for CNN processing.
+        Encode a legacy sequence/text representation into padded token ids.
 
         Args:
             text: Input text sequence or None.
@@ -78,7 +79,7 @@ class UniversalPDBBindDataset(Dataset):
 
     def _encode_graph(self, graph_dict: Optional[Dict[str, Any]]) -> Data:
         """
-        Encode graph dictionary for GNN processing.
+        Convert a cached graph dictionary into a PyG `Data` object.
 
         Args:
             graph_dict: Dictionary containing graph data or None.
@@ -111,7 +112,7 @@ class UniversalPDBBindDataset(Dataset):
 
     def _process_item(self, item: Any, vocab: Optional[Dict[str, int]] = None, max_len: Optional[int] = None) -> Union[torch.Tensor, Data]:
         """
-        Smart router: determines data type and calls appropriate encoder.
+        Route one dataframe cell to the appropriate encoder.
 
         Args:
             item: Input data (dict for graphs, string for sequences).
@@ -135,21 +136,23 @@ class UniversalPDBBindDataset(Dataset):
 
         Returns:
             Tuple of (protein_data, ligand_data, pocket_data, complex_data, target).
-            Data types depend on the encoding (tensors for sequences, Data for graphs).
+            In the current graph-first pipeline, `complex_data` is the primary
+            geometric carrier used by A1/A2/A3.
         """
         row = self.df.iloc[idx]
-        
-        # Tokenizer will figure out what's inside (string or graph)
+
+        # These legacy slots are still returned for compatibility, even though
+        # the active A1/A2/A3 family primarily consumes `complex_data`.
         prot_data = self._process_item(row['protein'], self.prot_vocab, self.max_prot)
         lig_data  = self._process_item(row['ligand'], self.lig_vocab, self.max_lig)
         pock_data = self._process_item(row['pocket'], self.prot_vocab, self.max_pock)
 
-        # Handle complex graph (for InteractionGraph/EGNN)
+        # The fused ligand-pocket graph is the current main geometric input.
         complex_data = None
         if 'complex_graph' in row and row['complex_graph'] is not None:
             complex_data = self._encode_graph(row['complex_graph'])
         else:
-            # If no complex graph, return empty Data
+            # Defensive fallback for malformed cached rows.
             complex_data = self._encode_graph(None)
         complex_data.pdb_id = str(row['pdb_id'])
         if 'protein' in row and row['protein'] is not None and not pd.isna(row['protein']):
@@ -162,7 +165,7 @@ class UniversalPDBBindDataset(Dataset):
         if ligand_smiles is not None:
             complex_data.ligand_smiles = ligand_smiles
 
-        # Target (affinity)
+        # Targets are already normalized upstream by the experiment runner.
         target = torch.tensor(row['pkd'], dtype=torch.float32)
         
         return prot_data, lig_data, pock_data, complex_data, target

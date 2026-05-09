@@ -47,23 +47,38 @@ def stage_repo(src_root: Path, dst_root: Path) -> None:
 
 def stage_protein_context_features(src_root: Path, dst_root: Path) -> None:
     features_src = src_root / "protein_context_features"
-    legacy_src = src_root / "esm_cache"
     features_dst = dst_root / "protein_context_features"
     features_dst.mkdir(parents=True, exist_ok=True)
 
-    active_src = features_src if features_src.exists() else legacy_src
-    if not active_src.exists():
+    if not features_src.exists():
         print("No protein context features found on Drive; empty protein_context_features/ will be used.")
         return
 
     copied = 0
-    for name in os.listdir(active_src):
-        src = active_src / name
+    for name in os.listdir(features_src):
+        src = features_src / name
         dst = features_dst / name
         copy_entry(src, dst)
         copied += 1
-    source_label = "protein_context_features" if active_src == features_src else "esm_cache (legacy source)"
-    print(f"Copied protein context features from {active_src} ({copied} top-level entries, source={source_label})")
+    print(f"Copied protein context features from {features_src} ({copied} top-level entries)")
+
+
+def stage_ligand_context_features(src_root: Path, dst_root: Path) -> None:
+    features_src = src_root / "ligand_context_features"
+    features_dst = dst_root / "ligand_context_features"
+    features_dst.mkdir(parents=True, exist_ok=True)
+
+    if not features_src.exists():
+        print("No ligand context features found on Drive; empty ligand_context_features/ will be used.")
+        return
+
+    copied = 0
+    for name in os.listdir(features_src):
+        src = features_src / name
+        dst = features_dst / name
+        copy_entry(src, dst)
+        copied += 1
+    print(f"Copied ligand context features from {features_src} ({copied} top-level entries)")
 
 
 def stage_archive(src_root: Path, dst_root: Path, archive_name: str) -> None:
@@ -85,7 +100,7 @@ def main() -> None:
     parser.add_argument("--drive-runs", default=None, help="Optional Drive-side runs directory to create if missing")
     parser.add_argument("--archive-name", default="pdbbind_v2016.tar.gz")
     parser.add_argument("--skip-protein-context-features", action="store_true")
-    parser.add_argument("--skip-esm-cache", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--skip-ligand-context-features", action="store_true")
     parser.add_argument("--skip-archive", action="store_true")
     parser.add_argument("--keep-dst", action="store_true", help="Keep an existing dst instead of recreating it")
     args = parser.parse_args()
@@ -102,8 +117,10 @@ def main() -> None:
     dst_root.mkdir(parents=True, exist_ok=True)
 
     stage_repo(src_root, dst_root)
-    if not (args.skip_protein_context_features or args.skip_esm_cache):
+    if not args.skip_protein_context_features:
         stage_protein_context_features(src_root, dst_root)
+    if not args.skip_ligand_context_features:
+        stage_ligand_context_features(src_root, dst_root)
     if not args.skip_archive:
         stage_archive(src_root, dst_root, args.archive_name)
 

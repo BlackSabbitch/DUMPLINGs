@@ -19,10 +19,11 @@ from models.ligand_context import (
 
 class A1DimeNet(nn.Module):
     """
-    DimeNet++ baseline with optional global protein and ligand context fusion.
+    A1 baseline: global DimeNet++ geometry plus optional context fusion.
 
     Genealogy:
-    - the geometry branch descends from the original A1 DimeNet++ baseline,
+    - the geometry branch descends from the original DimeNet++ baseline over
+      the fused ligand-pocket interaction graph,
     - the protein branch adds frozen ESM sequence embeddings,
     - the ligand branch adds frozen RDKit descriptor vectors,
     - the final prediction head performs late fusion over whichever branches
@@ -30,8 +31,9 @@ class A1DimeNet(nn.Module):
 
     The class is intentionally conservative: each auxiliary context branch is
     projected into the same hidden width as the geometric embedding before
-    concatenation. That keeps the fusion contract simple and makes ablations
-    easier to interpret.
+    concatenation. That keeps the fusion contract simple, supports clean
+    ablations, and makes A2/A3 inheritance easier because the "global branch"
+    has one stable representation contract.
     """
     def __init__(
         self,
@@ -81,6 +83,12 @@ class A1DimeNet(nn.Module):
         self.head = A1DimeNet._build_head(self, head_in_dim, out_channels)
 
     def _infer_global_head_input_dim(self) -> int:
+        """
+        Return the dimensionality of the fused global representation.
+
+        This is the representation consumed by the A1 prediction head and also
+        reused unchanged by A2/A3 as the coarse global branch.
+        """
         head_in_dim = 0
         if self.protein_context_mode != "esm_only":
             head_in_dim += self.hidden_channels
@@ -97,6 +105,14 @@ class A1DimeNet(nn.Module):
         return head_in_dim
 
     def _build_head(self, input_dim: int, out_channels: int = 1) -> nn.Module:
+        """
+        Build the A1 prediction head.
+
+        A1 intentionally keeps this head small and generic: a single hidden
+        layer is enough for late fusion of the already rich geometry/context
+        representation, and it establishes a simple baseline for later model
+        families.
+        """
         hidden_dim = max(self.hidden_channels // 2, 1)
         return nn.Sequential(
             nn.Linear(input_dim, hidden_dim),
@@ -105,6 +121,16 @@ class A1DimeNet(nn.Module):
         )
 
     def _encode_global_representation(self, complex_data) -> torch.Tensor:
+        """
+        Encode the coarse, whole-complex representation used by the A1 line.
+
+        The returned tensor is batch-aligned: one vector per complex after
+        fusing the enabled global sources:
+
+        - global geometry from the fused interaction graph,
+        - optional protein context,
+        - optional ligand context.
+        """
         fused_parts = []
         if self.protein_context_mode != "esm_only":
             z = complex_data.x[:, 0].long()
@@ -126,6 +152,7 @@ class A1DimeNet(nn.Module):
             ligand_context = self.ligand_context_encoder.encode_smiles_batch(ligand_smiles)
             fused_parts.append(self.ligand_context_projector(ligand_context))
 
+        # By construction at least one branch is active, so this is always safe.
         return fused_parts[0] if len(fused_parts) == 1 else torch.cat(fused_parts, dim=-1)
 
     def checkpoint_exclude_prefixes(self) -> tuple[str, ...]:

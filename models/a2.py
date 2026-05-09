@@ -18,20 +18,20 @@ from models.graph_components import (
 
 class A2DimeNet(A1DimeNet):
     """
-    A2 model with an additional local DimeNet++ branch over a tighter subgraph.
+    A2 model: A1-style coarse branch plus an explicit local geometric branch.
 
     Genealogy:
     - inherits A1's global geometry/context fusion contract,
     - keeps the same protein and ligand context branches,
     - adds a second geometric branch operating on an interaction-focused
       ligand-pocket subgraph,
-    - delegates the final combination of global and local representations to a
-      configurable prediction head.
+    - concatenates the coarse global representation with the local
+      representation before the final readout.
 
     The first revision intentionally keeps the local branch simple:
     radius-based node selection plus a second DimeNet++ encoder. Importance-
-    based local weighting is left for later A2 iterations, but the config
-    surface is now ready for that expansion.
+    based local weighting is left for later A2/A3a iterations, but the model
+    already exposes clean seams for that expansion.
     """
 
     def __init__(
@@ -61,12 +61,24 @@ class A2DimeNet(A1DimeNet):
         self.head = A2DimeNet._build_head(self, head_in_dim, out_channels)
 
     def _infer_head_input_dim(self) -> int:
+        """
+        Return the dimensionality of the concatenated A2 readout input.
+
+        This is the coarse global representation from A1 plus, when enabled,
+        the local branch embedding.
+        """
         head_in_dim = self._infer_global_head_input_dim()
         if self.local_gnn is not None:
             head_in_dim += self.local_encoder_cfg.hidden_channels
         return head_in_dim
 
     def _build_head(self, input_dim: int, out_channels: int = 1) -> nn.Module:
+        """
+        Build the A2 concat-readout head.
+
+        The head itself stays deliberately small; the main architectural change
+        in A2 is the existence of the local branch, not a more expressive MLP.
+        """
         hidden_dim = max(self.global_encoder_cfg.hidden_channels // 2, 1)
         return nn.Sequential(
             nn.Linear(input_dim, hidden_dim),
@@ -80,6 +92,14 @@ class A2DimeNet(A1DimeNet):
         graph_pos: torch.Tensor,
         local_cutoff: float,
     ) -> torch.Tensor:
+        """
+        Select the current A2 local subgraph by ligand-centered radius filtering.
+
+        The mask always keeps ligand atoms. Pocket atoms are kept if they lie
+        within `local_cutoff` of at least one ligand atom. This produces a
+        coarse interaction zone rather than a sparse interaction explanation;
+        later pair-scoring experiments are expected to refine this selection.
+        """
         ligand_mask = graph_x[:, 3] > 0.5
         if not torch.any(ligand_mask):
             return torch.ones(graph_x.size(0), dtype=torch.bool, device=graph_x.device)
@@ -153,15 +173,24 @@ class A2DimeNet(A1DimeNet):
         return f"batch_{batch_id}"
 
     def _safe_local_zero(self, device: torch.device) -> torch.Tensor:
+        """Return a neutral local embedding for failed or degenerate subgraphs."""
         return torch.zeros(self.local_encoder_cfg.hidden_channels, device=device, dtype=torch.float32)
 
     def get_local_guard_summary(self) -> dict[str, object]:
+        """Expose how often the temporary local non-finite fallback was used."""
         return {
             "activations": self.local_guard_activation_count,
             "pdb_ids": sorted(self.local_guard_activation_ids),
         }
 
     def log_local_guard_summary(self) -> None:
+        """
+        Emit one post-run summary for the temporary local-branch safeguard.
+
+        This is mainly an experiment-debugging hook. Once the problematic
+        complexes and numeric pathologies are understood well enough, this guard
+        can likely be simplified or removed.
+        """
         summary = self.get_local_guard_summary()
         activations = int(summary["activations"])
         pdb_ids = summary["pdb_ids"]
@@ -178,6 +207,16 @@ class A2DimeNet(A1DimeNet):
         )
 
     def _encode_local_branch(self, complex_data) -> torch.Tensor:
+        """
+        Encode one local representation per complex in the current batch.
+
+        The method deliberately operates per-complex rather than on one mixed
+        local mega-batch so that:
+
+        - each complex can define its own local subgraph,
+        - numerical issues can be attributed back to a specific PDB id,
+        - future pair-scoring or motif-scoring logic has a clean place to hook in.
+        """
         batch = complex_data.batch
         x = complex_data.x
         pos = complex_data.pos.float()
@@ -196,6 +235,7 @@ class A2DimeNet(A1DimeNet):
                 outputs.append(self._safe_local_zero(device=graph_pos.device))
                 continue
 
+            # The local encoder sees one per-complex local graph at a time.
             local_batch = torch.zeros(local_pos.size(0), dtype=batch.dtype, device=batch.device)
             local_repr = self.local_gnn(local_z, local_pos, local_batch).view(-1)
 
@@ -218,6 +258,14 @@ class A2DimeNet(A1DimeNet):
         return torch.stack(outputs, dim=0)
 
     def forward(self, batch_list, progress: float = 0.0):
+        """
+        Predict affinity from a coarse global branch plus a local correction branch.
+
+        In A2 the two branches are still merged by simple concatenation. A3
+        keeps the same branch encoders but replaces this final combination rule
+        with a more explicitly interpretable linear mixture of branch-level
+        outputs.
+        """
         _, _, _, complex_data, _ = batch_list
 
         fused_parts: list[torch.Tensor] = [self._encode_global_representation(complex_data)]

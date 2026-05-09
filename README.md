@@ -15,10 +15,55 @@ The repository was split out of the broader `ELIQSIR-QDL` codebase so the
 interaction-graph line of work could evolve quickly without carrying the full
 hybrid classical/quantum stack.
 
+## Table of Contents
+
+- [Project Status](#project-status)
+- [High-Level Pipeline](#high-level-pipeline)
+- [Current Models](#current-models)
+  - [Geometry Branch](#geometry-branch)
+  - [Protein Context Branch](#protein-context-branch)
+  - [Ligand Context Branch](#ligand-context-branch)
+- [Data Representation](#data-representation)
+- [Dataset Flow](#dataset-flow)
+- [Cache Model](#cache-model)
+  - [Dataset Cache](#dataset-cache)
+  - [Protein Context Cache](#protein-context-cache)
+  - [Ligand Context Cache](#ligand-context-cache)
+- [Train / Validation / Test Strategies](#train--validation--test-strategies)
+- [Main Files](#main-files)
+- [Setup](#setup)
+- [Data](#data)
+- [Evaluation Artifacts](#evaluation-artifacts)
+  - [`test_results.json`](#test_resultsjson)
+  - [`best_validation_scatter_diagnostics.json`](#best_validation_scatter_diagnosticsjson)
+- [Experimental Appendix](#experimental-appendix)
+  - [Why the Architecture Was Split into Stages](#why-the-architecture-was-split-into-stages)
+  - [A1](#a1)
+  - [A2](#a2)
+  - [A3](#a3)
+  - [Readout Diagnostics in A3](#readout-diagnostics-in-a3)
+  - [Immediate Next Candidate: A3a Pair Scoring](#immediate-next-candidate-a3a-pair-scoring)
+  - [Beyond Pairs: Motifs and "Interaction Responsibility"](#beyond-pairs-motifs-and-interaction-responsibility)
+  - [Attention and Pair Scoring](#attention-and-pair-scoring)
+  - [FiLM as a Separate Axis](#film-as-a-separate-axis)
+  - [MolE as a Future Ligand-Context Candidate](#mole-as-a-future-ligand-context-candidate)
+  - [Quantum Layer Speculation](#quantum-layer-speculation)
+- [Running](#running)
+- [Experiment Outputs](#experiment-outputs)
+- [Diagnostics and Monitoring](#diagnostics-and-monitoring)
+- [Notes](#notes)
+- [Roadmap](#roadmap)
+
 ## Project Status
 
-The active experiment family is the `A1` line, centered on
-[`models/a1.py`](models/a1.py).
+The active experiment family is now the `A1 -> A2 -> A3` ladder:
+
+- [`A1DimeNet`](models/a1.py): one coarse global geometry branch plus optional
+  protein/ligand context
+- [`A2DimeNet`](models/a2.py): A1 + an explicit local geometric branch over a
+  tighter ligand-pocket interaction zone
+- [`A3DimeNet`](models/a3.py): A2 branch encoders + a linear combination of
+  branch-level scalar outputs
 
 The current code supports:
 
@@ -26,9 +71,11 @@ The current code supports:
 - fused ligand-pocket graph construction,
 - frozen-sequence protein enrichment via ESM,
 - cached ligand enrichment via compact RDKit descriptors,
+- explicit coarse-vs-local architectural experiments,
 - experiment tracking, checkpointing, early stopping, and ASCII dashboards,
 - richer evaluation diagnostics, including validation-scatter agreement
-  summaries and PCA-axis overlays.
+  summaries and PCA-axis overlays,
+- A3-specific readout diagnostics exported into `test_results.json`.
 
 This project is intentionally optimized for experimentation rather than
 production packaging.
@@ -47,7 +94,7 @@ The default pipeline is:
 8. train the model,
 9. evaluate the best checkpoint and save plots, metrics, and diagnostics.
 
-## Current Model
+## Current Models
 
 The active model family is selected through `model.selected` in `config.json`.
 At the moment the repo ships with:
@@ -56,13 +103,23 @@ At the moment the repo ships with:
   protein/ligand context fusion
 - [`A2DimeNet`](models/a2.py): A1-style global fusion plus an optional tighter
   local DimeNet++ branch over a ligand-pocket subgraph
+- [`A3DimeNet`](models/a3.py): A2 branch encoders plus an explicit linear
+  mixture of branch-level scalar outputs
 
-It uses:
+All three models use:
 
 - `torch_geometric.nn.DimeNetPlusPlus` for geometry-aware message passing,
 - atomic numbers from `complex_graph.x[:, 0]`,
 - 3D coordinates from `complex_graph.pos`,
 - late fusion with optional global protein and ligand context vectors.
+
+The main architectural distinction is where the model is allowed to place
+expressive power:
+
+- `A1` asks whether one coarse whole-complex representation is already enough,
+- `A2` asks whether a dedicated local correction branch helps,
+- `A3` asks whether the final prediction can be decomposed into an explicit
+  coarse term plus an explicit local correction term.
 
 ### Geometry Branch
 
@@ -121,7 +178,8 @@ Each dataframe row can contain:
 - `complex_graph`: fused ligand-pocket graph with node features, coordinates,
   and edges.
 
-For the current A1 baseline, `complex_graph` is the primary geometric input.
+For the current A1/A2/A3 family, `complex_graph` is the primary geometric
+input.
 
 ## Dataset Flow
 
@@ -205,7 +263,10 @@ Supported test strategies:
 | `trainer.py` | Training loop, optimizer/scheduler setup, checkpointing, early stopping, memory diagnostics. |
 | `evaluator.py` | Loader evaluation, metrics, plots, scatter diagnostics, and report generation. |
 | `tokenizer.py` | Converts dataframe rows into PyTorch/PyG inputs. |
-| `models/a1.py` | Current DimeNet++ baseline with optional protein and ligand context fusion. |
+| `models/a1.py` | A1 coarse global branch baseline with optional protein and ligand context fusion. |
+| `models/a2.py` | A2 coarse+local concatenation model. |
+| `models/a3.py` | A3 branch-wise scalar readout with linear coarse/local mixing. |
+| `models/graph_components.py` | Shared encoder config helpers and DimeNet++ backbone construction. |
 | `models/protein_context.py` | Frozen ESM sequence encoder and cache utilities. |
 | `models/ligand_context.py` | Frozen RDKit ligand descriptor encoder and cache utilities. |
 | `parsers/interaction_graph_parser.py` | Fused ligand-pocket graph parser. |
@@ -259,6 +320,273 @@ protein_context_features/
 ligand_context_features/
 runs/
 ```
+
+## Evaluation Artifacts
+
+The most important machine-readable evaluation files are:
+
+- `runs/<experiment>/test_results.json`
+- `runs/<experiment>/best_validation_scatter_diagnostics.json`
+
+They serve different purposes.
+
+### `test_results.json`
+
+This is the main final-evaluation file. It is produced after:
+
+1. loading the best checkpoint selected on validation,
+2. running the held-out test set,
+3. denormalizing predictions,
+4. saving the final test metrics.
+
+At minimum it contains:
+
+- `RMSE`
+- `Pearson_R`
+- `CI`
+
+For model families that expose extra diagnostics, the file can also contain
+additional blocks. In particular `A3` currently writes a
+`readout_diagnostics` block with coarse/local contribution statistics.
+
+### `best_validation_scatter_diagnostics.json`
+
+This file does **not** summarize the held-out test set. It summarizes the
+geometry of the **validation scatter plot** at the best validation checkpoint.
+
+It is useful for questions like:
+
+- is the cloud well aligned with the diagonal `y = x`?
+- does the model show systematic positive or negative bias?
+- is the output range compressed or stretched?
+
+Important fields include:
+
+- `bias`: mean signed residual `y_pred - y_true`
+- `mae`, `rmse`: standard pointwise error summaries on the validation scatter
+- `pearson_r`: correlation on the validation scatter
+- `ccc`: concordance correlation coefficient, which is stricter than Pearson
+  because it rewards agreement with the diagonal rather than with an arbitrary
+  affine line
+- `ols_slope`, `ols_intercept`: ordinary least squares fit of predicted vs true
+- `pca_slope`, `pca_intercept`: principal-axis fit of the scatter cloud
+- `delta_angle_deg`: angular deviation of the principal axis from the ideal
+  diagonal
+- `orthogonal_rmse_to_diagonal`: cloud distance to the ideal diagonal measured
+  orthogonally rather than vertically
+
+## Experimental Appendix
+
+This section is intentionally more detailed and more speculative than the rest
+of the README. It records the current research narrative, the architectural
+steps already implemented, and the hypotheses under active discussion.
+
+### Why the Architecture Was Split into Stages
+
+The underlying scientific intuition is that protein-ligand binding is not only
+a global shape-matching problem. A model can often make a decent **coarse**
+affinity estimate from the whole fused ligand-pocket geometry, but the final
+prediction may depend on a more delicate **local correction** driven by a small
+interaction zone.
+
+This motivates a staged model family:
+
+1. `A1`: learn the best coarse estimate from the whole fused graph and optional
+   context branches
+2. `A2`: add a dedicated local geometric branch
+3. `A3`: force the final prediction into an explicit coarse-plus-local form
+
+The coarse/local split is inspired less by exact physical formalism than by a
+useful approximation mindset: a whole-complex estimate plus a correction term
+whose magnitude and structure we can inspect.
+
+### A1
+
+`A1` is the deliberately conservative baseline:
+
+- one global DimeNet++ branch over the fused interaction graph
+- optional frozen ESM whole-sequence context
+- optional cached RDKit ligand descriptors
+- one compact late-fusion MLP head
+
+The main question of `A1` is:
+
+> how far can a single coarse representation already go?
+
+### A2
+
+`A2` introduces an explicit local branch:
+
+- a ligand-centered radius-based local subgraph
+- a second DimeNet++ encoder over that tighter zone
+- concatenation of coarse global and local representations
+- a small final MLP
+
+This step asks:
+
+> does an explicitly modeled local interaction zone provide extra signal?
+
+In practice `A2` also forced the codebase to become more explicit about
+coarse-vs-local responsibilities, local graph extraction, and bad-complex
+handling. One especially important debugging episode involved pathological local
+geometry around `2iw4`, which motivated the current bad-complex registry.
+
+### A3
+
+`A3` keeps the `A2` branch encoders but replaces the final concatenation head
+with a branch-wise scalar decomposition:
+
+- `y_global = global_head(h_global)`
+- `y_local = local_head(h_local)`
+- `y = alpha * y_global + beta * y_local`
+
+The current mixer is intentionally bias-free. The purpose is interpretability:
+if the local term is meant to behave like a correction, it is useful to inspect
+its effective contribution directly rather than letting a hidden bias absorb
+part of that role.
+
+`A3` therefore asks:
+
+> is the local branch really functioning as a correction, or was `A2` only
+> exploiting a more expressive final MLP?
+
+### Readout Diagnostics in A3
+
+`A3` exports additional diagnostics into `test_results.json`, including:
+
+- the mixer coefficients (`alpha`, `beta`, and reserved `gamma`)
+- statistics of raw branch outputs (`y_global`, `y_local`)
+- statistics of effective contributions (`alpha * y_global`,
+  `beta * y_local`)
+- the mean absolute ratio of local-to-global contribution magnitudes
+
+This is important because the raw mixer weights alone are not enough: if the
+branch outputs have different scales, the coefficients by themselves can be
+misleading. The contribution statistics are therefore treated as the more
+meaningful quantities.
+
+### Immediate Next Candidate: A3a Pair Scoring
+
+If `A3` confirms that the local term is both real and not degenerate, the next
+planned direction is a **pair-scoring local correction** step, informally
+referred to as `A3a`.
+
+The main hypothesis is not merely that "locality matters", but that the local
+correction may be **sparse**:
+
+> a relatively small subset of ligand-pocket interactions may carry a large
+> fraction of the correction signal
+
+The first practical version would likely work in two phases:
+
+1. enumerate local ligand-pocket contact pairs inside the current local cutoff
+2. score each pair with a small MLP using pairwise interaction features
+
+Possible pair features include:
+
+- ligand atom embedding
+- pocket atom embedding
+- pair distance or distance basis expansion
+- atom-type-derived interaction hints such as donor/acceptor/aromatic/charge
+
+The first version of `A3a` is expected to be **soft**, meaning:
+
+- the current local graph is left intact,
+- pair scores are used for weighting and interpretation,
+- pruning is postponed until the score distribution is understood.
+
+Only if those scores show meaningful concentration would a later sparse version
+be considered.
+
+### Beyond Pairs: Motifs and "Interaction Responsibility"
+
+Although the first practical unit is likely a pair, the long-term hypothesis is
+slightly richer. Sometimes one chemically meaningful local signal may not be a
+single pair at all, but a small **motif**:
+
+- two pocket atoms "pinching" one ligand atom,
+- one charged site organizing two nearby ligand groups,
+- a small triangle or claw-like interaction pattern
+
+The current working idea is therefore:
+
+- score pairs first,
+- then inspect whether highly scored pairs cluster into motifs,
+- only later consider explicit higher-order modeling if the pair-level view
+  proves informative.
+
+### Attention and Pair Scoring
+
+The current view is that classical node-level attention is probably *not* the
+most scientifically aligned next step for this repository. What matters more is
+not just "which atom is important", but:
+
+> which local ligand-pocket interactions are responsible for the correction?
+
+That makes pair scoring or edge-level importance more attractive than generic
+node-attention pooling.
+
+Attention-like ideas are still relevant, but in this line they are likely to
+appear as:
+
+- pair-weighting mechanisms,
+- soft interaction scoring,
+- later motif-aware aggregation
+
+rather than as a wholesale replacement of the local geometric encoder.
+
+### FiLM as a Separate Axis
+
+Another future direction is **FiLM-style modulation** of geometric features by
+protein context.
+
+This would be a different idea from `A2/A3/A3a`: instead of asking how a local
+correction should be extracted, it asks whether frozen sequence context should
+do more than simply sit beside the geometry vector. In a FiLM-style design, an
+ESM-derived context embedding would generate feature-wise scaling and shifting
+parameters that modulate geometric hidden states.
+
+In other words:
+
+- current context fusion: "append context and let the final head use it"
+- FiLM-style context fusion: "use context to change how geometry features are
+  interpreted upstream"
+
+This direction is considered promising, but orthogonal to the present
+coarse/local-correction ladder.
+
+### MolE as a Future Ligand-Context Candidate
+
+The current ligand-context branch intentionally uses a very lightweight and
+interpretable RDKit descriptor set. A future line may replace or augment that
+with a stronger pretrained molecular representation, such as **MolE**.
+
+The reason this is not the immediate next step is experimental hygiene:
+changing the ligand prior at the same time as changing the local-correction
+mechanism would make attribution much harder.
+
+### Quantum Layer Speculation
+
+The repository was originally split from a broader classical/quantum sandbox,
+so it is natural to ask where a future quantum-inspired or genuinely quantum
+module could fit.
+
+The current view is deliberately conservative:
+
+- applying a quantum layer to the whole coarse graph is too diffuse
+- applying it to a poorly understood local branch is premature
+
+The first plausible place where it may become meaningful is *after* the local
+correction has been localized further:
+
+1. `A3` confirms the local correction is real
+2. `A3a` confirms the correction is concentrated in a compact interaction zone
+3. only then does it become reasonable to ask whether a more expensive
+   specialized module should refine that small responsible region
+
+In that sense, the pair-scoring direction is not only an interpretability
+exercise but also a possible precursor to a more focused quantum refinement
+module.
 
 Generated datasets and cache directories are intentionally treated as runtime
 artifacts rather than source-controlled assets.
