@@ -33,7 +33,7 @@
         "lig_vocab": "?ABCDEFGHIKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-=[]()#%@+./\\:,;^$"
     },
     "model": {
-        "selected": "A2",
+        "selected": "A3",
         "global_graph": {
             "selected": "interaction",
             "available": {
@@ -74,16 +74,6 @@
                     "num_blocks": 3,
                     "pooling_mode": "mean"
                 }
-            }
-        },
-        "head": {
-            "selected": "global_local_concat",
-            "available": {
-                "global_local_concat": {
-                    "hidden_dim": 64,
-                    "dropout": 0.0
-                },
-                "global_local_linear": {}
             }
         },
         "protein_context": {

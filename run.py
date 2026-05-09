@@ -18,11 +18,11 @@ from trainer import Trainer
 from evaluator import Evaluator
 from models.a1 import A1DimeNet
 from models.a2 import A2DimeNet
+from models.a3 import A3DimeNet
 from models.graph_components import (
     get_global_encoder_config,
     get_global_graph_config,
     get_global_graph_mode,
-    get_head_mode,
     get_local_encoder_config,
     get_local_encoder_mode,
     get_local_graph_config,
@@ -575,15 +575,14 @@ class ExperimentRunner:
             json.dump(self.config, f, indent=4)
 
         model_family = get_model_family(self.config)
-        if model_family not in {"A1", "A2"}:
-            raise ValueError(f"Unsupported model.selected={model_family!r}. Expected 'A1' or 'A2'.")
+        if model_family not in {"A1", "A2", "A3"}:
+            raise ValueError(f"Unsupported model.selected={model_family!r}. Expected 'A1', 'A2', or 'A3'.")
         global_graph_mode = get_global_graph_mode(self.config)
         global_graph_cfg = get_global_graph_config(self.config)
         global_encoder_cfg = get_global_encoder_config(self.config)
         local_encoder_cfg = get_local_encoder_config(self.config)
         local_graph_mode = get_local_graph_mode(self.config)
         local_graph_cfg = get_local_graph_config(self.config)
-        head_mode = get_head_mode(self.config)
         hidden_dim = global_encoder_cfg.hidden_channels
         protein_context_mode = get_protein_context_mode(self.config)
         ligand_context_mode = get_ligand_context_mode(self.config)
@@ -624,11 +623,7 @@ class ExperimentRunner:
             f"protein_context={protein_context_mode}, ligand_context={ligand_context_mode}",
             stage="MODEL"
         )
-        log_info(
-            f"Head settings -> mode={head_mode}",
-            stage="MODEL"
-        )
-        if model_family == "A2":
+        if model_family in {"A2", "A3"}:
             local_encoder_mode = get_local_encoder_mode(self.config)
             if local_encoder_cfg is None or local_graph_mode == "none":
                 log_info(
@@ -659,7 +654,13 @@ class ExperimentRunner:
         )
         log_info("Preparing model initialization.", stage="MODEL")
         model_init_started_at = time.perf_counter()
-        if model_family == "A2":
+        if model_family == "A3":
+            model = A3DimeNet(
+                config=self.config,
+                device=self.device,
+                out_channels=1,
+            )
+        elif model_family == "A2":
             model = A2DimeNet(
                 config=self.config,
                 device=self.device,

@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from torch import nn
 from torch_geometric.nn import DimeNetPlusPlus
 
 
@@ -49,10 +48,6 @@ def get_local_graph_mode(config: dict) -> str:
 
 def get_local_encoder_mode(config: dict) -> str:
     return str(config["model"].get("local_encoder", {}).get("selected", "none"))
-
-
-def get_head_mode(config: dict) -> str:
-    return str(config["model"].get("head", {}).get("selected", "global_local_concat"))
 
 
 def get_global_graph_config(config: dict) -> dict[str, Any]:
@@ -122,35 +117,3 @@ def build_dimenet_backbone(
         max_num_neighbors=encoder_cfg.max_num_neighbors,
         envelope_exponent=5,
     )
-
-
-def build_head(
-    config: dict,
-    input_dim: int,
-    default_hidden_dim: int,
-    out_channels: int = 1,
-) -> nn.Module:
-    """
-    Build the prediction head selected in the config.
-
-    `global_local_concat` is the conservative default used by A1 and the first
-    A2 revision. `global_local_linear` is reserved for later linear-combination
-    experiments, but it is already available so the config surface stays stable.
-    """
-
-    head_mode = get_head_mode(config)
-    head_cfg = config["model"].get("head", {}).get("available", {}).get(head_mode, {})
-
-    if head_mode == "global_local_linear":
-        return nn.Linear(input_dim, out_channels)
-
-    hidden_dim = int(head_cfg.get("hidden_dim", max(default_hidden_dim // 2, 1)))
-    dropout = float(head_cfg.get("dropout", 0.0))
-    layers: list[nn.Module] = [
-        nn.Linear(input_dim, hidden_dim),
-        nn.SiLU(),
-    ]
-    if dropout > 0.0:
-        layers.append(nn.Dropout(dropout))
-    layers.append(nn.Linear(hidden_dim, out_channels))
-    return nn.Sequential(*layers)

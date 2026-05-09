@@ -895,12 +895,21 @@ class Trainer:
         # Persist the final test metrics in a compact machine-readable file.
         log_debug("Saving final test results.", stage="TEST")
         test_results_started_at = time.perf_counter()
+        test_results_payload = {
+            "RMSE": test_rmse_denorm,
+            "Pearson_R": test_r,
+            "CI": test_ci
+        }
+        if hasattr(self.model, "get_test_result_payload"):
+            extra_payload = self.model.get_test_result_payload(
+                test_loader,
+                device=self.device,
+                progress=1.0,
+            )
+            if extra_payload:
+                test_results_payload.update(extra_payload)
         with open(f"{exp_dir}/test_results.json", 'w') as f:
-            json.dump({
-                "RMSE": test_rmse_denorm,
-                "Pearson_R": test_r,
-                "CI": test_ci
-            }, f, indent=4)
+            json.dump(test_results_payload, f, indent=4)
         log_debug(
             f"Final test results saved in "
             f"{self._format_duration(time.perf_counter() - test_results_started_at)}",

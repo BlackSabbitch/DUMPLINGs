@@ -9,7 +9,6 @@ from models.a1 import A1DimeNet
 from logger import log_info, log_warn
 from models.graph_components import (
     build_dimenet_backbone,
-    build_head,
     get_global_encoder_config,
     get_local_encoder_config,
     get_local_graph_config,
@@ -58,23 +57,22 @@ class A2DimeNet(A1DimeNet):
         self.local_guard_activation_count = 0
         self.local_guard_activation_ids: set[str] = set()
 
+        head_in_dim = self._infer_head_input_dim()
+        self.head = A2DimeNet._build_head(self, head_in_dim, out_channels)
+
+    def _infer_head_input_dim(self) -> int:
         head_in_dim = self._infer_global_head_input_dim()
         if self.local_gnn is not None:
             head_in_dim += self.local_encoder_cfg.hidden_channels
-        self.head = build_head(config, head_in_dim, self.global_encoder_cfg.hidden_channels, out_channels)
-
-    def _infer_global_head_input_dim(self) -> int:
-        head_in_dim = 0
-        if self.protein_context_mode != "esm_only":
-            head_in_dim += self.hidden_channels
-        if self.protein_context_mode != "none":
-            if self.protein_context_mode == "esm_only":
-                head_in_dim += self.protein_context_encoder.output_dim
-            else:
-                head_in_dim += self.hidden_channels
-        if self.ligand_context_mode != "none":
-            head_in_dim += self.hidden_channels
         return head_in_dim
+
+    def _build_head(self, input_dim: int, out_channels: int = 1) -> nn.Module:
+        hidden_dim = max(self.global_encoder_cfg.hidden_channels // 2, 1)
+        return nn.Sequential(
+            nn.Linear(input_dim, hidden_dim),
+            nn.SiLU(),
+            nn.Linear(hidden_dim, out_channels),
+        )
 
     @staticmethod
     def _select_local_mask_for_graph(
@@ -222,25 +220,7 @@ class A2DimeNet(A1DimeNet):
     def forward(self, batch_list, progress: float = 0.0):
         _, _, _, complex_data, _ = batch_list
 
-        fused_parts: list[torch.Tensor] = []
-        if self.protein_context_mode != "esm_only":
-            z = complex_data.x[:, 0].long()
-            pos = complex_data.pos.float()
-            fused_parts.append(self.gnn(z, pos, complex_data.batch))
-
-        if self.protein_context_mode != "none":
-            protein_sequences = self._extract_protein_sequences(complex_data)
-            protein_context = self.protein_context_encoder.encode_sequences(protein_sequences)
-            if self.protein_context_mode == "esm_only":
-                fused_parts.append(protein_context)
-            else:
-                fused_parts.append(self.protein_context_projector(protein_context))
-
-        if self.ligand_context_mode != "none":
-            ligand_smiles = self._extract_ligand_smiles(complex_data)
-            ligand_context = self.ligand_context_encoder.encode_smiles_batch(ligand_smiles)
-            fused_parts.append(self.ligand_context_projector(ligand_context))
-
+        fused_parts: list[torch.Tensor] = [self._encode_global_representation(complex_data)]
         if self.local_gnn is not None:
             fused_parts.append(self._encode_local_branch(complex_data))
 
