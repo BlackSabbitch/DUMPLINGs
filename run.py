@@ -2,13 +2,17 @@
 
 import json
 import os
+import csv
+import subprocess
 import pandas as pd
 import gc
 import argparse
 import tempfile
 import shutil
 import time
+import random
 import torch
+import numpy as np
 from datetime import datetime
 from torch_geometric.loader import DataLoader
 
@@ -62,8 +66,10 @@ class ExperimentRunner:
                  keep_temp: bool = False,
                  exp_dir: None | str = None,
                  core_as_test: None | bool = None,
-                 a3_mixer_bias: None | bool = None):
-        with open(config_path or 'config.json', 'r') as f:
+                 a3_mixer_bias: None | bool = None,
+                 splitter_seed: None | int = None):
+        self.config_path = os.path.abspath(config_path or 'config.json')
+        with open(self.config_path, 'r') as f:
             self.config = json.load(f)
         
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -84,6 +90,7 @@ class ExperimentRunner:
         configured_core_as_test = self.config['dataset'].get('core_as_test', True)
         self.core_as_test = configured_core_as_test if core_as_test is None else core_as_test
         self.a3_mixer_bias = a3_mixer_bias
+        self.splitter_seed = splitter_seed
         if self.a3_mixer_bias is not None and self.model_family != "A3":
             raise ValueError(
                 "--a3-mixer-bias / --no-a3-mixer-bias can only be used when "
@@ -92,10 +99,17 @@ class ExperimentRunner:
         self.test_frac = self.config['dataset'].get('test_frac', 0.15)
         if not self.core_as_test and not 0.0 < float(self.test_frac) < 1.0:
             raise ValueError("test_frac must be between 0 and 1")
+        if self.splitter_seed is not None:
+            strategy = self.config['splitter']['selected']
+            self.config['splitter']['available'][strategy]['seed'] = int(self.splitter_seed)
         self.config['dataset']['source_subset'] = self.source_subset
         self.config['dataset']['core_as_test'] = self.core_as_test
         self.config['dataset']['test_frac'] = self.test_frac
         assert all([self.train_dataset_path, self.test_dataset_path, self.val_dataset_path]) or not any([self.train_dataset_path, self.test_dataset_path, self.val_dataset_path])
+        self.experiment_signature = None
+        self.best_epoch = None
+        self.epochs_completed = None
+        self.git_commit = self._resolve_git_commit()
 
     def prepare_folders(self):
         """
@@ -113,10 +127,13 @@ class ExperimentRunner:
             os.makedirs('runs', exist_ok=True)
             self.exp_run_dir = tempfile.mkdtemp(prefix=f"{self.config['experiment_name']}_tmp_", dir="runs")
         else:
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
             exp_name = f"{self.config['experiment_name']}_{timestamp}"
+            self.experiment_signature = exp_name
             log_info(f"Experiment signature: {exp_name}", stage="EXPERIMENT")
             self.exp_run_dir = f"runs/{exp_name}"
+        if self.experiment_signature is None:
+            self.experiment_signature = os.path.basename(os.path.normpath(self.exp_run_dir))
 
         os.makedirs(DATASETS_DIR, exist_ok=True)
         log_info(f"Base Datasets folder: {DATASETS_DIR}", stage="EXPERIMENT")
@@ -191,6 +208,122 @@ class ExperimentRunner:
                 f"({'gamma is trainable' if mixer_bias else 'gamma absent'})",
                 stage="MODEL"
             )
+
+    def _set_global_random_state(self) -> None:
+        """
+        Seed Python, NumPy, and PyTorch from the effective splitter seed.
+
+        This keeps the user-facing `--rseed` override meaningful beyond the
+        dataframe split itself while preserving the existing config-driven
+        default when no override is passed.
+        """
+        strategy = self.config['splitter']['selected']
+        seed = int(self.config['splitter']['available'][strategy].get('seed', 42))
+        random.seed(seed)
+        np.random.seed(seed)
+        torch.manual_seed(seed)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(seed)
+
+    @staticmethod
+    def _resolve_git_commit() -> str:
+        """
+        Return the current Git commit hash when available.
+
+        The experiment registry uses this as a compact code-version fingerprint.
+        If Git is unavailable or the repo state cannot be resolved, an empty
+        string is stored instead of failing the run.
+        """
+        try:
+            result = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            return result.stdout.strip()
+        except Exception:
+            return ""
+
+    def _build_registry_row(
+        self,
+        *,
+        status: str,
+        started_at: datetime,
+        finished_at: datetime,
+        test_metrics: dict | None = None,
+    ) -> dict[str, object]:
+        strategy = self.config['splitter']['selected']
+        splitter_seed = int(self.config['splitter']['available'][strategy].get('seed', 42))
+        batch_run_index = os.environ.get("DUMPLING_BATCH_RUN_INDEX", "")
+        batch_n_times = os.environ.get("DUMPLING_BATCH_N_TIMES", "")
+        a3_mixer_bias = ""
+        if self.model_family == "A3":
+            a3_mixer_bias = get_a3_mixer_bias(self.config, self.a3_mixer_bias)
+
+        row = {
+            "started_at": started_at.isoformat(timespec="seconds"),
+            "finished_at": finished_at.isoformat(timespec="seconds"),
+            "duration_sec": round((finished_at - started_at).total_seconds(), 1),
+            "status": status,
+            "experiment_name": self.config["experiment_name"],
+            "experiment_signature": self.experiment_signature,
+            "exp_dir": self.exp_run_dir,
+            "config_path": self.config_path,
+            "git_commit": self.git_commit,
+            "model_family": self.model_family,
+            "source_subset": self.source_subset,
+            "splitter": strategy,
+            "splitter_seed": splitter_seed,
+            "core_as_test": self.core_as_test,
+            "a3_mixer_bias": a3_mixer_bias,
+            "batch_run_index": batch_run_index,
+            "batch_n_times": batch_n_times,
+            "device": self.device,
+            "primary_metric": self.config["training"]["early_stopping"]["primary_monitor"],
+            "best_epoch": self.best_epoch if self.best_epoch is not None else "",
+            "epochs_completed": self.epochs_completed if self.epochs_completed is not None else "",
+            "test_rmse": "",
+            "test_pearson": "",
+            "test_ci": "",
+        }
+        if test_metrics:
+            row["test_rmse"] = test_metrics.get("RMSE", "")
+            row["test_pearson"] = test_metrics.get("Pearson_R", "")
+            row["test_ci"] = test_metrics.get("CI", "")
+        return row
+
+    @staticmethod
+    def _load_test_metrics(exp_dir: str) -> dict | None:
+        test_results_path = os.path.join(exp_dir, "test_results.json")
+        if not os.path.exists(test_results_path):
+            return None
+        with open(test_results_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+
+    def _append_experiment_registry_row(
+        self,
+        *,
+        status: str,
+        started_at: datetime,
+        finished_at: datetime,
+        test_metrics: dict | None = None,
+    ) -> None:
+        os.makedirs("runs", exist_ok=True)
+        registry_path = os.path.join("runs", "experiment_registry.csv")
+        row = self._build_registry_row(
+            status=status,
+            started_at=started_at,
+            finished_at=finished_at,
+            test_metrics=test_metrics,
+        )
+        file_exists = os.path.exists(registry_path)
+        fieldnames = list(row.keys())
+        with open(registry_path, "a", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            if not file_exists:
+                writer.writeheader()
+            writer.writerow(row)
 
     def _get_dataset_from_path(self, path: str):
         """
@@ -587,6 +720,7 @@ class ExperimentRunner:
             val_df: Validation dataframe.
             test_df: Test dataframe.
         """
+        self._set_global_random_state()
         run_started_at = time.perf_counter()
         log_info(get_stage_banner("ENRICHMENT"), stage="EXPERIMENT")
         log_info(get_divider("="), stage="EXPERIMENT")
@@ -746,6 +880,9 @@ class ExperimentRunner:
         log_info(get_stage_banner("TRAINING"), stage="EXPERIMENT")
         log_info(get_divider("="), stage="EXPERIMENT")
         best_epoch, _ = self.trainer.train(train_loader, val_loader, self.exp_run_dir, self.config['training']['save_only_best_epoch'])
+        self.best_epoch = int(best_epoch)
+        if hasattr(self.trainer, "history"):
+            self.epochs_completed = len(self.trainer.history.get("train_loss", []))
         log_debug(
             f"Training loop completed in {self._format_duration(time.perf_counter() - train_started_at)}",
             stage="EXPERIMENT"
@@ -792,6 +929,8 @@ if __name__ == "__main__":
                         help='Use PDBBind core as test set. Use --no-core-as-test to split the configured source subset into train/val/test.')
     parser.add_argument('--a3-mixer-bias', action=argparse.BooleanOptionalAction, default=None,
                         help='Enable the explicit gamma term in the A3 readout mixer. Use --no-a3-mixer-bias for bias-free A3 ablations.')
+    parser.add_argument('--rseed', '--splitter-seed', dest='splitter_seed', type=int, default=None,
+                        help='Override the configured splitter seed from the CLI without editing config.json.')
 
     args = parser.parse_args()
     runner = ExperimentRunner(
@@ -805,12 +944,21 @@ if __name__ == "__main__":
         exp_dir=args.exp_dir,
         core_as_test=args.core_as_test,
         a3_mixer_bias=args.a3_mixer_bias,
+        splitter_seed=args.splitter_seed,
     )
     runner.prepare_folders()
     train_df, val_df, test_df = runner.prepare_datasets()
 
+    run_started_at = datetime.now()
     try:
         runner.run(train_df, val_df, test_df)
+        run_finished_at = datetime.now()
+        runner._append_experiment_registry_row(
+            status="success",
+            started_at=run_started_at,
+            finished_at=run_finished_at,
+            test_metrics=runner._load_test_metrics(runner.exp_run_dir),
+        )
         if runner.temp_run and not runner.keep_temp:
             shutil.rmtree(runner.exp_run_dir, ignore_errors=True)
     except Exception as e:
@@ -821,6 +969,13 @@ if __name__ == "__main__":
 
         with open(err_path, "w", encoding="utf-8") as f:
             f.write(error_msg)
+
+        runner._append_experiment_registry_row(
+            status="failed",
+            started_at=run_started_at,
+            finished_at=datetime.now(),
+            test_metrics=runner._load_test_metrics(runner.exp_run_dir),
+        )
 
         raise e
 

@@ -896,6 +896,11 @@ artifacts rather than source-controlled assets.
 
 ## Running
 
+The default shell entrypoint is [`run.sh`](run.sh). It is now more than a thin
+wrapper: it can forward normal `run.py` arguments, override the splitter seed,
+and launch small repeated batches of the same experiment without cloning the
+config file.
+
 Run the default experiment:
 
 ```bash
@@ -913,6 +918,35 @@ Force extraction before rebuilding datasets:
 ```bash
 ./run.sh --extract
 ```
+
+Override the configured splitter seed from the CLI:
+
+```bash
+./run.sh --rseed 42
+```
+
+Launch several repeated runs of the same experiment:
+
+```bash
+./run.sh --n-times 10
+```
+
+Launch a deterministic series of repeated runs:
+
+```bash
+./run.sh --n-times 10 --rseed 42
+```
+
+In that last case, the runs use splitter seeds:
+
+- `42`
+- `43`
+- `44`
+- ...
+
+so one command can produce a clean repeated batch without proliferating config
+files. The experiment name still comes from `config.json`, while the actual run
+directories remain unique because each run gets its own timestamped signature.
 
 Run from prebuilt train / validation / test dataframes:
 
@@ -934,6 +968,15 @@ CLI. When enabled, the model trains on `source_subset - core` and tests on the
 PDBBind core subset. When disabled, the configured source subset is split into
 train / validation / test according to `test_frac`.
 
+For A3-specific readout ablations, `run.py` also supports:
+
+```bash
+./run.sh --a3-mixer-bias
+./run.sh --no-a3-mixer-bias
+```
+
+Those flags are only valid when `model.selected == "A3"`.
+
 ## Experiment Outputs
 
 Each run writes to:
@@ -944,6 +987,9 @@ runs/<experiment_name>_<timestamp>/
 
 Typical outputs include:
 
+- `runs/experiment_registry.csv`: global one-line-per-experiment registry with
+  timestamps, seed, model family, status, best epoch, completed epochs, and
+  final test metrics when available,
 - `config.json`: resolved config snapshot,
 - `log.txt`: experiment log,
 - `err_log.txt`: traceback if execution fails,
@@ -954,6 +1000,28 @@ Typical outputs include:
   for the best validation predictions,
 - `model_performance_report.png`: evaluation plots,
 - `datasets/*.pickle`: optional per-run split snapshots.
+
+The global registry is intentionally terse: one row per experiment. At the
+moment it records fields such as:
+
+- start / finish timestamps,
+- run duration,
+- success or failure status,
+- experiment name and unique experiment signature,
+- experiment directory,
+- config path,
+- git commit hash,
+- model family,
+- source subset and split strategy,
+- effective splitter seed,
+- `core_as_test`,
+- A3 mixer-bias state when relevant,
+- batch position for `run.sh --n-times`,
+- device,
+- primary early-stopping metric,
+- `best_epoch`,
+- `epochs_completed`,
+- final test RMSE / Pearson / CI when the run reached testing.
 
 ## Diagnostics and Monitoring
 
