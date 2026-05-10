@@ -2,19 +2,27 @@
 set -euo pipefail
 
 if [[ $# -lt 2 ]]; then
-  echo "Usage: $0 LOCAL_RUNS DRIVE_RUNS [LOCAL_FEATURES DRIVE_FEATURES]" >&2
+  echo "Usage: $0 LOCAL_RUNS DRIVE_RUNS [LOCAL_PROTEIN DRIVE_PROTEIN [LOCAL_LIGAND DRIVE_LIGAND]]" >&2
   exit 1
 fi
 
 LOCAL_RUNS=$1
 DRIVE_RUNS=$2
-LOCAL_FEATURES=${3:-}
-DRIVE_FEATURES=${4:-}
+LOCAL_PROTEIN_FEATURES=${3:-}
+DRIVE_PROTEIN_FEATURES=${4:-}
+LOCAL_LIGAND_FEATURES=${5:-}
+DRIVE_LIGAND_FEATURES=${6:-}
+
+sync_dir_pair() {
+  local local_dir="$1"
+  local drive_dir="$2"
+  if [[ -n "$local_dir" && -n "$drive_dir" && -d "$local_dir" ]]; then
+    mkdir -p "$drive_dir"
+    rsync -a "$local_dir/" "$drive_dir/"
+  fi
+}
 
 mkdir -p "$DRIVE_RUNS"
 rsync -a "$LOCAL_RUNS/" "$DRIVE_RUNS/"
-
-if [[ -n "$LOCAL_FEATURES" && -n "$DRIVE_FEATURES" && -d "$LOCAL_FEATURES" ]]; then
-  mkdir -p "$DRIVE_FEATURES"
-  rsync -a "$LOCAL_FEATURES/" "$DRIVE_FEATURES/"
-fi
+sync_dir_pair "$LOCAL_PROTEIN_FEATURES" "$DRIVE_PROTEIN_FEATURES"
+sync_dir_pair "$LOCAL_LIGAND_FEATURES" "$DRIVE_LIGAND_FEATURES"

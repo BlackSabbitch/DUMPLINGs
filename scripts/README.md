@@ -34,10 +34,11 @@ cells instead of inventing a new workflow:
 - `colab_install_pyg.py`
   - mirrors the "install PyG wheels matching the active torch build" cell
 - `colab_start_sync.sh`
-  - mirrors the background `rsync` loop for `runs/`
+  - mirrors the background `rsync` loop for `runs/`,
+    `protein_context_features/`, and `ligand_context_features/`
 - `colab_finalize_sync.sh`
-  - mirrors the final one-shot sync of `runs/`, `protein_context_features/`,
-    and any optional cached feature directory passed to it
+  - mirrors the final one-shot sync of `runs/`,
+    `protein_context_features/`, and `ligand_context_features/`
 
 ## Smoke Helpers
 
