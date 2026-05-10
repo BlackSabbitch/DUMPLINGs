@@ -3,6 +3,7 @@
 import json
 import os
 import csv
+import socket
 import subprocess
 import pandas as pd
 import gc
@@ -67,7 +68,8 @@ class ExperimentRunner:
                  exp_dir: None | str = None,
                  core_as_test: None | bool = None,
                  a3_mixer_bias: None | bool = None,
-                 splitter_seed: None | int = None):
+                 splitter_seed: None | int = None,
+                 auto_summary: bool = True):
         self.config_path = os.path.abspath(config_path or 'config.json')
         with open(self.config_path, 'r') as f:
             self.config = json.load(f)
@@ -91,6 +93,7 @@ class ExperimentRunner:
         self.core_as_test = configured_core_as_test if core_as_test is None else core_as_test
         self.a3_mixer_bias = a3_mixer_bias
         self.splitter_seed = splitter_seed
+        self.auto_summary = auto_summary
         if self.a3_mixer_bias is not None and self.model_family != "A3":
             raise ValueError(
                 "--a3-mixer-bias / --no-a3-mixer-bias can only be used when "
@@ -110,6 +113,8 @@ class ExperimentRunner:
         self.best_epoch = None
         self.epochs_completed = None
         self.git_commit = self._resolve_git_commit()
+        self.execution_env = self._detect_execution_env()
+        self.hostname = socket.gethostname()
 
     def prepare_folders(self):
         """
@@ -245,6 +250,23 @@ class ExperimentRunner:
         except Exception:
             return ""
 
+    @staticmethod
+    def _detect_execution_env() -> str:
+        """
+        Return a compact label for the current runtime.
+
+        The value is intentionally coarse; it is meant for experiment
+        bookkeeping rather than environment introspection.
+        """
+        forced = os.environ.get("DUMPLING_EXECUTION_ENV", "").strip()
+        if forced:
+            return forced
+        if os.environ.get("COLAB_RELEASE_TAG") or os.environ.get("COLAB_GPU"):
+            return "colab"
+        if os.environ.get("SLURM_JOB_ID"):
+            return "cluster"
+        return "local"
+
     def _build_registry_row(
         self,
         *,
@@ -271,6 +293,9 @@ class ExperimentRunner:
             "exp_dir": self.exp_run_dir,
             "config_path": self.config_path,
             "git_commit": self.git_commit,
+            "execution_env": self.execution_env,
+            "hostname": self.hostname,
+            "artifact_root": os.path.abspath(os.path.dirname(self.exp_run_dir)),
             "model_family": self.model_family,
             "source_subset": self.source_subset,
             "splitter": strategy,
@@ -301,6 +326,297 @@ class ExperimentRunner:
         with open(test_results_path, "r", encoding="utf-8") as f:
             return json.load(f)
 
+    def _load_history(self) -> dict | None:
+        history_path = os.path.join(self.exp_run_dir, "history.json")
+        if not os.path.exists(history_path):
+            return None
+        with open(history_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+
+    @staticmethod
+    def _last_metric(history: dict | None, key: str) -> float | None:
+        if not history:
+            return None
+        values = history.get(key, [])
+        if not values:
+            return None
+        try:
+            return float(values[-1])
+        except (TypeError, ValueError):
+            return None
+
+    @staticmethod
+    def _safe_float(value) -> float | None:
+        try:
+            if value is None:
+                return None
+            return float(value)
+        except (TypeError, ValueError):
+            return None
+
+    def _build_assistant_summary_lines(
+        self,
+        *,
+        status: str,
+        started_at: datetime,
+        finished_at: datetime,
+        test_metrics: dict | None,
+        history: dict | None,
+    ) -> list[str]:
+        duration_sec = round((finished_at - started_at).total_seconds(), 1)
+        strategy = self.config['splitter']['selected']
+        splitter_seed = int(self.config['splitter']['available'][strategy].get('seed', 42))
+        primary_metric = self.config["training"]["early_stopping"]["primary_monitor"]
+
+        lines = [
+            f"# Assistant Summary: {self.experiment_signature}",
+            "",
+            "## Run Snapshot",
+            f"- status: `{status}`",
+            f"- experiment_name: `{self.config['experiment_name']}`",
+            f"- experiment_signature: `{self.experiment_signature}`",
+            f"- started_at: `{started_at.isoformat(timespec='seconds')}`",
+            f"- finished_at: `{finished_at.isoformat(timespec='seconds')}`",
+            f"- duration_sec: `{duration_sec}`",
+            f"- model_family: `{self.model_family}`",
+            f"- execution_env: `{self.execution_env}`",
+            f"- hostname: `{self.hostname}`",
+            f"- artifact_root: `{os.path.abspath(os.path.dirname(self.exp_run_dir))}`",
+            f"- exp_dir: `{os.path.abspath(self.exp_run_dir)}`",
+            f"- config_path: `{self.config_path}`",
+            f"- git_commit: `{self.git_commit or 'unknown'}`",
+            f"- splitter: `{strategy}`",
+            f"- splitter_seed: `{splitter_seed}`",
+            f"- primary_metric: `{primary_metric}`",
+            f"- best_epoch: `{self.best_epoch if self.best_epoch is not None else 'n/a'}`",
+            f"- epochs_completed: `{self.epochs_completed if self.epochs_completed is not None else 'n/a'}`",
+            "",
+        ]
+
+        if test_metrics:
+            lines.extend([
+                "## Final Metrics",
+                f"- RMSE: `{test_metrics.get('RMSE', 'n/a')}`",
+                f"- Pearson_R: `{test_metrics.get('Pearson_R', 'n/a')}`",
+                f"- CI: `{test_metrics.get('CI', 'n/a')}`",
+                "",
+            ])
+
+        readout = (test_metrics or {}).get("readout_diagnostics", {})
+        if self.model_family == "A3" and readout:
+            ratio = self._safe_float(readout.get("local_to_global_abs_contribution_ratio"))
+            alpha = self._safe_float(readout.get("alpha"))
+            beta = self._safe_float(readout.get("beta"))
+            gamma = self._safe_float(readout.get("gamma"))
+            global_mean = self._safe_float((readout.get("global_contribution") or {}).get("mean"))
+            local_mean = self._safe_float((readout.get("local_contribution") or {}).get("mean"))
+            lines.extend([
+                "## A3 Readout Snapshot",
+                f"- mixer_has_bias: `{readout.get('mixer_has_bias', 'n/a')}`",
+                f"- alpha: `{alpha if alpha is not None else 'n/a'}`",
+                f"- beta: `{beta if beta is not None else 'n/a'}`",
+                f"- gamma: `{gamma if gamma is not None else 'n/a'}`",
+                f"- local_to_global_abs_contribution_ratio: `{ratio if ratio is not None else 'n/a'}`",
+                f"- global_contribution_mean: `{global_mean if global_mean is not None else 'n/a'}`",
+                f"- local_contribution_mean: `{local_mean if local_mean is not None else 'n/a'}`",
+                "",
+            ])
+
+        observations: list[str] = []
+        if status != "success":
+            observations.append(
+                f"Run failed before clean completion. See `{os.path.join(self.exp_run_dir, 'err_log.txt')}`."
+            )
+        else:
+            train_r = self._last_metric(history, "train_pearson")
+            val_r = self._last_metric(history, "val_pearson")
+            train_rmse = self._last_metric(history, "train_rmse")
+            val_rmse = self._last_metric(history, "val_rmse")
+            if train_r is not None and val_r is not None:
+                gap = train_r - val_r
+                if gap > 0.12:
+                    observations.append(
+                        f"Train/validation Pearson gap is noticeable ({gap:.3f}), so overfitting is worth checking."
+                    )
+                else:
+                    observations.append(
+                        f"Train/validation Pearson gap stays moderate ({gap:.3f}), which suggests reasonably aligned fit quality."
+                    )
+            if train_rmse is not None and val_rmse is not None:
+                rmse_gap = val_rmse - train_rmse
+                if rmse_gap > 0.2:
+                    observations.append(
+                        f"Validation RMSE is materially above train RMSE ({rmse_gap:.3f} gap), another overfitting hint."
+                    )
+            configured_epochs = int(self.config["training"]["epochs"])
+            if self.epochs_completed is not None and self.epochs_completed < configured_epochs:
+                observations.append(
+                    f"Training stopped before the configured epoch budget ({self.epochs_completed}/{configured_epochs}), likely via early stopping."
+                )
+
+            if self.model_family == "A3" and readout:
+                mixer_has_bias = readout.get("mixer_has_bias")
+                observations.append(
+                    f"A3 readout bias was {'enabled' if mixer_has_bias else 'disabled'} for this run."
+                )
+                if ratio is not None:
+                    if ratio < 0.05:
+                        observations.append(
+                            f"Local contribution ratio is very small ({ratio:.3f}); the local branch looks close to collapsed."
+                        )
+                    elif ratio < 0.2:
+                        observations.append(
+                            f"Local contribution ratio is present but weak ({ratio:.3f})."
+                        )
+                    else:
+                        observations.append(
+                            f"Local contribution ratio is substantial ({ratio:.3f}); the local branch is meaningfully active."
+                        )
+                alpha = self._safe_float(readout.get("alpha"))
+                beta = self._safe_float(readout.get("beta"))
+                gamma = self._safe_float(readout.get("gamma"))
+                if alpha is not None and beta is not None:
+                    observations.append(
+                        f"A3 mixer weights ended near alpha={alpha:.3f}, beta={beta:.3f}"
+                        + (f", gamma={gamma:.3f}." if gamma is not None else ".")
+                    )
+                global_mean = self._safe_float((readout.get("global_contribution") or {}).get("mean"))
+                local_mean = self._safe_float((readout.get("local_contribution") or {}).get("mean"))
+                if global_mean is not None and local_mean is not None:
+                    if global_mean == 0 or local_mean == 0:
+                        observations.append(
+                            "One readout branch mean contribution sits very close to zero, so branch balance is skewed."
+                        )
+                    elif global_mean * local_mean < 0:
+                        observations.append(
+                            "Global and local mean contributions have opposite signs, so the local branch is acting as a corrective counterterm."
+                        )
+                    else:
+                        observations.append(
+                            "Global and local mean contributions point in the same direction on average, so the local branch mostly reinforces the coarse branch."
+                        )
+
+        lines.append("## Heuristic Notes")
+        if observations:
+            lines.extend([f"- {note}" for note in observations])
+        else:
+            lines.append("- No compact heuristic note was generated for this run.")
+
+        lines.extend([
+            "",
+            "## Caveat",
+            "- This file is an automatic assistant-style summary. It is meant to speed up review, not replace manual judgment.",
+            "",
+        ])
+        return lines
+
+    def _append_experiment_journal_entry(
+        self,
+        *,
+        status: str,
+        started_at: datetime,
+        finished_at: datetime,
+        test_metrics: dict | None = None,
+    ) -> None:
+        if not self.auto_summary:
+            return
+
+        os.makedirs("runs", exist_ok=True)
+        journal_path = os.path.join("runs", "experiment_journal.md")
+        history = self._load_history()
+        strategy = self.config['splitter']['selected']
+        splitter_seed = int(self.config['splitter']['available'][strategy].get('seed', 42))
+        duration_sec = round((finished_at - started_at).total_seconds(), 1)
+
+        headline = (
+            f"## {finished_at.strftime('%Y-%m-%d %H:%M:%S')} | "
+            f"{self.experiment_signature}"
+        )
+        lines = [headline, ""]
+        lines.append(
+            f"- status: `{status}` | model: `{self.model_family}` | env: `{self.execution_env}` | "
+            f"seed: `{splitter_seed}` | duration_sec: `{duration_sec}`"
+        )
+        lines.append(
+            f"- location: `{os.path.abspath(self.exp_run_dir)}` on `{self.hostname}`"
+        )
+
+        if test_metrics:
+            lines.append(
+                f"- final metrics: RMSE=`{test_metrics.get('RMSE', 'n/a')}`, "
+                f"Pearson_R=`{test_metrics.get('Pearson_R', 'n/a')}`, "
+                f"CI=`{test_metrics.get('CI', 'n/a')}`"
+            )
+
+        note_parts: list[str] = []
+        train_r = self._last_metric(history, "train_pearson")
+        val_r = self._last_metric(history, "val_pearson")
+        if train_r is not None and val_r is not None:
+            gap = train_r - val_r
+            if gap > 0.12:
+                note_parts.append(f"noticeable train/val Pearson gap ({gap:.3f})")
+            else:
+                note_parts.append(f"moderate train/val Pearson gap ({gap:.3f})")
+
+        readout = (test_metrics or {}).get("readout_diagnostics", {})
+        if self.model_family == "A3" and readout:
+            ratio = self._safe_float(readout.get("local_to_global_abs_contribution_ratio"))
+            if ratio is not None:
+                if ratio < 0.05:
+                    note_parts.append(f"local branch looks collapsed (ratio {ratio:.3f})")
+                elif ratio < 0.2:
+                    note_parts.append(f"local branch weak but present (ratio {ratio:.3f})")
+                else:
+                    note_parts.append(f"local branch meaningfully active (ratio {ratio:.3f})")
+            mixer_has_bias = readout.get("mixer_has_bias")
+            note_parts.append(f"A3 mixer bias {'enabled' if mixer_has_bias else 'disabled'}")
+
+        if not note_parts and status != "success":
+            note_parts.append("run failed before final evaluation")
+
+        if note_parts:
+            lines.append(f"- assistant note: {'. '.join(note_parts)}.")
+        else:
+            lines.append("- assistant note: no compact automatic interpretation.")
+
+        lines.extend([
+            "",
+            "> Auto-generated assistant journal note. Handy for scanning history; not a substitute for manual interpretation.",
+            "",
+        ])
+
+        file_exists = os.path.exists(journal_path)
+        with open(journal_path, "a", encoding="utf-8") as f:
+            if not file_exists:
+                f.write("# Experiment Journal\n\n")
+                f.write(
+                    "This file is an automatically accumulated run log. "
+                    "Treat it as a convenience layer over the raw artifacts and the terse CSV registry.\n\n"
+                )
+            f.write("\n".join(lines))
+
+    def _write_assistant_summary(
+        self,
+        *,
+        status: str,
+        started_at: datetime,
+        finished_at: datetime,
+        test_metrics: dict | None = None,
+    ) -> None:
+        if not self.auto_summary:
+            return
+        history = self._load_history()
+        lines = self._build_assistant_summary_lines(
+            status=status,
+            started_at=started_at,
+            finished_at=finished_at,
+            test_metrics=test_metrics,
+            history=history,
+        )
+        summary_path = os.path.join(self.exp_run_dir, "assistant_summary.md")
+        with open(summary_path, "w", encoding="utf-8") as f:
+            f.write("\n".join(lines))
+
     def _append_experiment_registry_row(
         self,
         *,
@@ -317,8 +633,23 @@ class ExperimentRunner:
             finished_at=finished_at,
             test_metrics=test_metrics,
         )
-        file_exists = os.path.exists(registry_path)
         fieldnames = list(row.keys())
+        existing_rows: list[dict[str, object]] = []
+        file_exists = os.path.exists(registry_path)
+        if file_exists:
+            with open(registry_path, "r", newline="", encoding="utf-8") as f:
+                reader = csv.DictReader(f)
+                existing_fieldnames = reader.fieldnames or []
+                existing_rows = list(reader)
+            if existing_fieldnames != fieldnames:
+                with open(registry_path, "w", newline="", encoding="utf-8") as f:
+                    writer = csv.DictWriter(f, fieldnames=fieldnames)
+                    writer.writeheader()
+                    for old_row in existing_rows:
+                        normalized = {name: old_row.get(name, "") for name in fieldnames}
+                        writer.writerow(normalized)
+                existing_rows = []
+
         with open(registry_path, "a", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             if not file_exists:
@@ -931,6 +1262,8 @@ if __name__ == "__main__":
                         help='Enable the explicit gamma term in the A3 readout mixer. Use --no-a3-mixer-bias for bias-free A3 ablations.')
     parser.add_argument('--rseed', '--splitter-seed', dest='splitter_seed', type=int, default=None,
                         help='Override the configured splitter seed from the CLI without editing config.json.')
+    parser.add_argument('--auto-summary', action=argparse.BooleanOptionalAction, default=True,
+                        help='Write assistant_summary.md after each run. Use --no-auto-summary to disable the per-run automatic note.')
 
     args = parser.parse_args()
     runner = ExperimentRunner(
@@ -945,6 +1278,7 @@ if __name__ == "__main__":
         core_as_test=args.core_as_test,
         a3_mixer_bias=args.a3_mixer_bias,
         splitter_seed=args.splitter_seed,
+        auto_summary=args.auto_summary,
     )
     runner.prepare_folders()
     train_df, val_df, test_df = runner.prepare_datasets()
@@ -953,11 +1287,24 @@ if __name__ == "__main__":
     try:
         runner.run(train_df, val_df, test_df)
         run_finished_at = datetime.now()
+        test_metrics = runner._load_test_metrics(runner.exp_run_dir)
         runner._append_experiment_registry_row(
             status="success",
             started_at=run_started_at,
             finished_at=run_finished_at,
-            test_metrics=runner._load_test_metrics(runner.exp_run_dir),
+            test_metrics=test_metrics,
+        )
+        runner._write_assistant_summary(
+            status="success",
+            started_at=run_started_at,
+            finished_at=run_finished_at,
+            test_metrics=test_metrics,
+        )
+        runner._append_experiment_journal_entry(
+            status="success",
+            started_at=run_started_at,
+            finished_at=run_finished_at,
+            test_metrics=test_metrics,
         )
         if runner.temp_run and not runner.keep_temp:
             shutil.rmtree(runner.exp_run_dir, ignore_errors=True)
@@ -970,11 +1317,25 @@ if __name__ == "__main__":
         with open(err_path, "w", encoding="utf-8") as f:
             f.write(error_msg)
 
+        failed_at = datetime.now()
+        test_metrics = runner._load_test_metrics(runner.exp_run_dir)
         runner._append_experiment_registry_row(
             status="failed",
             started_at=run_started_at,
-            finished_at=datetime.now(),
-            test_metrics=runner._load_test_metrics(runner.exp_run_dir),
+            finished_at=failed_at,
+            test_metrics=test_metrics,
+        )
+        runner._write_assistant_summary(
+            status="failed",
+            started_at=run_started_at,
+            finished_at=failed_at,
+            test_metrics=test_metrics,
+        )
+        runner._append_experiment_journal_entry(
+            status="failed",
+            started_at=run_started_at,
+            finished_at=failed_at,
+            test_metrics=test_metrics,
         )
 
         raise e

@@ -948,6 +948,12 @@ so one command can produce a clean repeated batch without proliferating config
 files. The experiment name still comes from `config.json`, while the actual run
 directories remain unique because each run gets its own timestamped signature.
 
+Disable the per-run automatic assistant note:
+
+```bash
+./run.sh --no-auto-summary
+```
+
 For a very short cluster-, Colab-, or launcher-side smoke run, the repo also ships with:
 
 - [`scripts/make_smoke_config.py`](scripts/make_smoke_config.py)
@@ -1023,14 +1029,18 @@ runs/<experiment_name>_<timestamp>/
 Typical outputs include:
 
 - `runs/experiment_registry.csv`: global one-line-per-experiment registry with
-  timestamps, seed, model family, status, best epoch, completed epochs, and
-  final test metrics when available,
+  timestamps, runtime-location metadata, seed, model family, status, best
+  epoch, completed epochs, and final test metrics when available,
 - `config.json`: resolved config snapshot,
 - `log.txt`: experiment log,
 - `err_log.txt`: traceback if execution fails,
 - `best_model.pt`: best checkpoint by the configured primary validation metric,
 - `history.json`: train/validation history,
 - `test_results.json`: final test metrics,
+- `assistant_summary.md`: automatic post-run assistant note with a compact
+  heuristic reading of the run,
+- `runs/experiment_journal.md`: accumulated automatic run journal for quick
+  cross-run scanning without opening each experiment folder,
 - `best_validation_scatter_diagnostics.json`: extended agreement diagnostics
   for the best validation predictions,
 - `model_performance_report.png`: evaluation plots,
@@ -1046,6 +1056,9 @@ moment it records fields such as:
 - experiment directory,
 - config path,
 - git commit hash,
+- execution environment (`local`, `colab`, `cluster`, or a manual override),
+- hostname,
+- artifact root,
 - model family,
 - source subset and split strategy,
 - effective splitter seed,
@@ -1057,6 +1070,17 @@ moment it records fields such as:
 - `best_epoch`,
 - `epochs_completed`,
 - final test RMSE / Pearson / CI when the run reached testing.
+
+The automatic note layer is intentionally split in two:
+
+- `runs/<exp>/assistant_summary.md`: the richer per-run card, where
+  model-specific commentary such as A3 readout behavior can live comfortably,
+- `runs/experiment_journal.md`: the short rolling journal, useful when you
+  want to scan a batch of runs in one file before drilling into individual
+  folders.
+
+Both are assistant-authored convenience artifacts. They should help review,
+not replace manual interpretation of configs, logs, and raw metrics.
 
 ## Diagnostics and Monitoring
 
