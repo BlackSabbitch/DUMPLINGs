@@ -1,5 +1,5 @@
 {
-    "experiment_name": "DUMPLING_A2_first_run",
+    "experiment_name": "DUMPLING_A3_bias_test",
     "debug_mode": true,
     "splitter": {
         "selected": "random",

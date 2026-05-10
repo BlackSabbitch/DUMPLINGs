@@ -702,6 +702,13 @@ class Trainer:
             self.history['val_pearson'].append(float(r_val))
             self.history['train_ci'].append(float(train_ci_val))
             self.history['val_ci'].append(float(ci_val))
+            if hasattr(self.model, "get_history_payload"):
+                extra_history = self.model.get_history_payload()
+                if extra_history:
+                    for key, value in extra_history.items():
+                        if key not in self.history:
+                            self.history[key] = []
+                        self.history[key].append(float(value))
             log_info(
                 f"[EPOCH {epoch_id}/{total_number_of_epochs}] Train(eval): "
                 f"RMSE {train_rmse_denorm:.4f} | R {train_r_val:.4f} | CI {train_ci_val:.4f}",

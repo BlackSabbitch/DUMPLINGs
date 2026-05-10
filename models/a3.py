@@ -20,11 +20,11 @@ class A3DimeNet(A2DimeNet):
 
     - `y_global = global_head(h_global)`
     - `y_local = local_head(h_local)`
-    - `y = alpha * y_global + beta * y_local`
+    - `y = alpha * y_global + beta * y_local + gamma`
 
-    The mixer is intentionally bias-free at this stage so the local term is
-    easier to interpret as a genuine correction rather than as a hidden global
-    offset.
+    The current revision keeps the linear coarse/local form but now exposes an
+    explicit mixer bias `gamma`. This makes the offset term observable rather
+    than forcing the local branch to impersonate a constant shift.
     """
 
     def __init__(
@@ -65,10 +65,10 @@ class A3DimeNet(A2DimeNet):
         """
         Build the final linear mixer over branch-level scalar outputs.
 
-        Bias is intentionally disabled so the readout remains interpretable as
-        a pure weighted sum of coarse and local terms.
+        The mixer remains intentionally tiny and interpretable: two branch-level
+        scalar inputs plus one explicit bias term.
         """
-        return nn.Linear(2, out_channels, bias=False)
+        return nn.Linear(2, out_channels, bias=True)
 
     def _build_head(self, input_dim: int | None = None, out_channels: int = 1) -> nn.ModuleDict:
         """
@@ -93,6 +93,23 @@ class A3DimeNet(A2DimeNet):
         global_pred = self.head["global"](global_repr).view(-1)
         local_pred = self.head["local"](local_repr).view(-1)
         return global_pred, local_pred
+
+    def get_history_payload(self) -> dict[str, float]:
+        """
+        Return per-epoch mixer coefficients for `history.json`.
+
+        This keeps the training history aligned with the final test diagnostics:
+        we can later inspect not only the best checkpoint's readout, but how the
+        coarse/local mixture evolved during optimization.
+        """
+        mixer = self.head["mixer"]
+        payload = {
+            "alpha": float(mixer.weight[0, 0].item()),
+            "beta": float(mixer.weight[0, 1].item()),
+        }
+        if mixer.bias is not None:
+            payload["gamma"] = float(mixer.bias[0].item())
+        return payload
 
     @staticmethod
     def _tensor_stats(values: torch.Tensor) -> dict[str, float]:
@@ -142,8 +159,6 @@ class A3DimeNet(A2DimeNet):
         mixer = self.head["mixer"]
         alpha = float(mixer.weight[0, 0].item())
         beta = float(mixer.weight[0, 1].item())
-        # Bias is currently disabled, but the field is kept in the payload so a
-        # future biased mixer can be compared without changing the JSON schema.
         gamma = float(mixer.bias[0].item()) if mixer.bias is not None else None
 
         with torch.no_grad():
