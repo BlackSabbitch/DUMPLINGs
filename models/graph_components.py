@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from typing import Any
 
@@ -36,6 +37,45 @@ def get_model_family(config: dict) -> str:
     """
 
     return str(config.get("model", {}).get("selected", "A1"))
+
+
+def _parse_bool_override(name: str, raw_value: str) -> bool:
+    value = raw_value.strip().lower()
+    if value in {"1", "true", "yes", "y", "on"}:
+        return True
+    if value in {"0", "false", "no", "n", "off"}:
+        return False
+    raise ValueError(
+        f"Invalid boolean override for {name}: {raw_value!r}. "
+        f"Use one of: 1/0, true/false, yes/no, on/off."
+    )
+
+
+def get_a3_mixer_bias(config: dict, override: bool | None = None) -> bool:
+    """
+    Resolve whether the A3 readout mixer should include an explicit bias.
+
+    Resolution order is intentionally external-first so experiment launchers can
+    toggle the setting without churning the main JSON config:
+
+    1. explicit runtime override from the caller,
+    2. `DUMPLING_A3_MIXER_BIAS` environment variable,
+    3. optional `model.a3.mixer_bias` config entry,
+    4. default `True`.
+    """
+
+    if override is not None:
+        return bool(override)
+
+    env_value = os.environ.get("DUMPLING_A3_MIXER_BIAS")
+    if env_value is not None:
+        return _parse_bool_override("DUMPLING_A3_MIXER_BIAS", env_value)
+
+    model_a3 = config.get("model", {}).get("a3", {})
+    if "mixer_bias" in model_a3:
+        return bool(model_a3["mixer_bias"])
+
+    return True
 
 
 def get_global_encoder_mode(config: dict) -> str:

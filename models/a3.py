@@ -6,6 +6,7 @@ import torch
 from torch import nn
 
 from models.a2 import A2DimeNet
+from models.graph_components import get_a3_mixer_bias
 
 
 class A3DimeNet(A2DimeNet):
@@ -32,6 +33,7 @@ class A3DimeNet(A2DimeNet):
         config: dict,
         device: str,
         out_channels: int = 1,
+        mixer_bias: bool | None = None,
     ) -> None:
         super().__init__(config=config, device=device, out_channels=out_channels)
         if out_channels != 1:
@@ -39,6 +41,7 @@ class A3DimeNet(A2DimeNet):
         if self.local_gnn is None or self.local_encoder_cfg is None:
             raise ValueError("A3DimeNet requires an active local branch.")
 
+        self.mixer_bias = get_a3_mixer_bias(config, override=mixer_bias)
         self.head = self._build_head(out_channels=out_channels)
 
     def _build_global_head(self, out_channels: int = 1) -> nn.Module:
@@ -68,7 +71,7 @@ class A3DimeNet(A2DimeNet):
         The mixer remains intentionally tiny and interpretable: two branch-level
         scalar inputs plus one explicit bias term.
         """
-        return nn.Linear(2, out_channels, bias=True)
+        return nn.Linear(2, out_channels, bias=self.mixer_bias)
 
     def _build_head(self, input_dim: int | None = None, out_channels: int = 1) -> nn.ModuleDict:
         """

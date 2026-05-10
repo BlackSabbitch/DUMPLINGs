@@ -20,6 +20,7 @@ from models.a1 import A1DimeNet
 from models.a2 import A2DimeNet
 from models.a3 import A3DimeNet
 from models.graph_components import (
+    get_a3_mixer_bias,
     get_global_encoder_config,
     get_global_graph_config,
     get_global_graph_mode,
@@ -60,7 +61,8 @@ class ExperimentRunner:
                  temp_run: bool = False,
                  keep_temp: bool = False,
                  exp_dir: None | str = None,
-                 core_as_test: None | bool = None):
+                 core_as_test: None | bool = None,
+                 a3_mixer_bias: None | bool = None):
         with open(config_path or 'config.json', 'r') as f:
             self.config = json.load(f)
         
@@ -75,11 +77,18 @@ class ExperimentRunner:
         self.keep_temp = keep_temp
         self.exp_dir = exp_dir
         self.source_subset = self.config['dataset'].get('source_subset', 'refined')
+        self.model_family = get_model_family(self.config)
         if self.source_subset not in {'refined', 'general'}:
             raise ValueError("source_subset must be either 'refined' or 'general'")
 
         configured_core_as_test = self.config['dataset'].get('core_as_test', True)
         self.core_as_test = configured_core_as_test if core_as_test is None else core_as_test
+        self.a3_mixer_bias = a3_mixer_bias
+        if self.a3_mixer_bias is not None and self.model_family != "A3":
+            raise ValueError(
+                "--a3-mixer-bias / --no-a3-mixer-bias can only be used when "
+                "model.selected == 'A3'."
+            )
         self.test_frac = self.config['dataset'].get('test_frac', 0.15)
         if not self.core_as_test and not 0.0 < float(self.test_frac) < 1.0:
             raise ValueError("test_frac must be between 0 and 1")
@@ -144,6 +153,44 @@ class ExperimentRunner:
             return f"{int(minutes)}m {rem:.1f}s"
         hours, minutes = divmod(minutes, 60)
         return f"{int(hours)}h {int(minutes)}m {rem:.1f}s"
+
+    @staticmethod
+    def _describe_model_family(model_family: str) -> str:
+        descriptions = {
+            "A1": "coarse global model only; one fused interaction graph plus optional context branches",
+            "A2": "global coarse branch plus an explicit local geometric correction branch",
+            "A3": "A2 branch encoders with an explicit linear coarse-plus-local readout",
+        }
+        return descriptions.get(model_family, "unknown model family")
+
+    def _log_model_overview(
+        self,
+        model_family: str,
+        global_graph_mode: str,
+        local_graph_mode: str,
+        protein_context_mode: str,
+        ligand_context_mode: str,
+    ) -> None:
+        log_info(
+            f"Model selected -> {model_family}: {self._describe_model_family(model_family)}",
+            stage="MODEL"
+        )
+
+        local_active = model_family in {"A2", "A3"} and local_graph_mode != "none"
+        log_info(
+            f"Model branch summary -> global_graph={global_graph_mode}, "
+            f"local_branch={'enabled' if local_active else 'disabled'}, "
+            f"protein_context={protein_context_mode}, ligand_context={ligand_context_mode}",
+            stage="MODEL"
+        )
+
+        if model_family == "A3":
+            mixer_bias = get_a3_mixer_bias(self.config, self.a3_mixer_bias)
+            log_info(
+                f"A3 readout summary -> mixer_bias={'enabled' if mixer_bias else 'disabled'} "
+                f"({'gamma is trainable' if mixer_bias else 'gamma absent'})",
+                stage="MODEL"
+            )
 
     def _get_dataset_from_path(self, path: str):
         """
@@ -574,7 +621,7 @@ class ExperimentRunner:
         with open(f"{self.exp_run_dir}/config.json", 'w') as f:
             json.dump(self.config, f, indent=4)
 
-        model_family = get_model_family(self.config)
+        model_family = self.model_family
         if model_family not in {"A1", "A2", "A3"}:
             raise ValueError(f"Unsupported model.selected={model_family!r}. Expected 'A1', 'A2', or 'A3'.")
         global_graph_mode = get_global_graph_mode(self.config)
@@ -610,6 +657,13 @@ class ExperimentRunner:
             f"epochs={self.config['training']['epochs']}",
             stage="EXPERIMENT"
         )
+        self._log_model_overview(
+            model_family=model_family,
+            global_graph_mode=global_graph_mode,
+            local_graph_mode=local_graph_mode,
+            protein_context_mode=protein_context_mode,
+            ligand_context_mode=ligand_context_mode,
+        )
         log_info(
             f"Global graph settings -> mode={global_graph_mode}, "
             f"dist_threshold={global_graph_cfg.get('dist_threshold', 'na')}, "
@@ -639,6 +693,11 @@ class ExperimentRunner:
                     f"num_blocks={local_encoder_cfg.num_blocks}",
                     stage="MODEL"
                 )
+        if model_family == "A3":
+            log_info(
+                f"A3 readout settings -> mixer_bias={get_a3_mixer_bias(self.config, self.a3_mixer_bias)}",
+                stage="MODEL"
+            )
         elif local_graph_mode != "none" or get_local_encoder_mode(self.config) != "none":
             log_info(
                 f"Local branch configuration present but ignored because model={model_family}: "
@@ -659,6 +718,7 @@ class ExperimentRunner:
                 config=self.config,
                 device=self.device,
                 out_channels=1,
+                mixer_bias=self.a3_mixer_bias,
             )
         elif model_family == "A2":
             model = A2DimeNet(
@@ -730,6 +790,8 @@ if __name__ == "__main__":
     parser.add_argument('--exp-dir', type=str, default=None, help='Use a fixed experiment directory instead of timestamped runs/<name>_<ts>')
     parser.add_argument('--core-as-test', action=argparse.BooleanOptionalAction, default=None,
                         help='Use PDBBind core as test set. Use --no-core-as-test to split the configured source subset into train/val/test.')
+    parser.add_argument('--a3-mixer-bias', action=argparse.BooleanOptionalAction, default=None,
+                        help='Enable the explicit gamma term in the A3 readout mixer. Use --no-a3-mixer-bias for bias-free A3 ablations.')
 
     args = parser.parse_args()
     runner = ExperimentRunner(
@@ -741,7 +803,8 @@ if __name__ == "__main__":
         temp_run=args.temp_run,
         keep_temp=args.keep_temp,
         exp_dir=args.exp_dir,
-        core_as_test=args.core_as_test
+        core_as_test=args.core_as_test,
+        a3_mixer_bias=args.a3_mixer_bias,
     )
     runner.prepare_folders()
     train_df, val_df, test_df = runner.prepare_datasets()

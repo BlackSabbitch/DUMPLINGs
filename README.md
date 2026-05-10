@@ -610,6 +610,40 @@ It says something closer to:
 That is why the first A3 run is treated as a useful negative result rather than
 as a dead end.
 
+A later rerun, initially intended to be an `A3 + bias` experiment, exposed a
+separate operational lesson. The Colab launcher silently continued after a
+failed `git pull`, so the staged workspace still contained the older bias-free
+`A3` code. The final `test_results.json` therefore reported:
+
+- `mixer_has_bias = false`
+- `gamma = null`
+
+So scientifically that run was **not** the intended `A3 + bias` test.
+
+Still, the result was informative. The second no-bias A3 run achieved:
+
+- `RMSE = 1.4945`
+- `Pearson R = 0.7790`
+- `CI = 0.7862`
+
+and, unlike the first no-bias run, its local branch remained meaningfully
+alive:
+
+- `global_contribution.mean_abs ~= 0.902`
+- `local_contribution.mean_abs ~= 0.347`
+- aggregate local/global absolute contribution ratio `~= 0.385`
+
+This sharpened the interpretation considerably. The first A3 collapse was not a
+universal fate of the architecture. Instead, the project now has evidence that
+the bias-free scalar decomposition can land in at least two regimes:
+
+- one where the local branch nearly collapses,
+- one where the local branch remains active and materially contributes.
+
+That makes A3 look less "fundamentally broken" and more **trajectory-sensitive
+or seed-sensitive**, while also emphasizing that experiment orchestration must
+fail loudly when code sync goes wrong.
+
 ### Immediate Next Questions
 
 The current working questions after the first A3 run are:
@@ -620,6 +654,8 @@ The current working questions after the first A3 run are:
    then become more interpretable?
 3. only after that, does it make sense to move toward pair-scoring
    local-correction experiments (`A3a`)?
+4. how sensitive is bias-free `A3` to initialization and training trajectory,
+   given that one run collapsed the local branch while another kept it alive?
 
 This ordering matters.
 
@@ -632,6 +668,7 @@ So the present interpretation of the roadmap is:
 - `A2` showed that locality may matter,
 - first `A3` showed that a too-restrictive linear scalar decomposition can
   suppress that locality,
+- second no-bias `A3` showed that this suppression is not deterministic,
 - the next experiments should test whether the local branch can be revived in a
   more faithful coarse-plus-correction formulation before attention- or
   pair-based refinement is added.
@@ -699,12 +736,17 @@ with a branch-wise scalar decomposition:
 
 - `y_global = global_head(h_global)`
 - `y_local = local_head(h_local)`
-- `y = alpha * y_global + beta * y_local`
+- `y = alpha * y_global + beta * y_local + gamma`
 
-The current mixer is intentionally bias-free. The purpose is interpretability:
-if the local term is meant to behave like a correction, it is useful to inspect
-its effective contribution directly rather than letting a hidden bias absorb
-part of that role.
+The mixer now supports an explicit bias term `gamma`. By default the current
+code enables it, but for ablations it can be disabled externally without
+editing `config.json`:
+
+- CLI: `python run.py --no-a3-mixer-bias`
+- env: `DUMPLING_A3_MIXER_BIAS=0 python run.py`
+
+This keeps the main config cleaner while still allowing cluster or notebook
+launchers to switch between bias-enabled and bias-free A3 runs.
 
 `A3` therefore asks:
 
@@ -715,7 +757,7 @@ part of that role.
 
 `A3` exports additional diagnostics into `test_results.json`, including:
 
-- the mixer coefficients (`alpha`, `beta`, and reserved `gamma`)
+- the mixer coefficients (`alpha`, `beta`, `gamma`)
 - statistics of raw branch outputs (`y_global`, `y_local`)
 - statistics of effective contributions (`alpha * y_global`,
   `beta * y_local`)
