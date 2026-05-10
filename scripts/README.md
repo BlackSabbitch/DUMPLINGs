@@ -19,7 +19,7 @@ The repo currently has two layers:
    - syncing `runs/` back to Drive,
    - syncing `protein_context_features/` back to Drive,
    - syncing `ligand_context_features/` back to Drive,
-   - running smoke checks on cluster/Slurm environments.
+   - running smoke checks on local, Colab, or Slurm environments.
 
 Those helpers are notebook/runtime concerns rather than experiment logic, so
 they live in `scripts/`.
@@ -39,22 +39,22 @@ cells instead of inventing a new workflow:
   - mirrors the final one-shot sync of `runs/`, `protein_context_features/`,
     and any optional cached feature directory passed to it
 
-## Cluster Helpers
+## Smoke Helpers
 
-The cluster-side helpers are intentionally lightweight. They do not replace
+The smoke helpers are intentionally lightweight. They do not replace
 `run.py`; they only make it easier to sanity-check a new Slurm environment
 before launching a long experiment.
 
-- `cluster_env_smoke.py`
+- `runtime_env_smoke.py`
   - checks imports, CUDA visibility, filesystem readiness, and archive presence
-- `cluster_make_smoke_config.py`
+- `make_smoke_config.py`
   - derives a tiny smoke-test config from the main `config.json`
   - can override:
     - model family (`A1` / `A2` / `A3`)
     - protein-context mode
     - ligand-context mode
     - epochs / batch size / workers
-- `cluster_sbatch_smoke.sh`
+- `slurm_pipeline_smoke.sh`
   - sample `sbatch` wrapper that runs the environment smoke test and can
     optionally launch a very short pipeline run once the archive is present
   - defaults to a very cheap smoke profile with `MODEL_FAMILY=A1`

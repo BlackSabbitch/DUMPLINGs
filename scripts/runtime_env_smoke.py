@@ -35,7 +35,7 @@ def import_status(module_name: str) -> tuple[bool, str]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Cluster-side smoke test for the DUMPLINGs runtime environment."
+        description="Smoke test for the DUMPLINGs runtime environment."
     )
     parser.add_argument(
         "--repo-root",
@@ -57,7 +57,7 @@ def main() -> int:
     repo_root = Path(args.repo_root).resolve()
     archive_path = repo_root / args.archive_name
 
-    print("== DUMPLINGs cluster environment smoke test ==")
+    print("== DUMPLINGs runtime environment smoke test ==")
     print(f"repo_root: {repo_root}")
     print(f"python: {sys.executable}")
     print(f"python_version: {platform.python_version()}")

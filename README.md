@@ -948,10 +948,11 @@ so one command can produce a clean repeated batch without proliferating config
 files. The experiment name still comes from `config.json`, while the actual run
 directories remain unique because each run gets its own timestamped signature.
 
-For a very short cluster- or launcher-side smoke run, the repo also ships with:
+For a very short cluster-, Colab-, or launcher-side smoke run, the repo also ships with:
 
-- [`scripts/cluster_make_smoke_config.py`](scripts/cluster_make_smoke_config.py)
-- [`scripts/cluster_sbatch_smoke.sh`](scripts/cluster_sbatch_smoke.sh)
+- [`scripts/make_smoke_config.py`](scripts/make_smoke_config.py)
+- [`scripts/runtime_env_smoke.py`](scripts/runtime_env_smoke.py)
+- [`scripts/slurm_pipeline_smoke.sh`](scripts/slurm_pipeline_smoke.sh)
 
 The smoke-config helper can derive a reduced config from the main
 `config.json` while overriding key knobs such as:
@@ -966,7 +967,7 @@ The smoke-config helper can derive a reduced config from the main
 Example:
 
 ```bash
-python scripts/cluster_make_smoke_config.py \
+python scripts/make_smoke_config.py \
   --base-config config.json \
   --output tmp/a1_smoke.json \
   --experiment-name DUMPLING_registry_smoke \

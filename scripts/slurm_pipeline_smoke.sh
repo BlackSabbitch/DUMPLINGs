@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Usage:
-#   sbatch scripts/cluster_sbatch_smoke.sh
+#   sbatch scripts/slurm_pipeline_smoke.sh
 # Optional environment overrides:
 #   REPO_ROOT=$HOME/DUMPLINGs
 #   VENV_DIR=$HOME/venvs/dumplings
@@ -8,8 +8,8 @@
 #   SMOKE_BATCH_SIZE=2
 #   SMOKE_NUM_WORKERS=0
 #   MODEL_FAMILY=A1
-#   PROTEIN_CONTEXT_MODE=esm_frozen_whole
-#   LIGAND_CONTEXT_MODE=basic_rdkit
+#   PROTEIN_CONTEXT_MODE=none
+#   LIGAND_CONTEXT_MODE=none
 #   RUN_PIPELINE_SMOKE=1
 #   EXTRA_RUN_ARGS="--extract"
 
@@ -29,15 +29,15 @@ SMOKE_EPOCHS=${SMOKE_EPOCHS:-2}
 SMOKE_BATCH_SIZE=${SMOKE_BATCH_SIZE:-2}
 SMOKE_NUM_WORKERS=${SMOKE_NUM_WORKERS:-0}
 MODEL_FAMILY=${MODEL_FAMILY:-A1}
-PROTEIN_CONTEXT_MODE=${PROTEIN_CONTEXT_MODE:-esm_frozen_whole}
-LIGAND_CONTEXT_MODE=${LIGAND_CONTEXT_MODE:-basic_rdkit}
+PROTEIN_CONTEXT_MODE=${PROTEIN_CONTEXT_MODE:-none}
+LIGAND_CONTEXT_MODE=${LIGAND_CONTEXT_MODE:-none}
 RUN_PIPELINE_SMOKE=${RUN_PIPELINE_SMOKE:-0}
 EXTRA_RUN_ARGS=${EXTRA_RUN_ARGS:-}
 ARCHIVE_NAME=${ARCHIVE_NAME:-pdbbind_v2016.tar.gz}
 
 cd "$REPO_ROOT"
 
-echo "== Cluster smoke job =="
+echo "== Slurm smoke job =="
 echo "host: $(hostname)"
 echo "repo: $REPO_ROOT"
 echo "venv: $VENV_DIR"
@@ -52,16 +52,16 @@ fi
 
 source "$VENV_DIR/bin/activate"
 
-python scripts/cluster_env_smoke.py --repo-root "$REPO_ROOT" --require-gpu
+python scripts/runtime_env_smoke.py --repo-root "$REPO_ROOT" --require-gpu
 
-SMOKE_CONFIG="$REPO_ROOT/tmp/cluster_smoke_config.json"
-python scripts/cluster_make_smoke_config.py \
+SMOKE_CONFIG="$REPO_ROOT/tmp/smoke_config.json"
+python scripts/make_smoke_config.py \
   --base-config "$REPO_ROOT/config.json" \
   --output "$SMOKE_CONFIG" \
   --epochs "$SMOKE_EPOCHS" \
   --batch-size "$SMOKE_BATCH_SIZE" \
   --num-workers "$SMOKE_NUM_WORKERS" \
-  --experiment-name "DUMPLING_cluster_smoke" \
+  --experiment-name "DUMPLING_slurm_smoke" \
   --model-family "$MODEL_FAMILY" \
   --protein-context-mode "$PROTEIN_CONTEXT_MODE" \
   --ligand-context-mode "$LIGAND_CONTEXT_MODE"
@@ -82,4 +82,4 @@ if [[ ! -f "$REPO_ROOT/$ARCHIVE_NAME" ]]; then
 fi
 
 echo "== Launching short pipeline smoke =="
-LOG_PATH="$REPO_ROOT/cluster_smoke_run.log" ./run.sh --config "$SMOKE_CONFIG" $EXTRA_RUN_ARGS
+LOG_PATH="$REPO_ROOT/slurm_smoke_run.log" ./run.sh --config "$SMOKE_CONFIG" $EXTRA_RUN_ARGS

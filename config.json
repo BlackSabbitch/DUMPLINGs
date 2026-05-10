@@ -1,5 +1,5 @@
 {
-    "experiment_name": "DUMPLING_A3_bias_test",
+    "experiment_name": "DUMPLING_A1_smoke_tests",
     "debug_mode": true,
     "splitter": {
         "selected": "random",
@@ -33,7 +33,7 @@
         "lig_vocab": "?ABCDEFGHIKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-=[]()#%@+./\\:,;^$"
     },
     "model": {
-        "selected": "A3",
+        "selected": "A1",
         "global_graph": {
             "selected": "interaction",
             "available": {

@@ -16,7 +16,7 @@ def main() -> int:
     parser.add_argument("--epochs", type=int, default=2)
     parser.add_argument("--batch-size", type=int, default=2)
     parser.add_argument("--num-workers", type=int, default=0)
-    parser.add_argument("--experiment-name", default="DUMPLING_cluster_smoke")
+    parser.add_argument("--experiment-name", default="DUMPLING_smoke")
     parser.add_argument(
         "--model-family",
         default=None,
