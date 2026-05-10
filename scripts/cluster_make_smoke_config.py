@@ -18,6 +18,12 @@ def main() -> int:
     parser.add_argument("--num-workers", type=int, default=0)
     parser.add_argument("--experiment-name", default="DUMPLING_cluster_smoke")
     parser.add_argument(
+        "--model-family",
+        default=None,
+        choices=["A1", "A2", "A3"],
+        help="Optional override for model.selected",
+    )
+    parser.add_argument(
         "--protein-context-mode",
         default=None,
         help="Optional override for model.protein_context.selected",
@@ -48,6 +54,8 @@ def main() -> int:
     if early_stopping:
         early_stopping["patience"] = max(int(args.epochs), 1)
 
+    if args.model_family is not None:
+        config["model"]["selected"] = args.model_family
     if args.protein_context_mode is not None:
         config["model"]["protein_context"]["selected"] = args.protein_context_mode
     if args.ligand_context_mode is not None:

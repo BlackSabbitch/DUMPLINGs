@@ -948,6 +948,40 @@ so one command can produce a clean repeated batch without proliferating config
 files. The experiment name still comes from `config.json`, while the actual run
 directories remain unique because each run gets its own timestamped signature.
 
+For a very short cluster- or launcher-side smoke run, the repo also ships with:
+
+- [`scripts/cluster_make_smoke_config.py`](scripts/cluster_make_smoke_config.py)
+- [`scripts/cluster_sbatch_smoke.sh`](scripts/cluster_sbatch_smoke.sh)
+
+The smoke-config helper can derive a reduced config from the main
+`config.json` while overriding key knobs such as:
+
+- model family (`A1`, `A2`, or `A3`)
+- protein-context mode
+- ligand-context mode
+- epochs
+- batch size
+- number of workers
+
+Example:
+
+```bash
+python scripts/cluster_make_smoke_config.py \
+  --base-config config.json \
+  --output tmp/a1_smoke.json \
+  --experiment-name DUMPLING_registry_smoke \
+  --model-family A1 \
+  --protein-context-mode none \
+  --ligand-context-mode none \
+  --epochs 2 \
+  --batch-size 2 \
+  --num-workers 0
+```
+
+This is the quickest useful path for checking launcher behavior such as
+`--rseed`, `--n-times`, and experiment-registry writes before moving to a full
+cluster run.
+
 Run from prebuilt train / validation / test dataframes:
 
 ```bash

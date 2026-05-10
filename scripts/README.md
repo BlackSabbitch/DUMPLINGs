@@ -49,9 +49,15 @@ before launching a long experiment.
   - checks imports, CUDA visibility, filesystem readiness, and archive presence
 - `cluster_make_smoke_config.py`
   - derives a tiny smoke-test config from the main `config.json`
+  - can override:
+    - model family (`A1` / `A2` / `A3`)
+    - protein-context mode
+    - ligand-context mode
+    - epochs / batch size / workers
 - `cluster_sbatch_smoke.sh`
   - sample `sbatch` wrapper that runs the environment smoke test and can
     optionally launch a very short pipeline run once the archive is present
+  - defaults to a very cheap smoke profile with `MODEL_FAMILY=A1`
 
 ## Why `run.py` stays in the repo root
 

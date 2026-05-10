@@ -7,6 +7,7 @@
 #   SMOKE_EPOCHS=2
 #   SMOKE_BATCH_SIZE=2
 #   SMOKE_NUM_WORKERS=0
+#   MODEL_FAMILY=A1
 #   PROTEIN_CONTEXT_MODE=esm_frozen_whole
 #   LIGAND_CONTEXT_MODE=basic_rdkit
 #   RUN_PIPELINE_SMOKE=1
@@ -27,6 +28,7 @@ VENV_DIR=${VENV_DIR:-$REPO_ROOT/.venv}
 SMOKE_EPOCHS=${SMOKE_EPOCHS:-2}
 SMOKE_BATCH_SIZE=${SMOKE_BATCH_SIZE:-2}
 SMOKE_NUM_WORKERS=${SMOKE_NUM_WORKERS:-0}
+MODEL_FAMILY=${MODEL_FAMILY:-A1}
 PROTEIN_CONTEXT_MODE=${PROTEIN_CONTEXT_MODE:-esm_frozen_whole}
 LIGAND_CONTEXT_MODE=${LIGAND_CONTEXT_MODE:-basic_rdkit}
 RUN_PIPELINE_SMOKE=${RUN_PIPELINE_SMOKE:-0}
@@ -60,6 +62,7 @@ python scripts/cluster_make_smoke_config.py \
   --batch-size "$SMOKE_BATCH_SIZE" \
   --num-workers "$SMOKE_NUM_WORKERS" \
   --experiment-name "DUMPLING_cluster_smoke" \
+  --model-family "$MODEL_FAMILY" \
   --protein-context-mode "$PROTEIN_CONTEXT_MODE" \
   --ligand-context-mode "$LIGAND_CONTEXT_MODE"
 
