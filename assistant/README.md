@@ -231,6 +231,42 @@ curl http://127.0.0.1:11434/api/tags
 On smaller laptops, use the exact model tag reported by `ollama list`, and
 prefer smaller models such as `qwen2.5:1.5b`.
 
+## Running on a Cluster
+
+For cluster use, the preferred path is not an interactive VPN session but a
+dedicated Slurm job:
+
+- [scripts/slurm_assistant_journal.sh](../scripts/slurm_assistant_journal.sh)
+
+Typical example:
+
+```bash
+sbatch --export=ALL,\
+ASSISTANT_MODE=live,\
+ASSISTANT_MODEL=qwen2.5:7b,\
+ASSISTANT_LIMIT=1,\
+ASSISTANT_FORCE_REFRESH=0,\
+ASSISTANT_TIMEOUT_SEC=1800 \
+scripts/slurm_assistant_journal.sh
+```
+
+Recommended first pass:
+
+1. probe one run and one series with `ASSISTANT_LIMIT=1`,
+2. if that looks comfortable, rerun with `ASSISTANT_LIMIT=0`.
+
+Suggested cluster model ladder:
+
+1. `qwen2.5:7b`
+2. then, if comfortable, `qwen2.5:14b`
+3. if that turns out too heavy or too slow, fall back to `qwen2.5:3b`
+
+This is a much better fit than the laptop profile:
+
+- the assistant can think longer,
+- stronger local models become realistic,
+- and the whole assistant pass can run unattended after `sbatch`.
+
 ## Current Limits
 
 This layer is already operational, but it is still early:

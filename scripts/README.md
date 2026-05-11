@@ -63,6 +63,14 @@ before launching a long experiment.
   - can now reproduce the two-step smoke pattern used in Colab:
     1. one bootstrap run with `--extract`
     2. one repeated batch run with `--n-times N`
+- `slurm_assistant_journal.sh`
+  - sample `sbatch` wrapper for the manual assistant layer
+  - starts a local Ollama service inside the job, ensures a chosen model is
+    available, and then runs:
+    - `assistant/run_llm_journal.sh --live`
+  - writes both:
+    - `runs/experiment_journal_llm.md`
+    - `runs/experiment_series_journal_llm.md`
 - `rebuild_experiment_index.py`
   - rescans a `runs/` directory and rewrites:
     - `experiment_registry.csv`
@@ -122,6 +130,42 @@ This reproduces the current Colab smoke shape closely:
   - `./run.sh --config tmp/...json --n-times 1 --rseed 42 --extract`
 - repeated short batch:
   - `./run.sh --config tmp/...json --n-times 3 --rseed 42`
+
+## Recommended Cluster Assistant Flow
+
+Once you already have a small set of runs on the cluster, the assistant layer
+can also be executed as a Slurm job instead of through an interactive VPN
+session.
+
+Example:
+
+```bash
+sbatch --export=ALL,\
+ASSISTANT_MODE=live,\
+ASSISTANT_MODEL=qwen2.5:7b,\
+ASSISTANT_LIMIT=1,\
+ASSISTANT_FORCE_REFRESH=0,\
+ASSISTANT_TIMEOUT_SEC=1800 \
+scripts/slurm_assistant_journal.sh
+```
+
+Recommended workflow:
+
+1. start with `ASSISTANT_LIMIT=1` to probe one run and one series,
+2. if runtime and memory look comfortable, rerun with `ASSISTANT_LIMIT=0`.
+
+Suggested model ladder:
+
+1. `qwen2.5:7b`
+2. if that is comfortable, try `qwen2.5:14b`
+3. if it becomes too slow or memory-heavy, fall back to `qwen2.5:3b`
+
+That job will:
+
+1. start a local Ollama service on the allocated node,
+2. pull the selected model if needed,
+3. rebuild run-level and series-level assistant context,
+4. write both LLM journals back into `runs/`.
 
 ## Why `run.py` stays in the repo root
 

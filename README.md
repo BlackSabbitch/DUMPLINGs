@@ -1238,6 +1238,20 @@ The assistant tooling remains fully optional:
 Use the exact model tag reported by `ollama list`. On small laptops, a 1.5B
 class model is a much safer first live test than 3B/7B models.
 
+On the cluster, a stronger assistant model becomes realistic. The preferred
+entrypoint there is:
+
+- [`scripts/slurm_assistant_journal.sh`](scripts/slurm_assistant_journal.sh)
+
+Suggested cluster ladder:
+
+1. try `qwen2.5:7b` with `ASSISTANT_LIMIT=1`,
+2. if runtime and memory remain comfortable, try `qwen2.5:14b`,
+3. if needed, fall back to `qwen2.5:3b`.
+
+That path is especially attractive for the series-level assistant journals,
+because the prompts are longer and benefit more from a stronger local model.
+
 ## Diagnostics and Monitoring
 
 The project includes:
