@@ -1,0 +1,175 @@
+{
+    "experiment_name": "DUMPLING_A1_dimenet_only",
+    "debug_mode": true,
+    "splitter": {
+        "selected": "random",
+        "available": {
+            "random": {
+                "val_frac": 0.15,
+                "seed": 42
+            },
+            "scaffold": {
+                "val_frac": 0.15,
+                "seed": 42
+            },
+            "scaffold_balanced": {
+                "val_frac": 0.15,
+                "seed": 42
+            },
+            "cold_protein": {
+                "val_frac": 0.15,
+                "seed": 42
+            }
+        }
+    },
+    "dataset": {
+        "batch_size": 2,
+        "num_workers": 0,
+        "save_train_test_val_datasets": false,
+        "source_subset": "refined",
+        "core_as_test": true,
+        "test_frac": 0.15,
+        "prot_vocab": "?ACDEFGHIKLMNPQRSTVWY",
+        "lig_vocab": "?ABCDEFGHIKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-=[]()#%@+./\\:,;^$"
+    },
+    "model": {
+        "selected": "A1",
+        "global_graph": {
+            "selected": "interaction",
+            "available": {
+                "interaction": {
+                    "dist_threshold": 5.0,
+                    "ca_only": false
+                }
+            }
+        },
+        "global_encoder": {
+            "selected": "DimeNet",
+            "available": {
+                "DimeNet": {
+                    "hidden_channels": 128,
+                    "cutoff": 5.0,
+                    "max_num_neighbors": 12,
+                    "num_blocks": 3
+                }
+            }
+        },
+        "local_graph": {
+            "selected": "radius",
+            "available": {
+                "none": {},
+                "radius": {
+                    "dist_threshold": 3.5
+                }
+            }
+        },
+        "local_encoder": {
+            "selected": "DimeNet",
+            "available": {
+                "none": {},
+                "DimeNet": {
+                    "hidden_channels": 128,
+                    "cutoff": 3.5,
+                    "max_num_neighbors": 12,
+                    "num_blocks": 3,
+                    "pooling_mode": "mean"
+                }
+            }
+        },
+        "protein_context": {
+            "selected": "none",
+            "available": {
+                "none": {},
+                "esm_frozen_whole": {
+                    "model_name": "esm2_t33_650M_UR50D",
+                    "repr_layer": 33,
+                    "pooling": "mean",
+                    "cache_path": "protein_context_features",
+                    "embedding_dim": 1280,
+                    "max_length": 1022,
+                    "precompute_batch_size": 8
+                },
+                "esm_only": {
+                    "model_name": "esm2_t33_650M_UR50D",
+                    "repr_layer": 33,
+                    "pooling": "mean",
+                    "cache_path": "protein_context_features",
+                    "embedding_dim": 1280,
+                    "max_length": 1022,
+                    "precompute_batch_size": 8
+                },
+                "esm_frozen_pocket": {
+                    "model_name": "esm2_t33_650M_UR50D",
+                    "repr_layer": 33,
+                    "pooling": "mean",
+                    "cache_path": "protein_context_features",
+                    "embedding_dim": 1280,
+                    "max_length": 1022,
+                    "precompute_batch_size": 16
+                }
+            }
+        },
+        "ligand_context": {
+            "selected": "none",
+            "available": {
+                "none": {},
+                "basic_rdkit": {
+                    "cache_path": "ligand_context_features",
+                    "descriptor_set": "basic_physchem_v1",
+                    "embedding_dim": 7,
+                    "precompute_batch_size": 256
+                }
+            }
+        }
+    },
+    "training": {
+        "epochs": 100,
+        "plot_every_n_epochs": 10,
+        "save_only_best_epoch": true,
+        "memory_log_every_n_batches": 0,
+        "slow_batch_warn_seconds": 5.0,
+        "early_stopping": {
+            "enabled": true,
+            "patience": 10,
+            "primary_monitor": "val_pearson",
+            "monitors": {
+                "val_pearson": "max",
+                "val_rmse": "min",
+                "train_loss": "ignore",
+                "val_ci": "max"
+            }
+        },
+        "loss_fn": {
+            "selected": "HuberLoss",
+            "available": {
+                "HuberLoss": {
+                    "delta": 1.0
+                },
+                "MSELoss": {}
+            }
+        },
+        "optimizers": {
+            "classic": {
+                "type": "AdamW",
+                "params": {
+                    "lr": 0.0001,
+                    "weight_decay": 0.01
+                },
+                "scheduler": {
+                    "type": "ReduceLROnPlateau",
+                    "params": {
+                        "mode": "min",
+                        "factor": 0.5,
+                        "patience": 3
+                    }
+                }
+            },
+            "quantum": {
+                "type": "AdamW",
+                "params": {
+                    "lr": 0.001
+                }
+            }
+        }
+    }
+}

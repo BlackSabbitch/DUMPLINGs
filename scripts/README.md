@@ -56,6 +56,9 @@ before launching a long experiment.
     - protein-context mode
     - ligand-context mode
     - epochs / batch size / workers
+- `make_real_series_configs.py`
+  - derives a first real-series config suite from the main `config.json`
+  - useful when you want one stable config per real experimental condition
 - `slurm_pipeline_smoke.sh`
   - sample `sbatch` wrapper that runs the environment smoke test and can
     optionally launch a very short pipeline run once the archive is present
@@ -63,6 +66,11 @@ before launching a long experiment.
   - can now reproduce the two-step smoke pattern used in Colab:
     1. one bootstrap run with `--extract`
     2. one repeated batch run with `--n-times N`
+- `slurm_run_series.sh`
+  - sample `sbatch` wrapper for a real repeated experiment series
+  - launches `./run.sh --config ... --n-times ... --rseed ...`
+  - supports optional `RUN_EXTRACT=1`, but the normal post-bootstrap case is
+    `RUN_EXTRACT=0`
 - `slurm_assistant_journal.sh`
   - sample `sbatch` wrapper for the manual assistant layer
   - starts a local Ollama service inside the job, ensures a chosen model is
@@ -130,6 +138,123 @@ This reproduces the current Colab smoke shape closely:
   - `./run.sh --config tmp/...json --n-times 1 --rseed 42 --extract`
 - repeated short batch:
   - `./run.sh --config tmp/...json --n-times 3 --rseed 42`
+
+### When to use this again
+
+Use the full bootstrap smoke again only when something material changed about
+the raw-data side of the workspace, for example:
+
+- a fresh cluster account or fresh filesystem location,
+- missing `data/` or `datasets/`,
+- a new source archive or a different source subset,
+- a parser/cache-signature change that should invalidate old cached datasets.
+
+Otherwise, once extraction and dataset caches already exist, later smoke or
+tuning jobs should normally use:
+
+```bash
+RUN_BOOTSTRAP_EXTRACT=0
+```
+
+That keeps the comparison focused on runtime knobs rather than paying the
+one-time extraction cost again.
+
+## Practical Cluster Run Playbook
+
+This is the shortest version of the intended workflow.
+
+### 1. First contact with a new cluster workspace
+
+1. run environment-only smoke,
+2. run full bootstrap smoke once,
+3. confirm that `runs/`, `data/`, and `datasets/` are now populated.
+
+### 2. Smoke or tuning after caches already exist
+
+Do not rerun extraction. Submit the short repeated batch only:
+
+```bash
+sbatch --export=ALL,\
+RUN_PIPELINE_SMOKE=1,\
+RUN_BOOTSTRAP_EXTRACT=0,\
+REPEAT_N_TIMES=3,\
+BASE_RSEED=42,\
+SMOKE_EXPERIMENT_NAME=DUMPLING_colab_smoke_bs2_nw0,\
+MODEL_FAMILY=A1,\
+PROTEIN_CONTEXT_MODE=none,\
+LIGAND_CONTEXT_MODE=none,\
+SMOKE_EPOCHS=2,\
+SMOKE_BATCH_SIZE=2,\
+SMOKE_NUM_WORKERS=0 \
+scripts/slurm_pipeline_smoke.sh
+```
+
+### 3. First real experiment series
+
+For a real series, you usually do **not** use `make_smoke_config.py`.
+Instead:
+
+1. choose or edit the real config you want to study,
+2. give that series a stable `experiment_name`,
+3. launch repeated runs with `--n-times` and a base seed.
+
+Typical pattern:
+
+```bash
+./run.sh --config config.json --n-times 5 --rseed 42
+```
+
+On Slurm, the same principle applies: one config per intended series, many
+repeated runs from that config.
+
+If you want a ready-made first suite of real configs, generate it once:
+
+```bash
+python3 scripts/make_real_series_configs.py \
+  --base-config config.json \
+  --output-dir configs/real_series \
+  --batch-size 2 \
+  --num-workers 0
+```
+
+Then launch a real repeated series on Slurm:
+
+```bash
+sbatch --export=ALL,\
+CONFIG_PATH=configs/real_series/a1_full.json,\
+N_TIMES=10,\
+BASE_RSEED=42,\
+RUN_EXTRACT=0 \
+scripts/slurm_run_series.sh
+```
+
+### 4. Do you need a new config file for every series?
+
+Usually, no.
+
+Use one config file per meaningful experimental condition. Create a new config
+only when you are actually changing something substantive, such as:
+
+- model family,
+- protein or ligand context mode,
+- loss/optimizer settings,
+- data split policy,
+- training length.
+
+Do **not** clone a config just because you want more seeds. Repeated runs of
+the same condition should usually share the same config and differ only by
+`--rseed` / `--n-times`.
+
+### 5. What to rebuild after a series finishes
+
+If new run folders were created, rebuild the factual top-level views:
+
+```bash
+python scripts/rebuild_experiment_index.py --runs-dir runs
+```
+
+That is the normal post-series maintenance step. You do not need to rebuild
+anything before every run.
 
 ## Recommended Cluster Assistant Flow
 

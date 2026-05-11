@@ -957,9 +957,11 @@ Disable the per-run automatic assistant note:
 For a very short cluster-, Colab-, or launcher-side smoke run, the repo also ships with:
 
 - [`scripts/make_smoke_config.py`](scripts/make_smoke_config.py)
+- [`scripts/make_real_series_configs.py`](scripts/make_real_series_configs.py)
 - [`scripts/rebuild_experiment_index.py`](scripts/rebuild_experiment_index.py)
 - [`scripts/runtime_env_smoke.py`](scripts/runtime_env_smoke.py)
 - [`scripts/slurm_pipeline_smoke.sh`](scripts/slurm_pipeline_smoke.sh)
+- [`scripts/slurm_run_series.sh`](scripts/slurm_run_series.sh)
 
 The smoke-config helper can derive a reduced config from the main
 `config.json` while overriding key knobs such as:
@@ -1021,6 +1023,119 @@ scripts/slurm_pipeline_smoke.sh
 
 That is preferred over feeding two manual `run.sh` invocations into Slurm by
 hand, because the whole smoke path stays reproducible in one `sbatch` script.
+
+## Practical Launch Playbook
+
+If you just want the operational answer, use this:
+
+### A. First smoke on a new machine or new cluster workspace
+
+1. run the environment-only smoke,
+2. run the full bootstrap smoke once,
+3. let it create `data/`, `datasets/`, and the first `runs/...` folders.
+
+Environment-only smoke:
+
+```bash
+sbatch --export=ALL,RUN_PIPELINE_SMOKE=0 scripts/slurm_pipeline_smoke.sh
+```
+
+Full bootstrap smoke:
+
+```bash
+sbatch --export=ALL,\
+RUN_PIPELINE_SMOKE=1,\
+RUN_BOOTSTRAP_EXTRACT=1,\
+BOOTSTRAP_N_TIMES=1,\
+REPEAT_N_TIMES=3,\
+BASE_RSEED=42,\
+SMOKE_EXPERIMENT_NAME=DUMPLING_colab_smoke,\
+MODEL_FAMILY=A1,\
+PROTEIN_CONTEXT_MODE=none,\
+LIGAND_CONTEXT_MODE=none,\
+SMOKE_EPOCHS=2,\
+SMOKE_BATCH_SIZE=2,\
+SMOKE_NUM_WORKERS=0 \
+scripts/slurm_pipeline_smoke.sh
+```
+
+### B. Later smoke or tuning runs after caches already exist
+
+Do not pay the extraction cost again unless the raw-data side really changed.
+Use:
+
+```bash
+RUN_BOOTSTRAP_EXTRACT=0
+```
+
+That is the normal setting for later runtime tuning such as `batch_size` or
+`num_workers`.
+
+### C. Real experiment series
+
+For a real series, the intended pattern is simple:
+
+1. pick one real config for one real condition,
+2. keep one stable `experiment_name` for that condition,
+3. launch repeated runs by varying only the base seed.
+
+Example:
+
+```bash
+./run.sh --config config.json --n-times 5 --rseed 42
+```
+
+If you want a ready-made first suite of real configs, derive them once from
+the main config:
+
+```bash
+python3 scripts/make_real_series_configs.py \
+  --base-config config.json \
+  --output-dir configs/real_series \
+  --batch-size 2 \
+  --num-workers 0
+```
+
+Then launch a real repeated series on Slurm:
+
+```bash
+sbatch --export=ALL,\
+CONFIG_PATH=configs/real_series/a1_full.json,\
+N_TIMES=10,\
+BASE_RSEED=42,\
+RUN_EXTRACT=0 \
+scripts/slurm_run_series.sh
+```
+
+You normally do **not** make a new config file for every seed. One config
+describes one experimental condition; repeated runs of that condition should
+usually share it.
+
+Create a new config only when the condition itself changes, for example:
+
+- model family,
+- protein context mode,
+- ligand context mode,
+- splitter policy,
+- loss or optimizer settings,
+- training length.
+
+### D. What to do after runs finish
+
+Rebuild the factual top-level indices:
+
+```bash
+python scripts/rebuild_experiment_index.py --runs-dir runs
+```
+
+This rewrites:
+
+- `runs/experiment_registry.csv`
+- `runs/experiment_journal.md`
+- `runs/experiment_series_journal.md`
+
+That rebuild is the normal post-series step. It is not something you need to
+do between every seed inside one running batch.
 
 When runs are produced on multiple machines, the recommended workflow is:
 
@@ -1251,6 +1366,17 @@ Suggested cluster ladder:
 
 That path is especially attractive for the series-level assistant journals,
 because the prompts are longer and benefit more from a stronger local model.
+
+### When to run the assistant
+
+The cleanest timing is:
+
+1. let a run or series finish,
+2. rebuild the factual indices,
+3. then run the assistant layer on top of the finished artifacts.
+
+In other words, the assistant is not part of training orchestration. It is a
+post-hoc reader over completed run folders and rebuilt top-level views.
 
 ## Diagnostics and Monitoring
 

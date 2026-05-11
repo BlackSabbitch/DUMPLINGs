@@ -1,0 +1,58 @@
+[
+  {
+    "filename": "a1_dimenet_only.json",
+    "experiment_name": "DUMPLING_A1_dimenet_only",
+    "model_family": "A1",
+    "protein_context_mode": "none",
+    "ligand_context_mode": "none",
+    "launch_extra_args": ""
+  },
+  {
+    "filename": "a1_esm_only.json",
+    "experiment_name": "DUMPLING_A1_esm_only",
+    "model_family": "A1",
+    "protein_context_mode": "esm_only",
+    "ligand_context_mode": "none",
+    "launch_extra_args": ""
+  },
+  {
+    "filename": "a1_dimenet_esm.json",
+    "experiment_name": "DUMPLING_A1_dimenet_esm",
+    "model_family": "A1",
+    "protein_context_mode": "esm_frozen_whole",
+    "ligand_context_mode": "none",
+    "launch_extra_args": ""
+  },
+  {
+    "filename": "a1_full.json",
+    "experiment_name": "DUMPLING_A1_full",
+    "model_family": "A1",
+    "protein_context_mode": "esm_frozen_whole",
+    "ligand_context_mode": "basic_rdkit",
+    "launch_extra_args": ""
+  },
+  {
+    "filename": "a2_full.json",
+    "experiment_name": "DUMPLING_A2_full",
+    "model_family": "A2",
+    "protein_context_mode": "esm_frozen_whole",
+    "ligand_context_mode": "basic_rdkit",
+    "launch_extra_args": ""
+  },
+  {
+    "filename": "a3_with_bias.json",
+    "experiment_name": "DUMPLING_A3_with_bias",
+    "model_family": "A3",
+    "protein_context_mode": "esm_frozen_whole",
+    "ligand_context_mode": "basic_rdkit",
+    "launch_extra_args": "--a3-mixer-bias"
+  },
+  {
+    "filename": "a3_without_bias.json",
+    "experiment_name": "DUMPLING_A3_without_bias",
+    "model_family": "A3",
+    "protein_context_mode": "esm_frozen_whole",
+    "ligand_context_mode": "basic_rdkit",
+    "launch_extra_args": "--no-a3-mixer-bias"
+  }
+]

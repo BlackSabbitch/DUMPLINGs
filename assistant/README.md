@@ -116,6 +116,27 @@ The assistant pipeline currently has a clean, staged flow:
 This is why the code is split into separate scripts rather than one large
 module: each file owns one pipeline stage.
 
+## When To Run It
+
+The assistant should normally run **after** experiments finish, not during
+launch setup.
+
+Recommended order:
+
+1. complete one run or one series of runs,
+2. rebuild the factual indices with
+   `python scripts/rebuild_experiment_index.py --runs-dir runs`,
+3. run the assistant layer,
+4. inspect:
+   - `runs/experiment_journal_llm.md`
+   - `runs/experiment_series_journal_llm.md`
+
+That keeps responsibilities clean:
+
+- training produces factual artifacts,
+- factual rebuild compacts them into top-level views,
+- the assistant reads those finished artifacts and adds optional notes.
+
 ## Why It Is Scripts, Not Classes
 
 Right now this layer is mostly:
