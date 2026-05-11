@@ -31,6 +31,16 @@ These define the assistant pipeline itself.
   Stage 3. Builds `runs/experiment_journal_llm.md` from prompt previews and,
   in live mode, from Ollama responses.
 
+- [build_series_contexts.py](build_series_contexts.py)  
+  Stage 1s. Groups run-level context packets into series-level packets.
+
+- [build_series_llm_prompts.py](build_series_llm_prompts.py)  
+  Stage 2s. Turns those series packets into reviewable series prompt previews.
+
+- [build_series_llm_journal.py](build_series_llm_journal.py)  
+  Stage 3s. Builds `runs/experiment_series_journal_llm.md` from series prompt
+  previews and, in live mode, from Ollama responses.
+
 - [llm_backend.py](llm_backend.py)  
   Thin local Ollama backend plus cache helpers. It does not know what a run
   is; it only knows how to call the model and cache results.
@@ -61,6 +71,15 @@ not hand-maintained source files.
 - [llm_prompt_preview.md](llm_prompt_preview.md)  
   Output of stage 2. Human-readable prompt previews.
 
+- [experiment_series_llm_context.json](experiment_series_llm_context.json)  
+  Output of stage 1s. Machine-oriented context packets per series.
+
+- [llm_series_prompt_preview.json](llm_series_prompt_preview.json)  
+  Output of stage 2s. Structured prompt previews for experiment series.
+
+- [llm_series_prompt_preview.md](llm_series_prompt_preview.md)  
+  Output of stage 2s. Human-readable prompt previews for experiment series.
+
 These files are not mere trash; they are useful for debugging and prompt
 design. But they are still **intermediate products**, not canonical inputs.
 
@@ -79,11 +98,20 @@ The assistant pipeline currently has a clean, staged flow:
 1. `build_run_contexts.py`  
    factual run folders -> compact JSON packets
 
-2. `build_llm_prompts.py`  
+2. `build_series_contexts.py`  
+   run packets -> grouped series packets
+
+3. `build_llm_prompts.py`  
    packets + context files -> prompt previews
 
-3. `build_llm_journal.py`  
+4. `build_series_llm_prompts.py`  
+   series packets + context files -> series prompt previews
+
+5. `build_llm_journal.py`  
    prompt previews + backend/cache -> `runs/experiment_journal_llm.md`
+
+6. `build_series_llm_journal.py`  
+   series prompt previews + backend/cache -> `runs/experiment_series_journal_llm.md`
 
 This is why the code is split into separate scripts rather than one large
 module: each file owns one pipeline stage.
@@ -125,6 +153,9 @@ that would mostly add ceremony.
 - `build_run_contexts.py`
 - `build_llm_prompts.py`
 - `build_llm_journal.py`
+- `build_series_contexts.py`
+- `build_series_llm_prompts.py`
+- `build_series_llm_journal.py`
 - `llm_backend.py`
 - `run_llm_journal.sh`
 - `system_context.md`
@@ -137,6 +168,9 @@ These are the real assistant system.
 - `experiment_journal_llm_context.json`
 - `llm_prompt_preview.json`
 - `llm_prompt_preview.md`
+- `experiment_series_llm_context.json`
+- `llm_series_prompt_preview.json`
+- `llm_series_prompt_preview.md`
 - `cache/*.json`
 
 These are partly "scaffolding", but useful scaffolding:
@@ -153,9 +187,12 @@ separate inspection points.
 If you want one simple map:
 
 - `build_run_contexts.py` = extractor
-- `build_llm_prompts.py` = prompt packer
+- `build_series_contexts.py` = series grouper
+- `build_llm_prompts.py` = run-level prompt packer
+- `build_series_llm_prompts.py` = series-level prompt packer
 - `llm_backend.py` = model adapter
-- `build_llm_journal.py` = final journal writer
+- `build_llm_journal.py` = run-level final journal writer
+- `build_series_llm_journal.py` = series-level final journal writer
 - `run_llm_journal.sh` = orchestrator
 
 Everything else is either:
@@ -208,11 +245,16 @@ That is fine. The important part is that the pipeline now works end to end.
 
 `assistant/` is not a random pile of functions.
 
-It is a 3-stage post-hoc analysis pipeline:
+It is a staged post-hoc analysis pipeline with two parallel tracks:
 
-- extract run context,
-- assemble prompts,
-- build an LLM journal.
+- run-level:
+  - extract run context,
+  - assemble run prompts,
+  - build `experiment_journal_llm.md`
+- series-level:
+  - group runs into series packets,
+  - assemble series prompts,
+  - build `experiment_series_journal_llm.md`
 
 The generated files are separate on purpose, because right now they are useful
 inspection points rather than clutter.

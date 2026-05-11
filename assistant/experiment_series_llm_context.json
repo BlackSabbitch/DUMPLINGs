@@ -1,0 +1,1533 @@
+{
+  "run_context_path": "/home/yaroslav/FCUL/DUMPLINGs/assistant/experiment_journal_llm_context.json",
+  "num_series": 8,
+  "series_packets": [
+    {
+      "series_name": "DUMPLING_A15_esm_DimeNet",
+      "setup": {
+        "experiment_name": "DUMPLING_A15_esm_DimeNet",
+        "model_family": "legacy_duo",
+        "source_subset": "refined",
+        "splitter": "random",
+        "core_as_test": "True",
+        "primary_metric": "val_pearson",
+        "protein_context": "esm_frozen_whole",
+        "ligand_context": "",
+        "execution_env": "",
+        "hostname": ""
+      },
+      "series_summary": {
+        "started_at": "2026-05-07T19:51:11",
+        "finished_at": "2026-05-08T00:10:49",
+        "total_runs": 2,
+        "success_count": 2,
+        "failure_count": 0,
+        "seeds": [
+          "42"
+        ],
+        "batch_positions": []
+      },
+      "aggregate_metrics": {
+        "duration_sec": {
+          "count": "2",
+          "mean": "0.0",
+          "std": "0.0",
+          "min": "0.0",
+          "max": "0.0"
+        },
+        "test_rmse": {
+          "count": "2",
+          "mean": "1.3764",
+          "std": "0.0226",
+          "min": "1.3538",
+          "max": "1.3989"
+        },
+        "test_pearson": {
+          "count": "2",
+          "mean": "0.7753",
+          "std": "0.0076",
+          "min": "0.7677",
+          "max": "0.7829"
+        },
+        "test_ci": {
+          "count": "2",
+          "mean": "0.7850",
+          "std": "0.0057",
+          "min": "0.7793",
+          "max": "0.7908"
+        }
+      },
+      "members": [
+        {
+          "experiment_signature": "DUMPLING_A15_esm_DimeNet_20260507_195111",
+          "run_dir": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A15_esm_DimeNet_20260507_195111",
+          "registry_snapshot": {
+            "started_at": "2026-05-07T19:51:11",
+            "finished_at": "2026-05-07T19:51:11",
+            "duration_sec": "0.0",
+            "status": "success",
+            "experiment_name": "DUMPLING_A15_esm_DimeNet",
+            "experiment_signature": "DUMPLING_A15_esm_DimeNet_20260507_195111",
+            "exp_dir": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A15_esm_DimeNet_20260507_195111",
+            "config_path": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A15_esm_DimeNet_20260507_195111/config.json",
+            "git_commit": "",
+            "execution_env": "",
+            "hostname": "",
+            "artifact_root": "/home/yaroslav/FCUL/DUMPLINGs/runs",
+            "model_family": "legacy_duo",
+            "source_subset": "refined",
+            "splitter": "random",
+            "splitter_seed": "42",
+            "core_as_test": "True",
+            "a3_mixer_bias": "",
+            "batch_run_index": "",
+            "batch_n_times": "",
+            "device": "",
+            "primary_metric": "val_pearson",
+            "best_epoch": "",
+            "epochs_completed": "43",
+            "test_rmse": "1.353843036008509",
+            "test_pearson": "0.7828758146629085",
+            "test_ci": "0.7907588549015856"
+          },
+          "metrics": {
+            "best_epoch": "",
+            "epochs_completed": "43",
+            "test_rmse": "1.353843036008509",
+            "test_pearson": "0.7828758146629085",
+            "test_ci": "0.7907588549015856"
+          },
+          "config_excerpt": {
+            "experiment_name": "DUMPLING_A15_esm_DimeNet",
+            "source_subset": "refined",
+            "core_as_test": true,
+            "epochs": 100,
+            "batch_size": "",
+            "num_workers": "",
+            "primary_metric": "val_pearson",
+            "model_selected": "",
+            "global_graph_selected": "",
+            "global_graph_config": {},
+            "global_encoder_selected": "",
+            "global_encoder_config": {},
+            "local_graph_selected": "",
+            "local_graph_config": {},
+            "local_encoder_selected": "",
+            "local_encoder_config": {},
+            "protein_context_selected": "esm_frozen_whole",
+            "protein_context_config": {},
+            "ligand_context_selected": "",
+            "ligand_context_config": {}
+          },
+          "artifact_paths": {
+            "run_dir": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A15_esm_DimeNet_20260507_195111",
+            "config": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A15_esm_DimeNet_20260507_195111/config.json",
+            "history": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A15_esm_DimeNet_20260507_195111/history.json",
+            "test_results": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A15_esm_DimeNet_20260507_195111/test_results.json",
+            "report": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A15_esm_DimeNet_20260507_195111/model_performance_report.png",
+            "run_log": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A15_esm_DimeNet_20260507_195111/log.txt"
+          }
+        },
+        {
+          "experiment_signature": "DUMPLING_A15_esm_DimeNet_20260508_001049",
+          "run_dir": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A15_esm_DimeNet_20260508_001049",
+          "registry_snapshot": {
+            "started_at": "2026-05-08T00:10:49",
+            "finished_at": "2026-05-08T00:10:49",
+            "duration_sec": "0.0",
+            "status": "success",
+            "experiment_name": "DUMPLING_A15_esm_DimeNet",
+            "experiment_signature": "DUMPLING_A15_esm_DimeNet_20260508_001049",
+            "exp_dir": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A15_esm_DimeNet_20260508_001049",
+            "config_path": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A15_esm_DimeNet_20260508_001049/config.json",
+            "git_commit": "",
+            "execution_env": "",
+            "hostname": "",
+            "artifact_root": "/home/yaroslav/FCUL/DUMPLINGs/runs",
+            "model_family": "legacy_duo",
+            "source_subset": "refined",
+            "splitter": "random",
+            "splitter_seed": "42",
+            "core_as_test": "True",
+            "a3_mixer_bias": "",
+            "batch_run_index": "",
+            "batch_n_times": "",
+            "device": "",
+            "primary_metric": "val_pearson",
+            "best_epoch": "",
+            "epochs_completed": "36",
+            "test_rmse": "1.39894675085749",
+            "test_pearson": "0.7676593466194417",
+            "test_ci": "0.7793030875565016"
+          },
+          "metrics": {
+            "best_epoch": "",
+            "epochs_completed": "36",
+            "test_rmse": "1.39894675085749",
+            "test_pearson": "0.7676593466194417",
+            "test_ci": "0.7793030875565016"
+          },
+          "config_excerpt": {
+            "experiment_name": "DUMPLING_A15_esm_DimeNet",
+            "source_subset": "refined",
+            "core_as_test": true,
+            "epochs": 100,
+            "batch_size": "",
+            "num_workers": "",
+            "primary_metric": "val_pearson",
+            "model_selected": "",
+            "global_graph_selected": "",
+            "global_graph_config": {},
+            "global_encoder_selected": "",
+            "global_encoder_config": {},
+            "local_graph_selected": "",
+            "local_graph_config": {},
+            "local_encoder_selected": "",
+            "local_encoder_config": {},
+            "protein_context_selected": "esm_frozen_whole",
+            "protein_context_config": {},
+            "ligand_context_selected": "",
+            "ligand_context_config": {}
+          },
+          "artifact_paths": {
+            "run_dir": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A15_esm_DimeNet_20260508_001049",
+            "config": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A15_esm_DimeNet_20260508_001049/config.json",
+            "history": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A15_esm_DimeNet_20260508_001049/history.json",
+            "test_results": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A15_esm_DimeNet_20260508_001049/test_results.json",
+            "report": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A15_esm_DimeNet_20260508_001049/model_performance_report.png",
+            "run_log": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A15_esm_DimeNet_20260508_001049/log.txt"
+          }
+        }
+      ]
+    },
+    {
+      "series_name": "DUMPLING_A15_esm_DimeNet_ligand_context_test",
+      "setup": {
+        "experiment_name": "DUMPLING_A15_esm_DimeNet_ligand_context_test",
+        "model_family": "legacy_duo",
+        "source_subset": "refined",
+        "splitter": "random",
+        "core_as_test": "True",
+        "primary_metric": "val_pearson",
+        "protein_context": "esm_frozen_whole",
+        "ligand_context": "basic_rdkit",
+        "execution_env": "",
+        "hostname": ""
+      },
+      "series_summary": {
+        "started_at": "2026-05-08T11:13:27",
+        "finished_at": "2026-05-08T11:13:27",
+        "total_runs": 1,
+        "success_count": 1,
+        "failure_count": 0,
+        "seeds": [
+          "42"
+        ],
+        "batch_positions": []
+      },
+      "aggregate_metrics": {
+        "duration_sec": {
+          "count": "1",
+          "mean": "0.0",
+          "std": "0.0",
+          "min": "0.0",
+          "max": "0.0"
+        },
+        "test_rmse": {
+          "count": "1",
+          "mean": "1.3771",
+          "std": "0.0000",
+          "min": "1.3771",
+          "max": "1.3771"
+        },
+        "test_pearson": {
+          "count": "1",
+          "mean": "0.7753",
+          "std": "0.0000",
+          "min": "0.7753",
+          "max": "0.7753"
+        },
+        "test_ci": {
+          "count": "1",
+          "mean": "0.7862",
+          "std": "0.0000",
+          "min": "0.7862",
+          "max": "0.7862"
+        }
+      },
+      "members": [
+        {
+          "experiment_signature": "DUMPLING_A15_esm_DimeNet_ligand_context_test_20260508_111327",
+          "run_dir": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A15_esm_DimeNet_ligand_context_test_20260508_111327",
+          "registry_snapshot": {
+            "started_at": "2026-05-08T11:13:27",
+            "finished_at": "2026-05-08T11:13:27",
+            "duration_sec": "0.0",
+            "status": "success",
+            "experiment_name": "DUMPLING_A15_esm_DimeNet_ligand_context_test",
+            "experiment_signature": "DUMPLING_A15_esm_DimeNet_ligand_context_test_20260508_111327",
+            "exp_dir": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A15_esm_DimeNet_ligand_context_test_20260508_111327",
+            "config_path": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A15_esm_DimeNet_ligand_context_test_20260508_111327/config.json",
+            "git_commit": "",
+            "execution_env": "",
+            "hostname": "",
+            "artifact_root": "/home/yaroslav/FCUL/DUMPLINGs/runs",
+            "model_family": "legacy_duo",
+            "source_subset": "refined",
+            "splitter": "random",
+            "splitter_seed": "42",
+            "core_as_test": "True",
+            "a3_mixer_bias": "",
+            "batch_run_index": "",
+            "batch_n_times": "",
+            "device": "",
+            "primary_metric": "val_pearson",
+            "best_epoch": "",
+            "epochs_completed": "29",
+            "test_rmse": "1.3771292078063415",
+            "test_pearson": "0.7752929785769919",
+            "test_ci": "0.7862010836845273"
+          },
+          "metrics": {
+            "best_epoch": "",
+            "epochs_completed": "29",
+            "test_rmse": "1.3771292078063415",
+            "test_pearson": "0.7752929785769919",
+            "test_ci": "0.7862010836845273"
+          },
+          "config_excerpt": {
+            "experiment_name": "DUMPLING_A15_esm_DimeNet_ligand_context_test",
+            "source_subset": "refined",
+            "core_as_test": true,
+            "epochs": 100,
+            "batch_size": "",
+            "num_workers": "",
+            "primary_metric": "val_pearson",
+            "model_selected": "",
+            "global_graph_selected": "",
+            "global_graph_config": {},
+            "global_encoder_selected": "",
+            "global_encoder_config": {},
+            "local_graph_selected": "",
+            "local_graph_config": {},
+            "local_encoder_selected": "",
+            "local_encoder_config": {},
+            "protein_context_selected": "esm_frozen_whole",
+            "protein_context_config": {},
+            "ligand_context_selected": "basic_rdkit",
+            "ligand_context_config": {}
+          },
+          "artifact_paths": {
+            "run_dir": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A15_esm_DimeNet_ligand_context_test_20260508_111327",
+            "config": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A15_esm_DimeNet_ligand_context_test_20260508_111327/config.json",
+            "history": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A15_esm_DimeNet_ligand_context_test_20260508_111327/history.json",
+            "test_results": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A15_esm_DimeNet_ligand_context_test_20260508_111327/test_results.json",
+            "scatter_diagnostics": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A15_esm_DimeNet_ligand_context_test_20260508_111327/best_validation_scatter_diagnostics.json",
+            "report": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A15_esm_DimeNet_ligand_context_test_20260508_111327/model_performance_report.png",
+            "run_log": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A15_esm_DimeNet_ligand_context_test_20260508_111327/log.txt"
+          }
+        }
+      ]
+    },
+    {
+      "series_name": "DUMPLING_A1_DimeNet",
+      "setup": {
+        "experiment_name": "DUMPLING_A1_DimeNet",
+        "model_family": "legacy_duo",
+        "source_subset": "refined",
+        "splitter": "random",
+        "core_as_test": "True",
+        "primary_metric": "val_pearson",
+        "protein_context": "",
+        "ligand_context": "",
+        "execution_env": "",
+        "hostname": ""
+      },
+      "series_summary": {
+        "started_at": "",
+        "finished_at": "2026-05-03T15:47:19",
+        "total_runs": 2,
+        "success_count": 1,
+        "failure_count": 1,
+        "seeds": [
+          "42"
+        ],
+        "batch_positions": []
+      },
+      "aggregate_metrics": {
+        "duration_sec": {
+          "count": "1",
+          "mean": "0.0",
+          "std": "0.0",
+          "min": "0.0",
+          "max": "0.0"
+        },
+        "test_rmse": {
+          "count": "1",
+          "mean": "0.8141",
+          "std": "0.0000",
+          "min": "0.8141",
+          "max": "0.8141"
+        },
+        "test_pearson": {
+          "count": "1",
+          "mean": "0.6809",
+          "std": "0.0000",
+          "min": "0.6809",
+          "max": "0.6809"
+        },
+        "test_ci": {
+          "count": "1",
+          "mean": "0.7369",
+          "std": "0.0000",
+          "min": "0.7369",
+          "max": "0.7369"
+        }
+      },
+      "members": [
+        {
+          "experiment_signature": "DUMPLING_A1_DimeNet_milestone_16_epochs_CI074",
+          "run_dir": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A1_DimeNet_milestone_16_epochs_CI074",
+          "registry_snapshot": {
+            "started_at": "",
+            "finished_at": "",
+            "duration_sec": "",
+            "status": "",
+            "experiment_name": "DUMPLING_A1_DimeNet",
+            "experiment_signature": "DUMPLING_A1_DimeNet_milestone_16_epochs_CI074",
+            "exp_dir": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A1_DimeNet_milestone_16_epochs_CI074",
+            "config_path": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A1_DimeNet_milestone_16_epochs_CI074/config.json",
+            "git_commit": "",
+            "execution_env": "",
+            "hostname": "",
+            "artifact_root": "/home/yaroslav/FCUL/DUMPLINGs/runs",
+            "model_family": "legacy_duo",
+            "source_subset": "refined",
+            "splitter": "random",
+            "splitter_seed": "42",
+            "core_as_test": "True",
+            "a3_mixer_bias": "",
+            "batch_run_index": "",
+            "batch_n_times": "",
+            "device": "",
+            "primary_metric": "val_pearson",
+            "best_epoch": "",
+            "epochs_completed": "16",
+            "test_rmse": "",
+            "test_pearson": "",
+            "test_ci": ""
+          },
+          "metrics": {
+            "best_epoch": "",
+            "epochs_completed": "16",
+            "test_rmse": "",
+            "test_pearson": "",
+            "test_ci": ""
+          },
+          "config_excerpt": {
+            "experiment_name": "DUMPLING_A1_DimeNet",
+            "source_subset": "refined",
+            "core_as_test": true,
+            "epochs": 100,
+            "batch_size": "",
+            "num_workers": "",
+            "primary_metric": "val_pearson",
+            "model_selected": "",
+            "global_graph_selected": "",
+            "global_graph_config": {},
+            "global_encoder_selected": "",
+            "global_encoder_config": {},
+            "local_graph_selected": "",
+            "local_graph_config": {},
+            "local_encoder_selected": "",
+            "local_encoder_config": {},
+            "protein_context_selected": "",
+            "protein_context_config": {},
+            "ligand_context_selected": "",
+            "ligand_context_config": {}
+          },
+          "artifact_paths": {
+            "run_dir": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A1_DimeNet_milestone_16_epochs_CI074",
+            "config": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A1_DimeNet_milestone_16_epochs_CI074/config.json",
+            "history": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A1_DimeNet_milestone_16_epochs_CI074/history.json",
+            "run_log": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A1_DimeNet_milestone_16_epochs_CI074/log.txt"
+          }
+        },
+        {
+          "experiment_signature": "DUMPLING_A1_DimeNet_20260503_154719",
+          "run_dir": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A1_DimeNet_20260503_154719",
+          "registry_snapshot": {
+            "started_at": "2026-05-03T15:47:19",
+            "finished_at": "2026-05-03T15:47:19",
+            "duration_sec": "0.0",
+            "status": "success",
+            "experiment_name": "DUMPLING_A1_DimeNet",
+            "experiment_signature": "DUMPLING_A1_DimeNet_20260503_154719",
+            "exp_dir": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A1_DimeNet_20260503_154719",
+            "config_path": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A1_DimeNet_20260503_154719/config.json",
+            "git_commit": "",
+            "execution_env": "",
+            "hostname": "",
+            "artifact_root": "/home/yaroslav/FCUL/DUMPLINGs/runs",
+            "model_family": "legacy_duo",
+            "source_subset": "refined",
+            "splitter": "random",
+            "splitter_seed": "42",
+            "core_as_test": "True",
+            "a3_mixer_bias": "",
+            "batch_run_index": "",
+            "batch_n_times": "",
+            "device": "",
+            "primary_metric": "val_pearson",
+            "best_epoch": "",
+            "epochs_completed": "40",
+            "test_rmse": "0.8140774957898527",
+            "test_pearson": "0.680922538999824",
+            "test_ci": "0.7368521751608351"
+          },
+          "metrics": {
+            "best_epoch": "",
+            "epochs_completed": "40",
+            "test_rmse": "0.8140774957898527",
+            "test_pearson": "0.680922538999824",
+            "test_ci": "0.7368521751608351"
+          },
+          "config_excerpt": {
+            "experiment_name": "DUMPLING_A1_DimeNet",
+            "source_subset": "refined",
+            "core_as_test": true,
+            "epochs": 100,
+            "batch_size": "",
+            "num_workers": "",
+            "primary_metric": "val_pearson",
+            "model_selected": "",
+            "global_graph_selected": "",
+            "global_graph_config": {},
+            "global_encoder_selected": "",
+            "global_encoder_config": {},
+            "local_graph_selected": "",
+            "local_graph_config": {},
+            "local_encoder_selected": "",
+            "local_encoder_config": {},
+            "protein_context_selected": "",
+            "protein_context_config": {},
+            "ligand_context_selected": "",
+            "ligand_context_config": {}
+          },
+          "artifact_paths": {
+            "run_dir": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A1_DimeNet_20260503_154719",
+            "config": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A1_DimeNet_20260503_154719/config.json",
+            "history": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A1_DimeNet_20260503_154719/history.json",
+            "test_results": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A1_DimeNet_20260503_154719/test_results.json",
+            "report": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A1_DimeNet_20260503_154719/model_performance_report.png",
+            "run_log": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A1_DimeNet_20260503_154719/log.txt"
+          }
+        }
+      ]
+    },
+    {
+      "series_name": "DUMPLING_A1b_DimeNet_ESM_only_ESM",
+      "setup": {
+        "experiment_name": "DUMPLING_A1b_DimeNet_ESM_only_ESM",
+        "model_family": "legacy_duo",
+        "source_subset": "refined",
+        "splitter": "random",
+        "core_as_test": "True",
+        "primary_metric": "val_pearson",
+        "protein_context": "esm_only",
+        "ligand_context": "",
+        "execution_env": "",
+        "hostname": ""
+      },
+      "series_summary": {
+        "started_at": "2026-05-06T09:30:30",
+        "finished_at": "2026-05-06T09:30:30",
+        "total_runs": 1,
+        "success_count": 1,
+        "failure_count": 0,
+        "seeds": [
+          "42"
+        ],
+        "batch_positions": []
+      },
+      "aggregate_metrics": {
+        "duration_sec": {
+          "count": "1",
+          "mean": "0.0",
+          "std": "0.0",
+          "min": "0.0",
+          "max": "0.0"
+        },
+        "test_rmse": {
+          "count": "1",
+          "mean": "0.9514",
+          "std": "0.0000",
+          "min": "0.9514",
+          "max": "0.9514"
+        },
+        "test_pearson": {
+          "count": "1",
+          "mean": "0.5101",
+          "std": "0.0000",
+          "min": "0.5101",
+          "max": "0.5101"
+        },
+        "test_ci": {
+          "count": "1",
+          "mean": "0.6686",
+          "std": "0.0000",
+          "min": "0.6686",
+          "max": "0.6686"
+        }
+      },
+      "members": [
+        {
+          "experiment_signature": "DUMPLING_A1b_DimeNet_ESM_only_ESM_20260506_093030",
+          "run_dir": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A1b_DimeNet_ESM_only_ESM_20260506_093030",
+          "registry_snapshot": {
+            "started_at": "2026-05-06T09:30:30",
+            "finished_at": "2026-05-06T09:30:30",
+            "duration_sec": "0.0",
+            "status": "success",
+            "experiment_name": "DUMPLING_A1b_DimeNet_ESM_only_ESM",
+            "experiment_signature": "DUMPLING_A1b_DimeNet_ESM_only_ESM_20260506_093030",
+            "exp_dir": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A1b_DimeNet_ESM_only_ESM_20260506_093030",
+            "config_path": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A1b_DimeNet_ESM_only_ESM_20260506_093030/config.json",
+            "git_commit": "",
+            "execution_env": "",
+            "hostname": "",
+            "artifact_root": "/home/yaroslav/FCUL/DUMPLINGs/runs",
+            "model_family": "legacy_duo",
+            "source_subset": "refined",
+            "splitter": "random",
+            "splitter_seed": "42",
+            "core_as_test": "True",
+            "a3_mixer_bias": "",
+            "batch_run_index": "",
+            "batch_n_times": "",
+            "device": "",
+            "primary_metric": "val_pearson",
+            "best_epoch": "",
+            "epochs_completed": "41",
+            "test_rmse": "0.9514149115496928",
+            "test_pearson": "0.5101147026194092",
+            "test_ci": "0.6685600172195251"
+          },
+          "metrics": {
+            "best_epoch": "",
+            "epochs_completed": "41",
+            "test_rmse": "0.9514149115496928",
+            "test_pearson": "0.5101147026194092",
+            "test_ci": "0.6685600172195251"
+          },
+          "config_excerpt": {
+            "experiment_name": "DUMPLING_A1b_DimeNet_ESM_only_ESM",
+            "source_subset": "refined",
+            "core_as_test": true,
+            "epochs": 100,
+            "batch_size": "",
+            "num_workers": "",
+            "primary_metric": "val_pearson",
+            "model_selected": "",
+            "global_graph_selected": "",
+            "global_graph_config": {},
+            "global_encoder_selected": "",
+            "global_encoder_config": {},
+            "local_graph_selected": "",
+            "local_graph_config": {},
+            "local_encoder_selected": "",
+            "local_encoder_config": {},
+            "protein_context_selected": "esm_only",
+            "protein_context_config": {},
+            "ligand_context_selected": "",
+            "ligand_context_config": {}
+          },
+          "artifact_paths": {
+            "run_dir": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A1b_DimeNet_ESM_only_ESM_20260506_093030",
+            "config": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A1b_DimeNet_ESM_only_ESM_20260506_093030/config.json",
+            "history": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A1b_DimeNet_ESM_only_ESM_20260506_093030/history.json",
+            "test_results": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A1b_DimeNet_ESM_only_ESM_20260506_093030/test_results.json",
+            "report": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A1b_DimeNet_ESM_only_ESM_20260506_093030/model_performance_report.png",
+            "run_log": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A1b_DimeNet_ESM_only_ESM_20260506_093030/log.txt"
+          }
+        }
+      ]
+    },
+    {
+      "series_name": "DUMPLING_A1b_DimeNet_Initial_milestone_bs2",
+      "setup": {
+        "experiment_name": "DUMPLING_A1b_DimeNet_Initial_milestone_bs2",
+        "model_family": "legacy_duo",
+        "source_subset": "refined",
+        "splitter": "random",
+        "core_as_test": "True",
+        "primary_metric": "val_pearson",
+        "protein_context": "",
+        "ligand_context": "",
+        "execution_env": "",
+        "hostname": ""
+      },
+      "series_summary": {
+        "started_at": "2026-05-03T21:08:15",
+        "finished_at": "2026-05-03T21:08:15",
+        "total_runs": 1,
+        "success_count": 1,
+        "failure_count": 0,
+        "seeds": [
+          "42"
+        ],
+        "batch_positions": []
+      },
+      "aggregate_metrics": {
+        "duration_sec": {
+          "count": "1",
+          "mean": "0.0",
+          "std": "0.0",
+          "min": "0.0",
+          "max": "0.0"
+        },
+        "test_rmse": {
+          "count": "1",
+          "mean": "0.8091",
+          "std": "0.0000",
+          "min": "0.8091",
+          "max": "0.8091"
+        },
+        "test_pearson": {
+          "count": "1",
+          "mean": "0.6867",
+          "std": "0.0000",
+          "min": "0.6867",
+          "max": "0.6867"
+        },
+        "test_ci": {
+          "count": "1",
+          "mean": "0.7497",
+          "std": "0.0000",
+          "min": "0.7497",
+          "max": "0.7497"
+        }
+      },
+      "members": [
+        {
+          "experiment_signature": "DUMPLING_A1b_DimeNet_Initial_milestone_bs2_20260503_210815",
+          "run_dir": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A1b_DimeNet_Initial_milestone_bs2_20260503_210815",
+          "registry_snapshot": {
+            "started_at": "2026-05-03T21:08:15",
+            "finished_at": "2026-05-03T21:08:15",
+            "duration_sec": "0.0",
+            "status": "success",
+            "experiment_name": "DUMPLING_A1b_DimeNet_Initial_milestone_bs2",
+            "experiment_signature": "DUMPLING_A1b_DimeNet_Initial_milestone_bs2_20260503_210815",
+            "exp_dir": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A1b_DimeNet_Initial_milestone_bs2_20260503_210815",
+            "config_path": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A1b_DimeNet_Initial_milestone_bs2_20260503_210815/config.json",
+            "git_commit": "",
+            "execution_env": "",
+            "hostname": "",
+            "artifact_root": "/home/yaroslav/FCUL/DUMPLINGs/runs",
+            "model_family": "legacy_duo",
+            "source_subset": "refined",
+            "splitter": "random",
+            "splitter_seed": "42",
+            "core_as_test": "True",
+            "a3_mixer_bias": "",
+            "batch_run_index": "",
+            "batch_n_times": "",
+            "device": "",
+            "primary_metric": "val_pearson",
+            "best_epoch": "",
+            "epochs_completed": "40",
+            "test_rmse": "0.8091408350981468",
+            "test_pearson": "0.6866728747345389",
+            "test_ci": "0.7497189869179441"
+          },
+          "metrics": {
+            "best_epoch": "",
+            "epochs_completed": "40",
+            "test_rmse": "0.8091408350981468",
+            "test_pearson": "0.6866728747345389",
+            "test_ci": "0.7497189869179441"
+          },
+          "config_excerpt": {
+            "experiment_name": "DUMPLING_A1b_DimeNet_Initial_milestone_bs2",
+            "source_subset": "refined",
+            "core_as_test": true,
+            "epochs": 100,
+            "batch_size": "",
+            "num_workers": "",
+            "primary_metric": "val_pearson",
+            "model_selected": "",
+            "global_graph_selected": "",
+            "global_graph_config": {},
+            "global_encoder_selected": "",
+            "global_encoder_config": {},
+            "local_graph_selected": "",
+            "local_graph_config": {},
+            "local_encoder_selected": "",
+            "local_encoder_config": {},
+            "protein_context_selected": "",
+            "protein_context_config": {},
+            "ligand_context_selected": "",
+            "ligand_context_config": {}
+          },
+          "artifact_paths": {
+            "run_dir": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A1b_DimeNet_Initial_milestone_bs2_20260503_210815",
+            "config": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A1b_DimeNet_Initial_milestone_bs2_20260503_210815/config.json",
+            "history": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A1b_DimeNet_Initial_milestone_bs2_20260503_210815/history.json",
+            "test_results": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A1b_DimeNet_Initial_milestone_bs2_20260503_210815/test_results.json",
+            "report": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A1b_DimeNet_Initial_milestone_bs2_20260503_210815/model_performance_report.png",
+            "run_log": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A1b_DimeNet_Initial_milestone_bs2_20260503_210815/log.txt"
+          }
+        }
+      ]
+    },
+    {
+      "series_name": "DUMPLING_A2_first_run",
+      "setup": {
+        "experiment_name": "DUMPLING_A2_first_run",
+        "model_family": "mixed",
+        "source_subset": "refined",
+        "splitter": "random",
+        "core_as_test": "True",
+        "primary_metric": "val_pearson",
+        "protein_context": "esm_frozen_whole",
+        "ligand_context": "basic_rdkit",
+        "execution_env": "",
+        "hostname": ""
+      },
+      "series_summary": {
+        "started_at": "2026-05-09T13:59:23",
+        "finished_at": "2026-05-10T04:18:20",
+        "total_runs": 3,
+        "success_count": 3,
+        "failure_count": 0,
+        "seeds": [
+          "42"
+        ],
+        "batch_positions": []
+      },
+      "aggregate_metrics": {
+        "duration_sec": {
+          "count": "3",
+          "mean": "0.0",
+          "std": "0.0",
+          "min": "0.0",
+          "max": "0.0"
+        },
+        "test_rmse": {
+          "count": "3",
+          "mean": "1.4567",
+          "std": "0.0651",
+          "min": "1.3651",
+          "max": "1.5104"
+        },
+        "test_pearson": {
+          "count": "3",
+          "mean": "0.7614",
+          "std": "0.0288",
+          "min": "0.7208",
+          "max": "0.7845"
+        },
+        "test_ci": {
+          "count": "3",
+          "mean": "0.7797",
+          "std": "0.0146",
+          "min": "0.7595",
+          "max": "0.7934"
+        }
+      },
+      "members": [
+        {
+          "experiment_signature": "DUMPLING_A2_first_run_20260509_135923",
+          "run_dir": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A2_first_run_20260509_135923",
+          "registry_snapshot": {
+            "started_at": "2026-05-09T13:59:23",
+            "finished_at": "2026-05-09T13:59:23",
+            "duration_sec": "0.0",
+            "status": "success",
+            "experiment_name": "DUMPLING_A2_first_run",
+            "experiment_signature": "DUMPLING_A2_first_run_20260509_135923",
+            "exp_dir": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A2_first_run_20260509_135923",
+            "config_path": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A2_first_run_20260509_135923/config.json",
+            "git_commit": "",
+            "execution_env": "",
+            "hostname": "",
+            "artifact_root": "/home/yaroslav/FCUL/DUMPLINGs/runs",
+            "model_family": "A2",
+            "source_subset": "refined",
+            "splitter": "random",
+            "splitter_seed": "42",
+            "core_as_test": "True",
+            "a3_mixer_bias": "",
+            "batch_run_index": "",
+            "batch_n_times": "",
+            "device": "",
+            "primary_metric": "val_pearson",
+            "best_epoch": "",
+            "epochs_completed": "37",
+            "test_rmse": "1.3650935060199703",
+            "test_pearson": "0.7845170516175317",
+            "test_ci": "0.7933534015653221"
+          },
+          "metrics": {
+            "best_epoch": "",
+            "epochs_completed": "37",
+            "test_rmse": "1.3650935060199703",
+            "test_pearson": "0.7845170516175317",
+            "test_ci": "0.7933534015653221"
+          },
+          "config_excerpt": {
+            "experiment_name": "DUMPLING_A2_first_run",
+            "source_subset": "refined",
+            "core_as_test": true,
+            "epochs": 100,
+            "batch_size": "",
+            "num_workers": "",
+            "primary_metric": "val_pearson",
+            "model_selected": "A2",
+            "global_graph_selected": "interaction",
+            "global_graph_config": {},
+            "global_encoder_selected": "DimeNet",
+            "global_encoder_config": {},
+            "local_graph_selected": "radius",
+            "local_graph_config": {},
+            "local_encoder_selected": "DimeNet",
+            "local_encoder_config": {},
+            "protein_context_selected": "esm_frozen_whole",
+            "protein_context_config": {},
+            "ligand_context_selected": "basic_rdkit",
+            "ligand_context_config": {}
+          },
+          "artifact_paths": {
+            "run_dir": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A2_first_run_20260509_135923",
+            "config": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A2_first_run_20260509_135923/config.json",
+            "history": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A2_first_run_20260509_135923/history.json",
+            "test_results": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A2_first_run_20260509_135923/test_results.json",
+            "scatter_diagnostics": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A2_first_run_20260509_135923/best_validation_scatter_diagnostics.json",
+            "report": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A2_first_run_20260509_135923/model_performance_report.png",
+            "run_log": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A2_first_run_20260509_135923/log.txt"
+          }
+        },
+        {
+          "experiment_signature": "DUMPLING_A2_first_run_20260509_191050",
+          "run_dir": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A2_first_run_20260509_191050",
+          "registry_snapshot": {
+            "started_at": "2026-05-09T19:10:50",
+            "finished_at": "2026-05-09T19:10:50",
+            "duration_sec": "0.0",
+            "status": "success",
+            "experiment_name": "DUMPLING_A2_first_run",
+            "experiment_signature": "DUMPLING_A2_first_run_20260509_191050",
+            "exp_dir": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A2_first_run_20260509_191050",
+            "config_path": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A2_first_run_20260509_191050/config.json",
+            "git_commit": "",
+            "execution_env": "",
+            "hostname": "",
+            "artifact_root": "/home/yaroslav/FCUL/DUMPLINGs/runs",
+            "model_family": "A3",
+            "source_subset": "refined",
+            "splitter": "random",
+            "splitter_seed": "42",
+            "core_as_test": "True",
+            "a3_mixer_bias": "False",
+            "batch_run_index": "",
+            "batch_n_times": "",
+            "device": "",
+            "primary_metric": "val_pearson",
+            "best_epoch": "",
+            "epochs_completed": "35",
+            "test_rmse": "1.510409481341661",
+            "test_pearson": "0.7207662592812666",
+            "test_ci": "0.7594942805538832"
+          },
+          "metrics": {
+            "best_epoch": "",
+            "epochs_completed": "35",
+            "test_rmse": "1.510409481341661",
+            "test_pearson": "0.7207662592812666",
+            "test_ci": "0.7594942805538832"
+          },
+          "config_excerpt": {
+            "experiment_name": "DUMPLING_A2_first_run",
+            "source_subset": "refined",
+            "core_as_test": true,
+            "epochs": 100,
+            "batch_size": "",
+            "num_workers": "",
+            "primary_metric": "val_pearson",
+            "model_selected": "A3",
+            "global_graph_selected": "interaction",
+            "global_graph_config": {},
+            "global_encoder_selected": "DimeNet",
+            "global_encoder_config": {},
+            "local_graph_selected": "radius",
+            "local_graph_config": {},
+            "local_encoder_selected": "DimeNet",
+            "local_encoder_config": {},
+            "protein_context_selected": "esm_frozen_whole",
+            "protein_context_config": {},
+            "ligand_context_selected": "basic_rdkit",
+            "ligand_context_config": {}
+          },
+          "artifact_paths": {
+            "run_dir": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A2_first_run_20260509_191050",
+            "config": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A2_first_run_20260509_191050/config.json",
+            "history": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A2_first_run_20260509_191050/history.json",
+            "test_results": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A2_first_run_20260509_191050/test_results.json",
+            "scatter_diagnostics": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A2_first_run_20260509_191050/best_validation_scatter_diagnostics.json",
+            "report": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A2_first_run_20260509_191050/model_performance_report.png",
+            "run_log": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A2_first_run_20260509_191050/log.txt"
+          }
+        },
+        {
+          "experiment_signature": "DUMPLING_A2_first_run_20260510_041820",
+          "run_dir": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A2_first_run_20260510_041820",
+          "registry_snapshot": {
+            "started_at": "2026-05-10T04:18:20",
+            "finished_at": "2026-05-10T04:18:20",
+            "duration_sec": "0.0",
+            "status": "success",
+            "experiment_name": "DUMPLING_A2_first_run",
+            "experiment_signature": "DUMPLING_A2_first_run_20260510_041820",
+            "exp_dir": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A2_first_run_20260510_041820",
+            "config_path": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A2_first_run_20260510_041820/config.json",
+            "git_commit": "",
+            "execution_env": "",
+            "hostname": "",
+            "artifact_root": "/home/yaroslav/FCUL/DUMPLINGs/runs",
+            "model_family": "A3",
+            "source_subset": "refined",
+            "splitter": "random",
+            "splitter_seed": "42",
+            "core_as_test": "True",
+            "a3_mixer_bias": "False",
+            "batch_run_index": "",
+            "batch_n_times": "",
+            "device": "",
+            "primary_metric": "val_pearson",
+            "best_epoch": "",
+            "epochs_completed": "40",
+            "test_rmse": "1.4945000565203554",
+            "test_pearson": "0.7790107314731265",
+            "test_ci": "0.7862251655629139"
+          },
+          "metrics": {
+            "best_epoch": "",
+            "epochs_completed": "40",
+            "test_rmse": "1.4945000565203554",
+            "test_pearson": "0.7790107314731265",
+            "test_ci": "0.7862251655629139"
+          },
+          "config_excerpt": {
+            "experiment_name": "DUMPLING_A2_first_run",
+            "source_subset": "refined",
+            "core_as_test": true,
+            "epochs": 100,
+            "batch_size": "",
+            "num_workers": "",
+            "primary_metric": "val_pearson",
+            "model_selected": "A3",
+            "global_graph_selected": "interaction",
+            "global_graph_config": {},
+            "global_encoder_selected": "DimeNet",
+            "global_encoder_config": {},
+            "local_graph_selected": "radius",
+            "local_graph_config": {},
+            "local_encoder_selected": "DimeNet",
+            "local_encoder_config": {},
+            "protein_context_selected": "esm_frozen_whole",
+            "protein_context_config": {},
+            "ligand_context_selected": "basic_rdkit",
+            "ligand_context_config": {}
+          },
+          "artifact_paths": {
+            "run_dir": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A2_first_run_20260510_041820",
+            "config": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A2_first_run_20260510_041820/config.json",
+            "history": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A2_first_run_20260510_041820/history.json",
+            "test_results": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A2_first_run_20260510_041820/test_results.json",
+            "scatter_diagnostics": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A2_first_run_20260510_041820/best_validation_scatter_diagnostics.json",
+            "report": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A2_first_run_20260510_041820/model_performance_report.png",
+            "run_log": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A2_first_run_20260510_041820/log.txt"
+          }
+        }
+      ]
+    },
+    {
+      "series_name": "DUMPLING_A2_sanity_run_of_A1_from_new_codebase",
+      "setup": {
+        "experiment_name": "DUMPLING_A2_sanity_run_of_A1_from_new_codebase",
+        "model_family": "A1",
+        "source_subset": "refined",
+        "splitter": "random",
+        "core_as_test": "True",
+        "primary_metric": "val_pearson",
+        "protein_context": "esm_frozen_whole",
+        "ligand_context": "basic_rdkit",
+        "execution_env": "",
+        "hostname": ""
+      },
+      "series_summary": {
+        "started_at": "2026-05-09T01:04:22",
+        "finished_at": "2026-05-09T01:04:22",
+        "total_runs": 1,
+        "success_count": 1,
+        "failure_count": 0,
+        "seeds": [
+          "42"
+        ],
+        "batch_positions": []
+      },
+      "aggregate_metrics": {
+        "duration_sec": {
+          "count": "1",
+          "mean": "0.0",
+          "std": "0.0",
+          "min": "0.0",
+          "max": "0.0"
+        },
+        "test_rmse": {
+          "count": "1",
+          "mean": "1.4061",
+          "std": "0.0000",
+          "min": "1.4061",
+          "max": "1.4061"
+        },
+        "test_pearson": {
+          "count": "1",
+          "mean": "0.7666",
+          "std": "0.0000",
+          "min": "0.7666",
+          "max": "0.7666"
+        },
+        "test_ci": {
+          "count": "1",
+          "mean": "0.7834",
+          "std": "0.0000",
+          "min": "0.7834",
+          "max": "0.7834"
+        }
+      },
+      "members": [
+        {
+          "experiment_signature": "DUMPLING_A2_sanity_run_of_A1_from_new_codebase_20260509_010422",
+          "run_dir": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A2_sanity_run_of_A1_from_new_codebase_20260509_010422",
+          "registry_snapshot": {
+            "started_at": "2026-05-09T01:04:22",
+            "finished_at": "2026-05-09T01:04:22",
+            "duration_sec": "0.0",
+            "status": "success",
+            "experiment_name": "DUMPLING_A2_sanity_run_of_A1_from_new_codebase",
+            "experiment_signature": "DUMPLING_A2_sanity_run_of_A1_from_new_codebase_20260509_010422",
+            "exp_dir": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A2_sanity_run_of_A1_from_new_codebase_20260509_010422",
+            "config_path": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A2_sanity_run_of_A1_from_new_codebase_20260509_010422/config.json",
+            "git_commit": "",
+            "execution_env": "",
+            "hostname": "",
+            "artifact_root": "/home/yaroslav/FCUL/DUMPLINGs/runs",
+            "model_family": "A1",
+            "source_subset": "refined",
+            "splitter": "random",
+            "splitter_seed": "42",
+            "core_as_test": "True",
+            "a3_mixer_bias": "",
+            "batch_run_index": "",
+            "batch_n_times": "",
+            "device": "",
+            "primary_metric": "val_pearson",
+            "best_epoch": "",
+            "epochs_completed": "41",
+            "test_rmse": "1.4060856670300768",
+            "test_pearson": "0.7666348075116517",
+            "test_ci": "0.7834075857916918"
+          },
+          "metrics": {
+            "best_epoch": "",
+            "epochs_completed": "41",
+            "test_rmse": "1.4060856670300768",
+            "test_pearson": "0.7666348075116517",
+            "test_ci": "0.7834075857916918"
+          },
+          "config_excerpt": {
+            "experiment_name": "DUMPLING_A2_sanity_run_of_A1_from_new_codebase",
+            "source_subset": "refined",
+            "core_as_test": true,
+            "epochs": 100,
+            "batch_size": "",
+            "num_workers": "",
+            "primary_metric": "val_pearson",
+            "model_selected": "A1",
+            "global_graph_selected": "interaction",
+            "global_graph_config": {},
+            "global_encoder_selected": "DimeNet",
+            "global_encoder_config": {},
+            "local_graph_selected": "radius",
+            "local_graph_config": {},
+            "local_encoder_selected": "DimeNet",
+            "local_encoder_config": {},
+            "protein_context_selected": "esm_frozen_whole",
+            "protein_context_config": {},
+            "ligand_context_selected": "basic_rdkit",
+            "ligand_context_config": {}
+          },
+          "artifact_paths": {
+            "run_dir": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A2_sanity_run_of_A1_from_new_codebase_20260509_010422",
+            "config": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A2_sanity_run_of_A1_from_new_codebase_20260509_010422/config.json",
+            "history": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A2_sanity_run_of_A1_from_new_codebase_20260509_010422/history.json",
+            "test_results": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A2_sanity_run_of_A1_from_new_codebase_20260509_010422/test_results.json",
+            "scatter_diagnostics": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A2_sanity_run_of_A1_from_new_codebase_20260509_010422/best_validation_scatter_diagnostics.json",
+            "report": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A2_sanity_run_of_A1_from_new_codebase_20260509_010422/model_performance_report.png",
+            "run_log": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_A2_sanity_run_of_A1_from_new_codebase_20260509_010422/log.txt"
+          }
+        }
+      ]
+    },
+    {
+      "series_name": "DUMPLING_colab_smoke",
+      "setup": {
+        "experiment_name": "DUMPLING_colab_smoke",
+        "model_family": "A1",
+        "source_subset": "refined",
+        "splitter": "random",
+        "core_as_test": "True",
+        "primary_metric": "val_pearson",
+        "protein_context": "none",
+        "ligand_context": "none",
+        "execution_env": "colab",
+        "hostname": "08c608046df2"
+      },
+      "series_summary": {
+        "started_at": "2026-05-10T14:41:58",
+        "finished_at": "2026-05-10T15:06:12",
+        "total_runs": 4,
+        "success_count": 4,
+        "failure_count": 0,
+        "seeds": [
+          "42",
+          "43",
+          "44"
+        ],
+        "batch_positions": []
+      },
+      "aggregate_metrics": {
+        "duration_sec": {
+          "count": "4",
+          "mean": "347.5",
+          "std": "0.5",
+          "min": "347.0",
+          "max": "348.0"
+        },
+        "test_rmse": {
+          "count": "4",
+          "mean": "1.9028",
+          "std": "0.0509",
+          "min": "1.8185",
+          "max": "1.9546"
+        },
+        "test_pearson": {
+          "count": "4",
+          "mean": "0.5381",
+          "std": "0.0247",
+          "min": "0.5048",
+          "max": "0.5657"
+        },
+        "test_ci": {
+          "count": "4",
+          "mean": "0.6883",
+          "std": "0.0076",
+          "min": "0.6786",
+          "max": "0.6967"
+        }
+      },
+      "members": [
+        {
+          "experiment_signature": "DUMPLING_colab_smoke_20260510_143841_929501",
+          "run_dir": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_colab_smoke_20260510_143841_929501",
+          "registry_snapshot": {
+            "started_at": "2026-05-10T14:41:58",
+            "finished_at": "2026-05-10T14:47:45",
+            "duration_sec": "347.0",
+            "status": "success",
+            "experiment_name": "DUMPLING_colab_smoke",
+            "experiment_signature": "DUMPLING_colab_smoke_20260510_143841_929501",
+            "exp_dir": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_colab_smoke_20260510_143841_929501",
+            "config_path": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_colab_smoke_20260510_143841_929501/config.json",
+            "git_commit": "unknown",
+            "execution_env": "colab",
+            "hostname": "08c608046df2",
+            "artifact_root": "/content/DUMPLINGs/runs",
+            "model_family": "A1",
+            "source_subset": "refined",
+            "splitter": "random",
+            "splitter_seed": "42",
+            "core_as_test": "True",
+            "a3_mixer_bias": "",
+            "batch_run_index": "",
+            "batch_n_times": "",
+            "device": "",
+            "primary_metric": "val_pearson",
+            "best_epoch": "1",
+            "epochs_completed": "2",
+            "test_rmse": "1.9160884232651596",
+            "test_pearson": "0.5242296312740448",
+            "test_ci": "0.683112907468969"
+          },
+          "metrics": {
+            "best_epoch": "1",
+            "epochs_completed": "2",
+            "test_rmse": "1.9160884232651596",
+            "test_pearson": "0.5242296312740448",
+            "test_ci": "0.683112907468969"
+          },
+          "config_excerpt": {
+            "experiment_name": "DUMPLING_colab_smoke",
+            "source_subset": "refined",
+            "core_as_test": true,
+            "epochs": 2,
+            "batch_size": "",
+            "num_workers": "",
+            "primary_metric": "val_pearson",
+            "model_selected": "A1",
+            "global_graph_selected": "interaction",
+            "global_graph_config": {},
+            "global_encoder_selected": "DimeNet",
+            "global_encoder_config": {},
+            "local_graph_selected": "radius",
+            "local_graph_config": {},
+            "local_encoder_selected": "DimeNet",
+            "local_encoder_config": {},
+            "protein_context_selected": "none",
+            "protein_context_config": {},
+            "ligand_context_selected": "none",
+            "ligand_context_config": {}
+          },
+          "artifact_paths": {
+            "run_dir": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_colab_smoke_20260510_143841_929501",
+            "config": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_colab_smoke_20260510_143841_929501/config.json",
+            "summary": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_colab_smoke_20260510_143841_929501/assistant_summary_4.md",
+            "history": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_colab_smoke_20260510_143841_929501/history_4.json",
+            "test_results": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_colab_smoke_20260510_143841_929501/test_results_4.json",
+            "scatter_diagnostics": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_colab_smoke_20260510_143841_929501/best_validation_scatter_diagnostics_4.json",
+            "report": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_colab_smoke_20260510_143841_929501/model_performance_report.png",
+            "run_log": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_colab_smoke_20260510_143841_929501/log_4.txt"
+          }
+        },
+        {
+          "experiment_signature": "DUMPLING_colab_smoke_20260510_144802_931304",
+          "run_dir": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_colab_smoke_20260510_144802_931304",
+          "registry_snapshot": {
+            "started_at": "2026-05-10T14:48:09",
+            "finished_at": "2026-05-10T14:53:57",
+            "duration_sec": "348.0",
+            "status": "success",
+            "experiment_name": "DUMPLING_colab_smoke",
+            "experiment_signature": "DUMPLING_colab_smoke_20260510_144802_931304",
+            "exp_dir": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_colab_smoke_20260510_144802_931304",
+            "config_path": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_colab_smoke_20260510_144802_931304/config.json",
+            "git_commit": "unknown",
+            "execution_env": "colab",
+            "hostname": "08c608046df2",
+            "artifact_root": "/content/DUMPLINGs/runs",
+            "model_family": "A1",
+            "source_subset": "refined",
+            "splitter": "random",
+            "splitter_seed": "42",
+            "core_as_test": "True",
+            "a3_mixer_bias": "",
+            "batch_run_index": "",
+            "batch_n_times": "",
+            "device": "",
+            "primary_metric": "val_pearson",
+            "best_epoch": "2",
+            "epochs_completed": "2",
+            "test_rmse": "1.9546020433366533",
+            "test_pearson": "0.5047704173902393",
+            "test_ci": "0.6786406141630593"
+          },
+          "metrics": {
+            "best_epoch": "2",
+            "epochs_completed": "2",
+            "test_rmse": "1.9546020433366533",
+            "test_pearson": "0.5047704173902393",
+            "test_ci": "0.6786406141630593"
+          },
+          "config_excerpt": {
+            "experiment_name": "DUMPLING_colab_smoke",
+            "source_subset": "refined",
+            "core_as_test": true,
+            "epochs": 2,
+            "batch_size": "",
+            "num_workers": "",
+            "primary_metric": "val_pearson",
+            "model_selected": "A1",
+            "global_graph_selected": "interaction",
+            "global_graph_config": {},
+            "global_encoder_selected": "DimeNet",
+            "global_encoder_config": {},
+            "local_graph_selected": "radius",
+            "local_graph_config": {},
+            "local_encoder_selected": "DimeNet",
+            "local_encoder_config": {},
+            "protein_context_selected": "none",
+            "protein_context_config": {},
+            "ligand_context_selected": "none",
+            "ligand_context_config": {}
+          },
+          "artifact_paths": {
+            "run_dir": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_colab_smoke_20260510_144802_931304",
+            "config": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_colab_smoke_20260510_144802_931304/config.json",
+            "summary": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_colab_smoke_20260510_144802_931304/assistant_summary_3.md",
+            "history": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_colab_smoke_20260510_144802_931304/history_3.json",
+            "test_results": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_colab_smoke_20260510_144802_931304/test_results_3.json",
+            "scatter_diagnostics": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_colab_smoke_20260510_144802_931304/best_validation_scatter_diagnostics_3.json",
+            "report": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_colab_smoke_20260510_144802_931304/model_performance_report.png",
+            "run_log": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_colab_smoke_20260510_144802_931304/log_3.txt"
+          }
+        },
+        {
+          "experiment_signature": "DUMPLING_colab_smoke_20260510_145411_104485",
+          "run_dir": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_colab_smoke_20260510_145411_104485",
+          "registry_snapshot": {
+            "started_at": "2026-05-10T14:54:17",
+            "finished_at": "2026-05-10T15:00:05",
+            "duration_sec": "348.0",
+            "status": "success",
+            "experiment_name": "DUMPLING_colab_smoke",
+            "experiment_signature": "DUMPLING_colab_smoke_20260510_145411_104485",
+            "exp_dir": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_colab_smoke_20260510_145411_104485",
+            "config_path": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_colab_smoke_20260510_145411_104485/config.json",
+            "git_commit": "unknown",
+            "execution_env": "colab",
+            "hostname": "08c608046df2",
+            "artifact_root": "/content/DUMPLINGs/runs",
+            "model_family": "A1",
+            "source_subset": "refined",
+            "splitter": "random",
+            "splitter_seed": "43",
+            "core_as_test": "True",
+            "a3_mixer_bias": "",
+            "batch_run_index": "",
+            "batch_n_times": "",
+            "device": "",
+            "primary_metric": "val_pearson",
+            "best_epoch": "2",
+            "epochs_completed": "2",
+            "test_rmse": "1.8184696843295838",
+            "test_pearson": "0.5576467544214949",
+            "test_ci": "0.6948795829048382"
+          },
+          "metrics": {
+            "best_epoch": "2",
+            "epochs_completed": "2",
+            "test_rmse": "1.8184696843295838",
+            "test_pearson": "0.5576467544214949",
+            "test_ci": "0.6948795829048382"
+          },
+          "config_excerpt": {
+            "experiment_name": "DUMPLING_colab_smoke",
+            "source_subset": "refined",
+            "core_as_test": true,
+            "epochs": 2,
+            "batch_size": "",
+            "num_workers": "",
+            "primary_metric": "val_pearson",
+            "model_selected": "A1",
+            "global_graph_selected": "interaction",
+            "global_graph_config": {},
+            "global_encoder_selected": "DimeNet",
+            "global_encoder_config": {},
+            "local_graph_selected": "radius",
+            "local_graph_config": {},
+            "local_encoder_selected": "DimeNet",
+            "local_encoder_config": {},
+            "protein_context_selected": "none",
+            "protein_context_config": {},
+            "ligand_context_selected": "none",
+            "ligand_context_config": {}
+          },
+          "artifact_paths": {
+            "run_dir": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_colab_smoke_20260510_145411_104485",
+            "config": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_colab_smoke_20260510_145411_104485/config.json",
+            "summary": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_colab_smoke_20260510_145411_104485/assistant_summary_2.md",
+            "history": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_colab_smoke_20260510_145411_104485/history_2.json",
+            "test_results": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_colab_smoke_20260510_145411_104485/test_results_2.json",
+            "scatter_diagnostics": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_colab_smoke_20260510_145411_104485/best_validation_scatter_diagnostics_2.json",
+            "report": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_colab_smoke_20260510_145411_104485/model_performance_report.png",
+            "run_log": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_colab_smoke_20260510_145411_104485/log_2.txt"
+          }
+        },
+        {
+          "experiment_signature": "DUMPLING_colab_smoke_20260510_150019_017055",
+          "run_dir": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_colab_smoke_20260510_150019_017055",
+          "registry_snapshot": {
+            "started_at": "2026-05-10T15:00:25",
+            "finished_at": "2026-05-10T15:06:12",
+            "duration_sec": "347.0",
+            "status": "success",
+            "experiment_name": "DUMPLING_colab_smoke",
+            "experiment_signature": "DUMPLING_colab_smoke_20260510_150019_017055",
+            "exp_dir": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_colab_smoke_20260510_150019_017055",
+            "config_path": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_colab_smoke_20260510_150019_017055/config.json",
+            "git_commit": "unknown",
+            "execution_env": "colab",
+            "hostname": "08c608046df2",
+            "artifact_root": "/content/DUMPLINGs/runs",
+            "model_family": "A1",
+            "source_subset": "refined",
+            "splitter": "random",
+            "splitter_seed": "44",
+            "core_as_test": "True",
+            "a3_mixer_bias": "",
+            "batch_run_index": "",
+            "batch_n_times": "",
+            "device": "",
+            "primary_metric": "val_pearson",
+            "best_epoch": "1",
+            "epochs_completed": "2",
+            "test_rmse": "1.9221339644150823",
+            "test_pearson": "0.5656828248985478",
+            "test_ci": "0.6966971994355823"
+          },
+          "metrics": {
+            "best_epoch": "1",
+            "epochs_completed": "2",
+            "test_rmse": "1.9221339644150823",
+            "test_pearson": "0.5656828248985478",
+            "test_ci": "0.6966971994355823"
+          },
+          "config_excerpt": {
+            "experiment_name": "DUMPLING_colab_smoke",
+            "source_subset": "refined",
+            "core_as_test": true,
+            "epochs": 2,
+            "batch_size": "",
+            "num_workers": "",
+            "primary_metric": "val_pearson",
+            "model_selected": "A1",
+            "global_graph_selected": "interaction",
+            "global_graph_config": {},
+            "global_encoder_selected": "DimeNet",
+            "global_encoder_config": {},
+            "local_graph_selected": "radius",
+            "local_graph_config": {},
+            "local_encoder_selected": "DimeNet",
+            "local_encoder_config": {},
+            "protein_context_selected": "none",
+            "protein_context_config": {},
+            "ligand_context_selected": "none",
+            "ligand_context_config": {}
+          },
+          "artifact_paths": {
+            "run_dir": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_colab_smoke_20260510_150019_017055",
+            "config": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_colab_smoke_20260510_150019_017055/config.json",
+            "summary": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_colab_smoke_20260510_150019_017055/assistant_summary_1.md",
+            "history": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_colab_smoke_20260510_150019_017055/history_1.json",
+            "test_results": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_colab_smoke_20260510_150019_017055/test_results_1.json",
+            "scatter_diagnostics": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_colab_smoke_20260510_150019_017055/best_validation_scatter_diagnostics_1.json",
+            "report": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_colab_smoke_20260510_150019_017055/model_performance_report.png",
+            "run_log": "/home/yaroslav/FCUL/DUMPLINGs/runs/DUMPLING_colab_smoke_20260510_150019_017055/log_1.txt"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -22,8 +22,8 @@ Examples:
   bash assistant/run_llm_journal.sh --live --limit 1 --force-refresh
 
 Notes:
-  --dry-run: build context, prompt previews, and experiment_journal_llm.md with mock notes
-  --live:    build context, prompt previews, and experiment_journal_llm.md using the configured LLM backend
+  --dry-run: build run-level and series-level context, prompt previews, and both LLM journals with mock notes
+  --live:    build run-level and series-level context, prompt previews, and both LLM journals using the configured LLM backend
   --env-file: optional shell env file to source before running; defaults to assistant/.env if present
 
 Required env vars for --live:
@@ -104,11 +104,21 @@ fi
 echo "[assistant] Building context packets..."
 python assistant/build_run_contexts.py --runs-dir "${RUNS_DIR}"
 
+echo "[assistant] Building series context packets..."
+python assistant/build_series_contexts.py
+
 echo "[assistant] Building prompt previews..."
 python assistant/build_llm_prompts.py "${LIMIT_ARGS[@]}"
+
+echo "[assistant] Building series prompt previews..."
+python assistant/build_series_llm_prompts.py "${LIMIT_ARGS[@]}"
 
 echo "[assistant] Building LLM journal (${MODE})..."
 python assistant/build_llm_journal.py --mode "${MODE}" "${LIMIT_ARGS[@]}" "${FORCE_ARGS[@]}"
 
+echo "[assistant] Building series LLM journal (${MODE})..."
+python assistant/build_series_llm_journal.py --mode "${MODE}" "${LIMIT_ARGS[@]}" "${FORCE_ARGS[@]}"
+
 echo "[assistant] Done."
 echo "[assistant] Journal: ${REPO_ROOT}/runs/experiment_journal_llm.md"
+echo "[assistant] Series Journal: ${REPO_ROOT}/runs/experiment_series_journal_llm.md"

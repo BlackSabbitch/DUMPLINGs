@@ -67,6 +67,7 @@ before launching a long experiment.
   - rescans a `runs/` directory and rewrites:
     - `experiment_registry.csv`
     - `experiment_journal.md`
+    - `experiment_series_journal.md`
   - useful after copying fresh run folders from Colab, another workstation,
     or a cluster scratch directory
   - treats the run folders themselves as the portable source of truth rather

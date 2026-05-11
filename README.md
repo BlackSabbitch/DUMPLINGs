@@ -1036,6 +1036,7 @@ That script rescans the discovered run folders and rewrites:
 
 - `runs/experiment_registry.csv`
 - `runs/experiment_journal.md`
+- `runs/experiment_series_journal.md`
 
 In other words, the factual top-level indices are treated as **rebuildable
 views**, not as irreplaceable primary artifacts. The portable truth is the run
@@ -1161,6 +1162,11 @@ The long-term target is a second journal, tentatively
 `runs/experiment_journal_llm.md`, that keeps the same entry structure as
 `runs/experiment_journal.md` but expands the `assistant note` section.
 
+The same split now exists at the series level:
+
+- `runs/experiment_series_journal.md`: factual grouped view over related runs,
+- `runs/experiment_series_journal_llm.md`: assistant-style grouped series notes.
+
 ### Assistant Roadmap
 
 1. MVP-1: build compact per-run context packets from the existing `runs/`
@@ -1182,6 +1188,9 @@ Current status of that roadmap:
     functional end to end.
 - MVP-4 is partially done: per-run response caching exists under
   `assistant/cache/`.
+- a parallel series-level path now exists too:
+  - factual grouping into `experiment_series_journal.md`,
+  - assistant grouping into `experiment_series_journal_llm.md`.
 
 ### MVP-1
 
@@ -1219,9 +1228,12 @@ bash assistant/run_llm_journal.sh --live --limit 1
 The assistant tooling remains fully optional:
 
 - factual experiment tracking still lives in `runs/experiment_registry.csv`
-  and `runs/experiment_journal.md`,
+  and the two factual journals
+  - `runs/experiment_journal.md`
+  - `runs/experiment_series_journal.md`,
 - the assistant layer adds only a separate manual artifact,
-  `runs/experiment_journal_llm.md`.
+  - `runs/experiment_journal_llm.md`
+  - `runs/experiment_series_journal_llm.md`.
 
 Use the exact model tag reported by `ollama list`. On small laptops, a 1.5B
 class model is a much safer first live test than 3B/7B models.

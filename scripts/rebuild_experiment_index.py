@@ -17,6 +17,7 @@ import argparse
 import csv
 import json
 import re
+import statistics
 from datetime import datetime
 from pathlib import Path
 
@@ -78,6 +79,12 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=None,
         help="Where to write the rebuilt markdown journal. Defaults to <runs-dir>/experiment_journal.md",
+    )
+    parser.add_argument(
+        "--series-journal-path",
+        type=Path,
+        default=None,
+        help="Where to write the rebuilt series markdown journal. Defaults to <runs-dir>/experiment_series_journal.md",
     )
     return parser.parse_args()
 
@@ -328,6 +335,45 @@ def row_sort_key(row: dict[str, str]) -> tuple[str, str]:
     return (row.get("started_at", ""), row.get("experiment_signature", ""))
 
 
+def coerce_float(value: str) -> float | None:
+    try:
+        if value in {"", None}:
+            return None
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def format_stat(value: float | None, decimals: int = 4) -> str:
+    if value is None:
+        return ""
+    return f"{value:.{decimals}f}"
+
+
+def consensus_value(rows: list[dict[str, str]], key: str) -> str:
+    values = {row.get(key, "") for row in rows if row.get(key, "")}
+    if not values:
+        return ""
+    if len(values) == 1:
+        return next(iter(values))
+    return "mixed"
+
+
+def summarize_numeric_field(rows: list[dict[str, str]], key: str, *, decimals: int = 4) -> dict[str, str]:
+    values = [coerce_float(row.get(key, "")) for row in rows]
+    series = [value for value in values if value is not None]
+    if not series:
+        return {}
+    std = statistics.pstdev(series) if len(series) > 1 else 0.0
+    return {
+        "count": str(len(series)),
+        "mean": format_stat(statistics.fmean(series), decimals),
+        "std": format_stat(std, decimals),
+        "min": format_stat(min(series), decimals),
+        "max": format_stat(max(series), decimals),
+    }
+
+
 def write_registry(registry_path: Path, rows: list[dict[str, str]]) -> None:
     """Rewrite `experiment_registry.csv` from scratch."""
     registry_path.parent.mkdir(parents=True, exist_ok=True)
@@ -336,6 +382,67 @@ def write_registry(registry_path: Path, rows: list[dict[str, str]]) -> None:
         writer.writeheader()
         for row in rows:
             writer.writerow({field: row.get(field, "") for field in REGISTRY_FIELD_ORDER})
+
+
+def build_series_records(rows_with_notes: list[tuple[dict[str, str], list[str], Path]]) -> list[dict]:
+    grouped: dict[str, list[tuple[dict[str, str], list[str], Path]]] = {}
+    for item in rows_with_notes:
+        row = item[0]
+        key = row.get("experiment_name", "") or row.get("experiment_signature", "")
+        grouped.setdefault(key, []).append(item)
+
+    series_records: list[dict] = []
+    for experiment_name, members in sorted(grouped.items()):
+        members.sort(key=lambda item: row_sort_key(item[0]))
+        rows = [row for row, _, _ in members]
+        success_count = sum(1 for row in rows if row.get("status", "") == "success")
+        seeds = sorted({row.get("splitter_seed", "") for row in rows if row.get("splitter_seed", "")})
+        batch_positions = [
+            f"{row.get('batch_run_index', '')}/{row.get('batch_n_times', '')}"
+            for row in rows
+            if row.get("batch_run_index", "") and row.get("batch_n_times", "")
+        ]
+        series_records.append(
+            {
+                "experiment_name": experiment_name,
+                "model_family": consensus_value(rows, "model_family"),
+                "source_subset": consensus_value(rows, "source_subset"),
+                "splitter": consensus_value(rows, "splitter"),
+                "core_as_test": consensus_value(rows, "core_as_test"),
+                "primary_metric": consensus_value(rows, "primary_metric"),
+                "started_at": rows[0].get("started_at", ""),
+                "finished_at": rows[-1].get("finished_at", ""),
+                "total_runs": len(rows),
+                "success_count": success_count,
+                "failure_count": len(rows) - success_count,
+                "seeds": seeds,
+                "batch_positions": batch_positions,
+                "duration_sec_stats": summarize_numeric_field(rows, "duration_sec", decimals=1),
+                "test_rmse_stats": summarize_numeric_field(rows, "test_rmse", decimals=4),
+                "test_pearson_stats": summarize_numeric_field(rows, "test_pearson", decimals=4),
+                "test_ci_stats": summarize_numeric_field(rows, "test_ci", decimals=4),
+                "members": [
+                    {
+                        "experiment_signature": row.get("experiment_signature", ""),
+                        "started_at": row.get("started_at", ""),
+                        "finished_at": row.get("finished_at", ""),
+                        "status": row.get("status", ""),
+                        "splitter_seed": row.get("splitter_seed", ""),
+                        "batch_run_index": row.get("batch_run_index", ""),
+                        "batch_n_times": row.get("batch_n_times", ""),
+                        "duration_sec": row.get("duration_sec", ""),
+                        "best_epoch": row.get("best_epoch", ""),
+                        "epochs_completed": row.get("epochs_completed", ""),
+                        "test_rmse": row.get("test_rmse", ""),
+                        "test_pearson": row.get("test_pearson", ""),
+                        "test_ci": row.get("test_ci", ""),
+                        "run_dir": str(run_dir.resolve()),
+                    }
+                    for row, _, run_dir in members
+                ],
+            }
+        )
+    return series_records
 
 
 def build_artifact_links(run_dir: Path, journal_dir: Path) -> str:
@@ -436,12 +543,84 @@ def write_journal(journal_path: Path, rows_with_notes: list[tuple[dict[str, str]
             f.write("\n")
 
 
+def build_series_journal_entry(series: dict) -> list[str]:
+    header = (
+        f"## {series.get('experiment_name', '')} | "
+        f"model=`{series.get('model_family', '')}` | runs=`{series.get('total_runs', '')}`"
+    )
+    lines = [header, ""]
+    lines.append(
+        f"- setup: subset=`{series.get('source_subset', '')}` | "
+        f"splitter=`{series.get('splitter', '')}` | core_as_test=`{series.get('core_as_test', '')}` | "
+        f"primary_metric=`{series.get('primary_metric', '')}`"
+    )
+    lines.append(
+        f"- outcomes: success=`{series.get('success_count', 0)}` / total=`{series.get('total_runs', 0)}` | "
+        f"failure=`{series.get('failure_count', 0)}` | seeds=`{', '.join(series.get('seeds', [])) or 'n/a'}`"
+    )
+    if series.get("batch_positions"):
+        lines.append(f"- batch positions: `{', '.join(series.get('batch_positions', []))}`")
+    lines.append(
+        f"- window: started=`{series.get('started_at', '')}` | finished=`{series.get('finished_at', '')}`"
+    )
+
+    duration_stats = series.get("duration_sec_stats", {})
+    if duration_stats:
+        lines.append(
+            f"- duration_sec: mean=`{duration_stats.get('mean', '')}` | std=`{duration_stats.get('std', '')}` | "
+            f"min=`{duration_stats.get('min', '')}` | max=`{duration_stats.get('max', '')}`"
+        )
+
+    pearson_stats = series.get("test_pearson_stats", {})
+    if pearson_stats:
+        lines.append(
+            f"- test Pearson_R: mean=`{pearson_stats.get('mean', '')}` | std=`{pearson_stats.get('std', '')}` | "
+            f"min=`{pearson_stats.get('min', '')}` | max=`{pearson_stats.get('max', '')}`"
+        )
+    rmse_stats = series.get("test_rmse_stats", {})
+    if rmse_stats:
+        lines.append(
+            f"- test RMSE: mean=`{rmse_stats.get('mean', '')}` | std=`{rmse_stats.get('std', '')}` | "
+            f"min=`{rmse_stats.get('min', '')}` | max=`{rmse_stats.get('max', '')}`"
+        )
+    ci_stats = series.get("test_ci_stats", {})
+    if ci_stats:
+        lines.append(
+            f"- test CI: mean=`{ci_stats.get('mean', '')}` | std=`{ci_stats.get('std', '')}` | "
+            f"min=`{ci_stats.get('min', '')}` | max=`{ci_stats.get('max', '')}`"
+        )
+
+    member_signatures = [member.get("experiment_signature", "") for member in series.get("members", []) if member.get("experiment_signature", "")]
+    if member_signatures:
+        lines.append(f"- members: `{', '.join(member_signatures)}`")
+    lines.extend([
+        "",
+        "> Rebuilt from grouped run-folder artifacts. This is a factual series view, not an interpretive conclusion.",
+        "",
+    ])
+    return lines
+
+
+def write_series_journal(series_journal_path: Path, series_records: list[dict]) -> None:
+    series_journal_path.parent.mkdir(parents=True, exist_ok=True)
+    with series_journal_path.open("w", encoding="utf-8") as f:
+        f.write("# Experiment Series Journal\n\n")
+        f.write(
+            "This file is rebuilt from grouped run folders. "
+            "It is a factual series-level view over related experiments.\n\n"
+        )
+        for series in series_records:
+            f.write("\n".join(build_series_journal_entry(series)))
+            f.write("\n")
+
+
 def main() -> None:
     """Run the full factual rebuild over the chosen `runs/` directory."""
     args = parse_args()
     runs_dir = args.runs_dir.resolve()
     registry_path = (args.registry_path or (runs_dir / "experiment_registry.csv")).resolve()
     journal_path = (args.journal_path or (runs_dir / "experiment_journal.md")).resolve()
+    series_journal_path = (args.series_journal_path or (runs_dir / "experiment_series_journal.md")).resolve()
 
     if not runs_dir.exists():
         raise SystemExit(f"runs dir does not exist: {runs_dir}")
@@ -459,12 +638,15 @@ def main() -> None:
 
     rows_with_notes.sort(key=lambda item: row_sort_key(item[0]))
     rows = [row for row, _, _ in rows_with_notes]
+    series_records = build_series_records(rows_with_notes)
 
     write_registry(registry_path, rows)
     write_journal(journal_path, rows_with_notes)
+    write_series_journal(series_journal_path, series_records)
 
     print(f"Rebuilt registry: {registry_path}")
     print(f"Rebuilt journal:  {journal_path}")
+    print(f"Rebuilt series:   {series_journal_path}")
     print(f"Indexed runs:     {len(rows)}")
 
 
