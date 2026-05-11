@@ -7,11 +7,17 @@
 #   SMOKE_EPOCHS=2
 #   SMOKE_BATCH_SIZE=2
 #   SMOKE_NUM_WORKERS=0
+#   SMOKE_EXPERIMENT_NAME=DUMPLING_colab_smoke
 #   MODEL_FAMILY=A1
 #   PROTEIN_CONTEXT_MODE=none
 #   LIGAND_CONTEXT_MODE=none
 #   RUN_PIPELINE_SMOKE=1
-#   EXTRA_RUN_ARGS="--extract"
+#   RUN_BOOTSTRAP_EXTRACT=1
+#   BOOTSTRAP_N_TIMES=1
+#   REPEAT_N_TIMES=3
+#   BASE_RSEED=42
+#   EXTRA_BOOTSTRAP_ARGS=""
+#   EXTRA_REPEAT_ARGS=""
 
 #SBATCH --job-name=dumplings-smoke
 #SBATCH --partition=compute
@@ -28,11 +34,17 @@ VENV_DIR=${VENV_DIR:-$REPO_ROOT/.venv}
 SMOKE_EPOCHS=${SMOKE_EPOCHS:-2}
 SMOKE_BATCH_SIZE=${SMOKE_BATCH_SIZE:-2}
 SMOKE_NUM_WORKERS=${SMOKE_NUM_WORKERS:-0}
+SMOKE_EXPERIMENT_NAME=${SMOKE_EXPERIMENT_NAME:-DUMPLING_slurm_smoke}
 MODEL_FAMILY=${MODEL_FAMILY:-A1}
 PROTEIN_CONTEXT_MODE=${PROTEIN_CONTEXT_MODE:-none}
 LIGAND_CONTEXT_MODE=${LIGAND_CONTEXT_MODE:-none}
 RUN_PIPELINE_SMOKE=${RUN_PIPELINE_SMOKE:-0}
-EXTRA_RUN_ARGS=${EXTRA_RUN_ARGS:-}
+RUN_BOOTSTRAP_EXTRACT=${RUN_BOOTSTRAP_EXTRACT:-1}
+BOOTSTRAP_N_TIMES=${BOOTSTRAP_N_TIMES:-1}
+REPEAT_N_TIMES=${REPEAT_N_TIMES:-3}
+BASE_RSEED=${BASE_RSEED:-42}
+EXTRA_BOOTSTRAP_ARGS=${EXTRA_BOOTSTRAP_ARGS:-}
+EXTRA_REPEAT_ARGS=${EXTRA_REPEAT_ARGS:-}
 ARCHIVE_NAME=${ARCHIVE_NAME:-pdbbind_v2016.tar.gz}
 
 cd "$REPO_ROOT"
@@ -61,7 +73,7 @@ python scripts/make_smoke_config.py \
   --epochs "$SMOKE_EPOCHS" \
   --batch-size "$SMOKE_BATCH_SIZE" \
   --num-workers "$SMOKE_NUM_WORKERS" \
-  --experiment-name "DUMPLING_slurm_smoke" \
+  --experiment-name "$SMOKE_EXPERIMENT_NAME" \
   --model-family "$MODEL_FAMILY" \
   --protein-context-mode "$PROTEIN_CONTEXT_MODE" \
   --ligand-context-mode "$LIGAND_CONTEXT_MODE"
@@ -82,4 +94,28 @@ if [[ ! -f "$REPO_ROOT/$ARCHIVE_NAME" ]]; then
 fi
 
 echo "== Launching short pipeline smoke =="
-LOG_PATH="$REPO_ROOT/slurm_smoke_run.log" ./run.sh --config "$SMOKE_CONFIG" $EXTRA_RUN_ARGS
+echo "base_rseed: $BASE_RSEED"
+echo "bootstrap_extract: $RUN_BOOTSTRAP_EXTRACT"
+echo "bootstrap_n_times: $BOOTSTRAP_N_TIMES"
+echo "repeat_n_times: $REPEAT_N_TIMES"
+echo
+
+if [[ "$RUN_BOOTSTRAP_EXTRACT" == "1" ]]; then
+  echo "== Bootstrap run with extraction =="
+  LOG_PATH="$REPO_ROOT/slurm_smoke_bootstrap.log" ./run.sh \
+    --config "$SMOKE_CONFIG" \
+    --n-times "$BOOTSTRAP_N_TIMES" \
+    --rseed "$BASE_RSEED" \
+    --extract \
+    $EXTRA_BOOTSTRAP_ARGS
+else
+  echo "== Bootstrap extraction step skipped =="
+fi
+
+echo
+echo "== Repeated smoke batch =="
+LOG_PATH="$REPO_ROOT/slurm_smoke_batch.log" ./run.sh \
+  --config "$SMOKE_CONFIG" \
+  --n-times "$REPEAT_N_TIMES" \
+  --rseed "$BASE_RSEED" \
+  $EXTRA_REPEAT_ARGS

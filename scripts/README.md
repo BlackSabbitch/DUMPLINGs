@@ -60,6 +60,9 @@ before launching a long experiment.
   - sample `sbatch` wrapper that runs the environment smoke test and can
     optionally launch a very short pipeline run once the archive is present
   - defaults to a very cheap smoke profile with `MODEL_FAMILY=A1`
+  - can now reproduce the two-step smoke pattern used in Colab:
+    1. one bootstrap run with `--extract`
+    2. one repeated batch run with `--n-times N`
 - `rebuild_experiment_index.py`
   - rescans a `runs/` directory and rewrites:
     - `experiment_registry.csv`
@@ -82,6 +85,42 @@ Typical workflow:
 2. skip or overwrite the copied top-level `experiment_registry.csv` /
    `experiment_journal.md`,
 3. rebuild those two files locally from the imported run folders.
+
+## Recommended Cluster Smoke Flow
+
+For the first real Slurm sanity check, the recommended path is:
+
+1. submit the environment-only smoke first:
+
+```bash
+sbatch --export=ALL,RUN_PIPELINE_SMOKE=0 scripts/slurm_pipeline_smoke.sh
+```
+
+2. once the environment looks healthy, submit the short pipeline smoke:
+
+```bash
+sbatch --export=ALL,\
+RUN_PIPELINE_SMOKE=1,\
+RUN_BOOTSTRAP_EXTRACT=1,\
+BOOTSTRAP_N_TIMES=1,\
+REPEAT_N_TIMES=3,\
+BASE_RSEED=42,\
+SMOKE_EXPERIMENT_NAME=DUMPLING_colab_smoke,\
+MODEL_FAMILY=A1,\
+PROTEIN_CONTEXT_MODE=none,\
+LIGAND_CONTEXT_MODE=none,\
+SMOKE_EPOCHS=2,\
+SMOKE_BATCH_SIZE=2,\
+SMOKE_NUM_WORKERS=0 \
+scripts/slurm_pipeline_smoke.sh
+```
+
+This reproduces the current Colab smoke shape closely:
+
+- bootstrap extraction run:
+  - `./run.sh --config tmp/...json --n-times 1 --rseed 42 --extract`
+- repeated short batch:
+  - `./run.sh --config tmp/...json --n-times 3 --rseed 42`
 
 ## Why `run.py` stays in the repo root
 

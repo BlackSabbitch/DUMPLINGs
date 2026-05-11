@@ -990,6 +990,38 @@ This is the quickest useful path for checking launcher behavior such as
 `--rseed`, `--n-times`, and experiment-registry writes before moving to a full
 cluster run.
 
+For Slurm specifically, the most useful first cluster check is to mirror the
+current Colab smoke pattern:
+
+1. one bootstrap smoke run with `--extract`,
+2. one repeated short batch with `--n-times 3` on the same reduced config.
+
+That flow is wrapped by:
+
+- [`scripts/slurm_pipeline_smoke.sh`](scripts/slurm_pipeline_smoke.sh)
+
+Example:
+
+```bash
+sbatch --export=ALL,\
+RUN_PIPELINE_SMOKE=1,\
+RUN_BOOTSTRAP_EXTRACT=1,\
+BOOTSTRAP_N_TIMES=1,\
+REPEAT_N_TIMES=3,\
+BASE_RSEED=42,\
+SMOKE_EXPERIMENT_NAME=DUMPLING_colab_smoke,\
+MODEL_FAMILY=A1,\
+PROTEIN_CONTEXT_MODE=none,\
+LIGAND_CONTEXT_MODE=none,\
+SMOKE_EPOCHS=2,\
+SMOKE_BATCH_SIZE=2,\
+SMOKE_NUM_WORKERS=0 \
+scripts/slurm_pipeline_smoke.sh
+```
+
+That is preferred over feeding two manual `run.sh` invocations into Slurm by
+hand, because the whole smoke path stays reproducible in one `sbatch` script.
+
 When runs are produced on multiple machines, the recommended workflow is:
 
 1. copy only the new `runs/<experiment_signature>/...` folders,
