@@ -1107,6 +1107,9 @@ RUN_EXTRACT=0 \
 scripts/slurm_run_series.sh
 ```
 
+If `RUN_EXTRACT=1` is used there, the wrapper applies extraction only to the
+first run of the repeated series, not to every seed.
+
 You normally do **not** make a new config file for every seed. One config
 describes one experimental condition; repeated runs of that condition should
 usually share it.

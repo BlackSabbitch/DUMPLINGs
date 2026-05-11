@@ -69,8 +69,9 @@ before launching a long experiment.
 - `slurm_run_series.sh`
   - sample `sbatch` wrapper for a real repeated experiment series
   - launches `./run.sh --config ... --n-times ... --rseed ...`
-  - supports optional `RUN_EXTRACT=1`, but the normal post-bootstrap case is
-    `RUN_EXTRACT=0`
+  - supports optional `RUN_EXTRACT=1`, which applies extraction only to the
+    first run in the repeated series
+  - the normal post-bootstrap case is still `RUN_EXTRACT=0`
 - `slurm_assistant_journal.sh`
   - sample `sbatch` wrapper for the manual assistant layer
   - starts a local Ollama service inside the job, ensures a chosen model is

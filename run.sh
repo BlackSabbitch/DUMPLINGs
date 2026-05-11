@@ -4,6 +4,7 @@ set -o pipefail
 LOG_PATH=${LOG_PATH:-last_run.log}
 N_TIMES=1
 RSEED=""
+EXTRACT_FIRST_ONLY=0
 FORWARD_ARGS=()
 
 while [[ $# -gt 0 ]]; do
@@ -24,6 +25,10 @@ while [[ $# -gt 0 ]]; do
             RSEED="$2"
             shift 2
             ;;
+        --extract-first-only)
+            EXTRACT_FIRST_ONLY=1
+            shift
+            ;;
         *)
             FORWARD_ARGS+=("$1")
             shift
@@ -40,6 +45,7 @@ run_once() {
     local run_index="$1"
     local seed_arg=()
     local effective_seed=""
+    local run_args=("${FORWARD_ARGS[@]}")
 
     if [[ -n "$RSEED" ]]; then
         effective_seed=$((RSEED + run_index - 1))
@@ -49,6 +55,10 @@ run_once() {
 
     seed_arg=(--rseed "$effective_seed")
 
+    if [[ "$EXTRACT_FIRST_ONLY" -eq 1 && "$run_index" -eq 1 ]]; then
+        run_args+=(--extract)
+    fi
+
     if [[ "$N_TIMES" -gt 1 ]]; then
         echo "== Run $run_index/$N_TIMES | splitter_seed=$effective_seed ==" | tee -a "$LOG_PATH"
     else
@@ -57,7 +67,7 @@ run_once() {
 
     DUMPLING_BATCH_RUN_INDEX="$run_index" \
     DUMPLING_BATCH_N_TIMES="$N_TIMES" \
-    python run.py "${FORWARD_ARGS[@]}" "${seed_arg[@]}" 2>&1 | tee -a "$LOG_PATH"
+    python run.py "${run_args[@]}" "${seed_arg[@]}" 2>&1 | tee -a "$LOG_PATH"
 }
 
 for ((i = 1; i <= N_TIMES; i++)); do

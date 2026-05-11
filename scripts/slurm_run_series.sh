@@ -57,7 +57,7 @@ source "$VENV_DIR/bin/activate"
 CMD=(./run.sh --config "$CONFIG_PATH" --n-times "$N_TIMES" --rseed "$BASE_RSEED")
 
 if [[ "$RUN_EXTRACT" == "1" ]]; then
-  CMD+=(--extract)
+  CMD+=(--extract-first-only)
 fi
 
 if [[ -n "$EXTRA_RUN_ARGS" ]]; then
