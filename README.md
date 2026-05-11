@@ -957,6 +957,7 @@ Disable the per-run automatic assistant note:
 For a very short cluster-, Colab-, or launcher-side smoke run, the repo also ships with:
 
 - [`scripts/make_smoke_config.py`](scripts/make_smoke_config.py)
+- [`scripts/rebuild_experiment_index.py`](scripts/rebuild_experiment_index.py)
 - [`scripts/runtime_env_smoke.py`](scripts/runtime_env_smoke.py)
 - [`scripts/slurm_pipeline_smoke.sh`](scripts/slurm_pipeline_smoke.sh)
 
@@ -988,6 +989,25 @@ python scripts/make_smoke_config.py \
 This is the quickest useful path for checking launcher behavior such as
 `--rseed`, `--n-times`, and experiment-registry writes before moving to a full
 cluster run.
+
+When runs are produced on multiple machines, the recommended workflow is:
+
+1. copy only the new `runs/<experiment_signature>/...` folders,
+2. keep the terse indices rebuildable rather than hand-merged,
+3. rebuild them locally when convenient:
+
+```bash
+python scripts/rebuild_experiment_index.py --runs-dir runs
+```
+
+That script rescans the discovered run folders and rewrites:
+
+- `runs/experiment_registry.csv`
+- `runs/experiment_journal.md`
+
+In other words, the factual top-level indices are treated as **rebuildable
+views**, not as irreplaceable primary artifacts. The portable truth is the run
+folder itself.
 
 Run from prebuilt train / validation / test dataframes:
 
@@ -1032,13 +1052,15 @@ Typical outputs include:
   timestamps, runtime-location metadata, seed, model family, status, best
   epoch, completed epochs, and final test metrics when available,
 - `config.json`: resolved config snapshot,
-- `log.txt`: experiment log,
-- `err_log.txt`: traceback if execution fails,
+- `run.log`: experiment log for that specific run folder,
+- `run_err.log`: traceback if execution fails,
 - `best_model.pt`: best checkpoint by the configured primary validation metric,
 - `history.json`: train/validation history,
 - `test_results.json`: final test metrics,
 - `assistant_summary.md`: automatic post-run assistant note with a compact
-  heuristic reading of the run,
+  factual snapshot of the run,
+- `run_manifest.json`: machine-readable run snapshot used by future index
+  rebuilds and portability workflows,
 - `runs/experiment_journal.md`: accumulated automatic run journal for quick
   cross-run scanning without opening each experiment folder,
 - `best_validation_scatter_diagnostics.json`: extended agreement diagnostics
@@ -1082,6 +1104,96 @@ The automatic note layer is intentionally split in two:
 Both are assistant-authored convenience artifacts. They should help review,
 not replace manual interpretation of configs, logs, and raw metrics.
 
+At the launcher level, [`run.sh`](run.sh) also writes a separate
+`last_run.log` in the repo root by default. That file is the outer shell log
+for the most recent launcher invocation, while each experiment folder keeps its
+own `run.log`.
+
+## Assistant Layer
+
+LLM-related tooling is intentionally separated from the training pipeline.
+
+Rules of the current design:
+
+- `run.py`, `run.sh`, and run folders do not know about the assistant layer;
+- assistant tooling is launched manually when needed;
+- assistant tools operate over a whole `runs/` directory;
+- factual indexing stays in `scripts/rebuild_experiment_index.py`;
+- richer LLM analysis will live under `assistant/`.
+
+The current live backend for the assistant layer is a local Ollama server.
+That keeps the analysis path manual, cheap to iterate on, and independent from
+the training pipeline.
+
+The long-term target is a second journal, tentatively
+`runs/experiment_journal_llm.md`, that keeps the same entry structure as
+`runs/experiment_journal.md` but expands the `assistant note` section.
+
+### Assistant Roadmap
+
+1. MVP-1: build compact per-run context packets from the existing `runs/`
+   structure, without calling any model.
+2. MVP-2: validate those packets manually and adjust what we keep from config,
+   history, logs, summaries, and diagnostics.
+3. MVP-3: add a manual LLM journal builder that reads the packets and writes
+   `experiment_journal_llm.md`.
+4. MVP-4: add caching for unchanged runs so repeated journal builds stay cheap.
+
+Current status of that roadmap:
+
+- MVP-1 is done: context packets are built from the factual `runs/` tree.
+- MVP-2 is done: prompt previews are generated and manually inspectable.
+- MVP-3 is done in operational form:
+  - dry-run journal generation works,
+  - live journal generation works through a local Ollama backend,
+  - small local models can still be weak or slow, but the pipeline itself is
+    functional end to end.
+- MVP-4 is partially done: per-run response caching exists under
+  `assistant/cache/`.
+
+### MVP-1
+
+The first assistant step is implemented as:
+
+- [assistant/build_run_contexts.py](assistant/build_run_contexts.py)
+
+It scans a `runs/` directory and writes compact context packets to:
+
+- `assistant/experiment_journal_llm_context.json`
+
+Run it manually:
+
+```bash
+python assistant/build_run_contexts.py --runs-dir runs
+```
+
+This step does not call any LLM yet. It only prepares compact structured
+inputs for future prompt design and journal generation.
+
+### Live Assistant Backend
+
+The manual assistant journal can now run against a local Ollama model.
+
+Typical setup:
+
+```bash
+sudo snap install ollama
+ollama serve
+ollama pull qwen2.5:1.5b
+cp assistant/.env.example assistant/.env
+bash assistant/run_llm_journal.sh --live --limit 1
+```
+
+The assistant tooling remains fully optional:
+
+- factual experiment tracking still lives in `runs/experiment_registry.csv`
+  and `runs/experiment_journal.md`,
+- the assistant layer adds only a separate manual artifact,
+  `runs/experiment_journal_llm.md`.
+
+Use the exact model tag reported by `ollama list`. On small laptops, a 1.5B
+class model is a much safer first live test than 3B/7B models.
+
 ## Diagnostics and Monitoring
 
 The project includes:
@@ -1107,6 +1219,11 @@ The project includes:
 ## Roadmap
 
 - Add a lightweight smoke-test config for one batch and one forward/backward pass.
+- Refine the factual rebuild workflow and keep the top-level experiment indices
+  documented as rebuildable views over run folders.
+- Keep the manual assistant journal flow alive, but treat better hardware or a
+  stronger local model as the next meaningful quality unlock rather than
+  overfitting prompt tweaks to a tiny laptop model.
 - Expand ligand context with optional ablations such as `SASA` and electronic
   descriptors once the compact baseline is stable.
 - Add additional geometric baselines that consume richer parser output.

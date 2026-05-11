@@ -1,7 +1,7 @@
 #!/bin/bash
 set -o pipefail
 
-LOG_PATH=${LOG_PATH:-run.log}
+LOG_PATH=${LOG_PATH:-last_run.log}
 N_TIMES=1
 RSEED=""
 FORWARD_ARGS=()

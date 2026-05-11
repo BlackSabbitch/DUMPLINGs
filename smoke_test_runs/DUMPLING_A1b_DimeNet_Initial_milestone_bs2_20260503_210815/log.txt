@@ -1,0 +1,703 @@
+[INFO][EXPERIMENT] Log file: runs/DUMPLING_A1b_DimeNet_Initial_milestone_bs2_20260503_210815/log.txt
+[INFO][InteractionGraphParser] Initialized dist_threshold=5.0, ca_only=False
+[INFO][REGISTRY] Loaded bad complexes registry from bad_complexes.toml with 1 entries
+[INFO][EXTRACTION] Unpacking 4057 complexes...
+[INFO][EXTRACTION] Unpacking completed.
+[WARNING][REGISTRY] Excluded 1 complexes from subset refined using bad_complexes.toml: 4bps(training)
+[INFO][BUILD] Starting parallel parsing on 2 cores...
+[INFO][BUILD] Success: 4056, Errors: 0
+[INFO][SAVE] Dataset saved to datasets/pdbbds_ref_duoNE_c4c7540228cdf199b68bbda99a18e4f4.pickle (compression: None)
+[INFO][SAVE] Metadata saved to datasets/pdbbds_ref_duoNE_c4c7540228cdf199b68bbda99a18e4f4_meta.json
+[INFO][SPLIT] Core as test: True
+[INFO][SPLIT] Strategy: random
+[INFO][SPLIT] Total: 3766 | Train: 3202 | Val: 564
+[INFO][EXPERIMENT] Data normalization
+[INFO][EXPERIMENT] Data Stats: {'mean': 6.401942535915053, 'std': 1.9791400063456517}
+[INFO][EXPERIMENT] min value: -2.224169347191835, max value: 2.7881086969050095
+[INFO][CHECK] ID комплекса: 3ujb
+[INFO][CHECK] Атомов в графе: 532
+[INFO][CHECK] Размерность признаков: 4
+[INFO][CHECK] Наличие координат (pos): True
+[INFO][DATA_QUALITY] Data quality registry active: bad_complexes.toml (1 entries)
+[INFO][EXPERIMENT] Prepared splits -> train: 3202, val: 564, test: 290
+[INFO][EXPERIMENT] Dataset sizes -> train: 3202, val: 564, test: 290
+[INFO][EXPERIMENT] Run settings -> source_subset=refined, core_as_test=True, splitter=random, batch_size=2, num_workers=2, splitter_seed=42, epochs=100
+[INFO][MODEL] DimeNet settings -> hidden_channels=128, cutoff=5.0, max_num_neighbors=12, num_blocks=3, ca_only=False
+[INFO][OPTIMIZER] Optimizer settings -> type=AdamW, lr=0.0001, weight_decay=0.01
+[INFO][EXPERIMENT] Launch on: cuda
+[INFO][OPTIMIZER] Classic: AdamW with 903687 parameters in 118 tensors
+[WARNING][OPTIMIZER] Quantum: No quantum parameters found, optimizer disabled
+[INFO][LossFunction] Using built-in PyTorch loss HuberLoss
+[INFO][LossFunction] Slope regularization: False
+[INFO][METRICS] Primary metric: val_pearson with mode max
+[INFO][METRICS] Early stopping enabled with patience 10
+[INFO][METRICS] Monitors: {'val_pearson': 'max', 'val_rmse': 'min', 'train_loss': 'ignore', 'val_ci': 'max'}
+[INFO][TRAINER] ---------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 1/100] progress=0.000 classic_lr=[0.0001] quantum_lr=None 
+[INFO][TRAINER] [EPOCH 1/100] Train Loss: 0.4170, Val Loss: 0.3698
+[INFO][TRAINER] [EPOCH 1/100] Valid: RMSE 1.7833 | R 0.5549 | CI 0.6897
+[INFO][TRAINER] Primary metric val_pearson improved: 0.5549
+[INFO][TRAINER] Metric val_rmse improved: 1.7833
+[INFO][TRAINER] Metric val_ci improved: 0.6897
+[INFO][TRAINER] New best for primary metric val_pearson: 0.5549 (Saved to best_model.pt)
+[INFO][TRAINER] ---------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 2/100] progress=0.010 classic_lr=[0.0001] quantum_lr=None 
+[INFO][TRAINER] [EPOCH 2/100] Train Loss: 0.3403, Val Loss: 0.4174
+[INFO][TRAINER] [EPOCH 2/100] Valid: RMSE 1.9469 | R 0.5276 | CI 0.6792
+[INFO][TRAINER] EarlyStopping counter: 1/10
+[INFO][TRAINER] ---------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 3/100] progress=0.020 classic_lr=[0.0001] quantum_lr=None 
+[INFO][TRAINER] [EPOCH 3/100] Train Loss: 0.3269, Val Loss: 0.3364
+[INFO][TRAINER] [EPOCH 3/100] Valid: RMSE 1.7036 | R 0.5869 | CI 0.7057
+[INFO][TRAINER] Primary metric val_pearson improved: 0.5869
+[INFO][TRAINER] Metric val_rmse improved: 1.7036
+[INFO][TRAINER] Metric val_ci improved: 0.7057
+[INFO][TRAINER] New best for primary metric val_pearson: 0.5869 (Saved to best_model.pt)
+[INFO][TRAINER] ---------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 4/100] progress=0.030 classic_lr=[0.0001] quantum_lr=None 
+[INFO][TRAINER] [EPOCH 4/100] Train Loss: 0.3086, Val Loss: 0.3463
+[INFO][TRAINER] [EPOCH 4/100] Valid: RMSE 1.7282 | R 0.6003 | CI 0.7130
+[INFO][TRAINER] Primary metric val_pearson improved: 0.6003
+[INFO][TRAINER] Metric val_ci improved: 0.7130
+[INFO][TRAINER] New best for primary metric val_pearson: 0.6003 (Saved to best_model.pt)
+[INFO][TRAINER] ---------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 5/100] progress=0.040 classic_lr=[0.0001] quantum_lr=None 
+[INFO][TRAINER] [EPOCH 5/100] Train Loss: 0.2980, Val Loss: 0.3084
+[INFO][TRAINER] [EPOCH 5/100] Valid: RMSE 1.6320 | R 0.6216 | CI 0.7195
+[INFO][TRAINER] Primary metric val_pearson improved: 0.6216
+[INFO][TRAINER] Metric val_rmse improved: 1.6320
+[INFO][TRAINER] Metric val_ci improved: 0.7195
+[INFO][TRAINER] New best for primary metric val_pearson: 0.6216 (Saved to best_model.pt)
+[INFO][TRAINER] ---------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 6/100] progress=0.051 classic_lr=[0.0001] quantum_lr=None 
+[INFO][TRAINER] [EPOCH 6/100] Train Loss: 0.2879, Val Loss: 0.3093
+[INFO][TRAINER] [EPOCH 6/100] Valid: RMSE 1.6377 | R 0.6317 | CI 0.7238
+[INFO][TRAINER] Primary metric val_pearson improved: 0.6317
+[INFO][TRAINER] Metric val_ci improved: 0.7238
+[INFO][TRAINER] New best for primary metric val_pearson: 0.6317 (Saved to best_model.pt)
+[INFO][TRAINER] ---------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 7/100] progress=0.061 classic_lr=[0.0001] quantum_lr=None 
+[INFO][TRAINER] [EPOCH 7/100] Train Loss: 0.2731, Val Loss: 0.3218
+[INFO][TRAINER] [EPOCH 7/100] Valid: RMSE 1.6686 | R 0.6417 | CI 0.7273
+[INFO][TRAINER] Primary metric val_pearson improved: 0.6417
+[INFO][TRAINER] Metric val_ci improved: 0.7273
+[INFO][TRAINER] New best for primary metric val_pearson: 0.6417 (Saved to best_model.pt)
+[INFO][TRAINER] ---------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 8/100] progress=0.071 classic_lr=[0.0001] quantum_lr=None 
+[INFO][TRAINER] [EPOCH 8/100] Train Loss: 0.2584, Val Loss: 0.2931
+[INFO][TRAINER] [EPOCH 8/100] Valid: RMSE 1.5869 | R 0.6510 | CI 0.7321
+[INFO][TRAINER] Primary metric val_pearson improved: 0.6510
+[INFO][TRAINER] Metric val_rmse improved: 1.5869
+[INFO][TRAINER] Metric val_ci improved: 0.7321
+[INFO][TRAINER] New best for primary metric val_pearson: 0.6510 (Saved to best_model.pt)
+[INFO][TRAINER] ---------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 9/100] progress=0.081 classic_lr=[0.0001] quantum_lr=None 
+[INFO][TRAINER] [EPOCH 9/100] Train Loss: 0.2513, Val Loss: 0.2857
+[INFO][TRAINER] [EPOCH 9/100] Valid: RMSE 1.5642 | R 0.6622 | CI 0.7364
+[INFO][TRAINER] Primary metric val_pearson improved: 0.6622
+[INFO][TRAINER] Metric val_rmse improved: 1.5642
+[INFO][TRAINER] Metric val_ci improved: 0.7364
+[INFO][TRAINER] New best for primary metric val_pearson: 0.6622 (Saved to best_model.pt)
+[INFO][TRAINER] ---------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 10/100] progress=0.091 classic_lr=[0.0001] quantum_lr=None 
+[INFO][TRAINER] [EPOCH 10/100] Train Loss: 0.2419, Val Loss: 0.3186
+[INFO][TRAINER] [EPOCH 10/100] Valid: RMSE 1.6854 | R 0.6627 | CI 0.7391
+[INFO][TRAINER] Primary metric val_pearson improved: 0.6627
+[INFO][TRAINER] Metric val_ci improved: 0.7391
+[INFO][TRAINER] New best for primary metric val_pearson: 0.6627 (Saved to best_model.pt)
+[INFO][TRAINER] ---------------------------------------------------------------------------
+[INFO][TRAINER] Generating Multi-column ASCII Dashboard...
+[INFO][TRAINER] 
+               Learning Curve (Loss)                                              Validation RMSE
+┌──────────────────────────────────────────────────┐            ┌──────────────────────────────────────────────────┐
+│▘                                                 │            │     ▝                                            │
+│                                                  │ 0.4        │                                                  │ 1.9
+│                                                  │            │                                                  │
+│                                                  │            │                                                  │
+│                                                  │            │                                                  │
+│                                                  │            │                                                  │ 1.8
+│     ▗                                            │            │▘                                                 │
+│           ▖                                      │            │                                                  │
+│                                                  │            │                ▗                                 │
+│                ▝                                 │            │           ▘                                      │ 1.7
+│                      ▘    ▗                      │ 0.3        │                                 ▖               ▝│
+│                                                  │            │                           ▗                      │
+│                                 ▘                │            │                      ▘                           │
+│                                      ▝     ▖     │            │                                      ▗           │ 1.6
+│                                                 ▗│            │                                            ▖     │
+└──────────────────────────────────────────────────┘            └──────────────────────────────────────────────────┘
+         2             5             8           10                      2             5             8           10
+[INFO][TRAINER] 
+              Correlation (Pearson R)                                          Ranking Accuracy (CI)
+┌──────────────────────────────────────────────────┐            ┌──────────────────────────────────────────────────┐
+│                                            ▘    ▝│            │                                            ▖    ▝│
+│                                      ▗           │ 0.65       │                                      ▗           │
+│                                 ▖                │            │                                                  │
+│                           ▗                      │            │                           ▗     ▘                │
+│                      ▖                           │            │                                                  │ 0.72
+│                                                  │            │                      ▘                           │
+│                ▗                                 │ 0.60       │                ▗                                 │
+│                                                  │            │                                                  │
+│           ▘                                      │            │           ▘                                      │
+│                                                  │            │                                                  │ 0.70
+│                                                  │            │                                                  │
+│▖                                                 │            │                                                  │
+│                                                  │ 0.55       │▘                                                 │
+│                                                  │            │                                                  │
+│     ▗                                            │            │     ▗                                            │ 0.68
+└──────────────────────────────────────────────────┘            └──────────────────────────────────────────────────┘
+         2             5             8           10                      2             5             8           10
+[INFO][TRAINER] Final Performance Analytics:
+                Actual vs Predicted                                            Residuals Distribution
+┌──────────────────────────────────────────────────┐            ┌──────────────────────────────────────────────────┐
+│                                       ▖       ▄▄▀│            │                          ▄▞▀▄                    │
+│                                 ▗       ▖▖ ▄▞▀   │            │                         ▗▘   ▚▖                  │
+│                ▖             ▗ ▝    ▘  ▗▄▀▀ ▝  ▝▖│ 10         │                         ▌│    ▝▄                 │
+│           ▗          ▗ ▐  ▗   ▝▘▗ ▖▘▄▞▀▘  ▘▗▖ ▖  │            │                        ▐ │      ▚▖               │
+│         ▘        ▗ ▗▞▝▗▌▗▗▗▐▜▐▖▝▗▄▀▀▖▐ ▖▝▖▖▝▝    │            │                       ▗▘ │       ▚               │
+│     ▘  ▝▘  ▗▗▖▖▘▝  ▘█▙▄▝▌██▜▌▄▄▀▘▝▞▀▞▐▝▄     ▘   │            │                       ▞  │        ▌              │
+│   ▝ ▝▝ ▝   ▖▖▗▐▌▌█▙▞▌▌▞▌█▗▄▞▀█ ▙▝▝▘  ▖▗      ▝   │            │                      ▐   │        ▝▖             │ 50
+│      ▘▝▖▜▘▖▟▖ ▝▄▌▙▐▘▐▙▗▄▀▘▝▟▘▚ ▜ ▘   ▟    ▘      │            │                     ▗▘   │         ▚             │
+│▘▞  ▚▙▖  ▘  ▚▞▙▌▛▄▙▗▄▞▀▘▐▗▘▘  ▝ ▐                 │            │                    ▗▌    │          ▚▖           │
+│▗ ▘▀▗ ▜▛▄▝▘ ▀▚▟█▗▄▀▀▚▌▝▐▘▖▖▀ ▖                    │            │                   ▗▘     │           ▝▖          │
+│▝▐ ▖▖▝▐▘▞▖▛▗▄▄▄▀▘▗▗▝▘▟▐▘  ▙▝▗▚▗              ▝    │ 5          │                  ▞▘      │            ▝▄         │
+│▛▘▘ ▄▛█▜▜▗▄▞▀  ▖ ▞  ▖  ▘ ▝▘      ▖      ▝         │            │                 ▞        │              ▜▖       │
+│▝ ▝ ▝ ▄▄▀▘▝▌▝  ▝                                  │            │                ▞         │               ▝▖      │
+│   ▄▞▀                                            │            │           ▄▞▀▀▀          │                ▝▄▄▄▄▄▄│
+│▄▀▀                                               │            │▀▄▄▄▄▄▄▄▄▞▀▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁│▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁│ 0
+└──────────────────────────────────────────────────┘            └──────────────────────────────────────────────────┘
+          4         6          8        10                         -5                      0                      5
+[INFO][TRAINER] [EPOCH 11/100] progress=0.101 classic_lr=[0.0001] quantum_lr=None 
+[INFO][TRAINER] [EPOCH 11/100] Train Loss: 0.2296, Val Loss: 0.2832
+[INFO][TRAINER] [EPOCH 11/100] Valid: RMSE 1.5594 | R 0.6709 | CI 0.7405
+[INFO][TRAINER] Primary metric val_pearson improved: 0.6709
+[INFO][TRAINER] Metric val_rmse improved: 1.5594
+[INFO][TRAINER] Metric val_ci improved: 0.7405
+[INFO][TRAINER] New best for primary metric val_pearson: 0.6709 (Saved to best_model.pt)
+[INFO][TRAINER] ---------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 12/100] progress=0.111 classic_lr=[0.0001] quantum_lr=None 
+[INFO][TRAINER] [EPOCH 12/100] Train Loss: 0.2157, Val Loss: 0.2984
+[INFO][TRAINER] [EPOCH 12/100] Valid: RMSE 1.6270 | R 0.6623 | CI 0.7375
+[INFO][TRAINER] EarlyStopping counter: 1/10
+[INFO][TRAINER] ---------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 13/100] progress=0.121 classic_lr=[0.0001] quantum_lr=None 
+[INFO][TRAINER] [EPOCH 13/100] Train Loss: 0.2043, Val Loss: 0.2841
+[INFO][TRAINER] [EPOCH 13/100] Valid: RMSE 1.5694 | R 0.6579 | CI 0.7349
+[INFO][TRAINER] EarlyStopping counter: 2/10
+[INFO][TRAINER] ---------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 14/100] progress=0.131 classic_lr=[0.0001] quantum_lr=None 
+[INFO][TRAINER] [EPOCH 14/100] Train Loss: 0.1904, Val Loss: 0.3250
+[INFO][TRAINER] [EPOCH 14/100] Valid: RMSE 1.7186 | R 0.6402 | CI 0.7269
+[INFO][TRAINER] EarlyStopping counter: 3/10
+[INFO][TRAINER] ---------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 15/100] progress=0.141 classic_lr=[0.0001] quantum_lr=None 
+[INFO][TRAINER] [EPOCH 15/100] Train Loss: 0.1813, Val Loss: 0.2873
+[INFO][TRAINER] [EPOCH 15/100] Valid: RMSE 1.5777 | R 0.6760 | CI 0.7437
+[INFO][TRAINER] Primary metric val_pearson improved: 0.6760
+[INFO][TRAINER] Metric val_ci improved: 0.7437
+[INFO][TRAINER] New best for primary metric val_pearson: 0.6760 (Saved to best_model.pt)
+[INFO][TRAINER] ---------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 16/100] progress=0.152 classic_lr=[5e-05] quantum_lr=None 
+[INFO][TRAINER] [EPOCH 16/100] Train Loss: 0.1431, Val Loss: 0.2659
+[INFO][TRAINER] [EPOCH 16/100] Valid: RMSE 1.5230 | R 0.6852 | CI 0.7488
+[INFO][TRAINER] Primary metric val_pearson improved: 0.6852
+[INFO][TRAINER] Metric val_rmse improved: 1.5230
+[INFO][TRAINER] Metric val_ci improved: 0.7488
+[INFO][TRAINER] New best for primary metric val_pearson: 0.6852 (Saved to best_model.pt)
+[INFO][TRAINER] ---------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 17/100] progress=0.162 classic_lr=[5e-05] quantum_lr=None 
+[INFO][TRAINER] [EPOCH 17/100] Train Loss: 0.1283, Val Loss: 0.2808
+[INFO][TRAINER] [EPOCH 17/100] Valid: RMSE 1.5723 | R 0.6617 | CI 0.7368
+[INFO][TRAINER] EarlyStopping counter: 1/10
+[INFO][TRAINER] ---------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 18/100] progress=0.172 classic_lr=[5e-05] quantum_lr=None 
+[INFO][TRAINER] [EPOCH 18/100] Train Loss: 0.1169, Val Loss: 0.2767
+[INFO][TRAINER] [EPOCH 18/100] Valid: RMSE 1.5570 | R 0.6749 | CI 0.7427
+[INFO][TRAINER] EarlyStopping counter: 2/10
+[INFO][TRAINER] ---------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 19/100] progress=0.182 classic_lr=[5e-05] quantum_lr=None 
+[INFO][TRAINER] [EPOCH 19/100] Train Loss: 0.1066, Val Loss: 0.2845
+[INFO][TRAINER] [EPOCH 19/100] Valid: RMSE 1.5734 | R 0.6741 | CI 0.7423
+[INFO][TRAINER] EarlyStopping counter: 3/10
+[INFO][TRAINER] ---------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 20/100] progress=0.192 classic_lr=[5e-05] quantum_lr=None 
+[INFO][TRAINER] [EPOCH 20/100] Train Loss: 0.1010, Val Loss: 0.2778
+[INFO][TRAINER] [EPOCH 20/100] Valid: RMSE 1.5659 | R 0.6710 | CI 0.7433
+[INFO][TRAINER] EarlyStopping counter: 4/10
+[INFO][TRAINER] ---------------------------------------------------------------------------
+[INFO][TRAINER] Generating Multi-column ASCII Dashboard...
+[INFO][TRAINER] 
+               Learning Curve (Loss)                                              Validation RMSE
+┌──────────────────────────────────────────────────┐            ┌──────────────────────────────────────────────────┐
+│▘                                                 │ 0.4        │  ▝                                               │
+│                                                  │            │                                                  │
+│                                                  │            │                                                  │
+│  ▗                                               │            │                                                  │
+│     ▘                                            │            │                                                  │
+│        ▘ ▗                                       │ 0.3        │▖                                                 │ 1.8
+│             ▘ ▗                                  │            │                                                  │
+│                  ▖  ▖                            │            │        ▖                                         │
+│                       ▝  ▖                       │            │     ▖                            ▘               │
+│                            ▝                     │            │               ▗       ▝                          │
+│                               ▝  ▖               │ 0.2        │             ▖                                    │
+│                                    ▝             │            │          ▝                 ▝                     │
+│                                       ▖          │            │                  ▖                 ▗             │ 1.6
+│                                         ▝        │            │                     ▘    ▘    ▝         ▝  ▗  ▘ ▝│
+│                                            ▝  ▘ ▗│            │                                       ▖          │
+└──────────────────────────────────────────────────┘            └──────────────────────────────────────────────────┘
+           5           10           15           20                        5           10           15           20
+[INFO][TRAINER] 
+              Correlation (Pearson R)                                          Ranking Accuracy (CI)
+┌──────────────────────────────────────────────────┐            ┌──────────────────────────────────────────────────┐
+│                                       ▘          │            │                                       ▘          │
+│                          ▖         ▝       ▝  ▘ ▗│            │                          ▖         ▝       ▗  ▖ ▝│
+│                     ▘ ▝    ▝  ▗         ▝        │            │                     ▖ ▝    ▗            ▗        │
+│                  ▘                               │ 0.65       │                  ▖            ▝                  │
+│               ▝                  ▘               │            │               ▗                  ▖               │
+│             ▘                                    │            │             ▘                                    │ 0.73
+│          ▝                                       │            │          ▝                                       │
+│                                                  │            │        ▖                                         │
+│        ▘                                         │ 0.60       │                                                  │
+│     ▘                                            │            │     ▘                                            │
+│                                                  │            │                                                  │ 0.70
+│                                                  │            │                                                  │
+│▘                                                 │ 0.55       │▖                                                 │
+│                                                  │            │                                                  │
+│  ▗                                               │            │  ▗                                               │
+└──────────────────────────────────────────────────┘            └──────────────────────────────────────────────────┘
+           5           10           15           20                        5           10           15           20
+[INFO][TRAINER] Final Performance Analytics:
+                Actual vs Predicted                                            Residuals Distribution
+┌──────────────────────────────────────────────────┐            ┌──────────────────────────────────────────────────┐
+│                                               ▄▄▀│            │                            │  ▟                  │
+│                                            ▄▞▀   │            │                            │ ▞▝▖                 │
+│                                       ▘▗▄▀▀ ▝   ▝│ 10         │                          ▄▖│▞  ▌                 │
+│                ▞               ▘▗   ▄▞▀▘▗▖  ▞  ▝ │            │                         ▗▘▝▀   ▐                 │
+│           ▗         ▗  ▞  ▗   ▄▗▗▄▀▀▖ ▝   ▌▗  ▖ ▘│            │                        ▗▘  │   ▝▖                │
+│        ▗            ▄▝▝▝ ▄▗▟▚▄▄▀▘▚▀▙▞▐▝▖    ▗    │            │                        ▌   │    ▚                │
+│     ▖   ▘   ▝ ▟▌▝▟▞▚▛▄▖▀█▗▄▞▀▛▀▜▚▗▘▀▚  ▄ ▘ ▝ ▚   │            │                       ▞    │    ▐                │
+│    ▗▖▝▗▗▌▖▘▞▖▜▗▌▌▛▘▌▟█▗▄▀▘█▗▐█▘▙▗    █▗          │            │                      ▞     │     ▀▀▀▖            │ 50
+│▖  ▝  ▖▞ ▛  █▛▙ ▚▌▀▜▄▞▀▘▛▚▗▛▜▚▚▘▜  ▘  ▝           │            │                     ▗▘     │        ▝▖           │
+│ ▝ ▄▝▝▄▀▘▀▞  ▌▚▌▗▄▀▀▀▞▟▛▗▜▌▐▐▌  ▝ ▘     ▗         │            │                    ▗▘      │         ▝▖          │
+│▖▖▘ ▚▘▜▌▙▙▞▝█▄▄▀▘▐▙▌▀▝ ▛  ▌▖               ▘ ▗    │ 5          │                   ▗▘       │          ▝▖         │
+│▐▐ ▘▛▀▜▞▄▗▄▞▀▗▘▟ ▖▞          ▝   ▖                │            │                  ▗▘        │           ▝▚        │
+│▚▞▀ ▝▘▄▄▀▘▝▘ ▘            ▘                       │            │               ▗▞▀▘         │             ▚       │
+│   ▄▞▀                                            │            │             ▄▞▘            │              ▚▖▗▄▄▄▄│
+│▄▀▀    ▘                                          │            │▄▄▄▄▄▄▄▞▀▀▀▀▀▘▁▁▁▁▁▁▁▁▁▁▁▁▁▁│▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▝▘▁▁▁▁│ 0
+└──────────────────────────────────────────────────┘            └──────────────────────────────────────────────────┘
+          4         6          8        10                          -5          -2           0            2
+[INFO][TRAINER] [EPOCH 21/100] progress=0.202 classic_lr=[2.5e-05] quantum_lr=None 
+[INFO][TRAINER] [EPOCH 21/100] Train Loss: 0.0762, Val Loss: 0.2789
+[INFO][TRAINER] [EPOCH 21/100] Valid: RMSE 1.5718 | R 0.6729 | CI 0.7432
+[INFO][TRAINER] EarlyStopping counter: 5/10
+[INFO][TRAINER] ---------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 22/100] progress=0.212 classic_lr=[2.5e-05] quantum_lr=None 
+[INFO][TRAINER] [EPOCH 22/100] Train Loss: 0.0671, Val Loss: 0.2758
+[INFO][TRAINER] [EPOCH 22/100] Valid: RMSE 1.5652 | R 0.6811 | CI 0.7475
+[INFO][TRAINER] EarlyStopping counter: 6/10
+[INFO][TRAINER] ---------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 23/100] progress=0.222 classic_lr=[2.5e-05] quantum_lr=None 
+[INFO][TRAINER] [EPOCH 23/100] Train Loss: 0.0621, Val Loss: 0.2757
+[INFO][TRAINER] [EPOCH 23/100] Valid: RMSE 1.5584 | R 0.6795 | CI 0.7454
+[INFO][TRAINER] EarlyStopping counter: 7/10
+[INFO][TRAINER] ---------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 24/100] progress=0.232 classic_lr=[2.5e-05] quantum_lr=None 
+[INFO][TRAINER] [EPOCH 24/100] Train Loss: 0.0562, Val Loss: 0.2900
+[INFO][TRAINER] [EPOCH 24/100] Valid: RMSE 1.5927 | R 0.6722 | CI 0.7418
+[INFO][TRAINER] EarlyStopping counter: 8/10
+[INFO][TRAINER] ---------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 25/100] progress=0.242 classic_lr=[1.25e-05] quantum_lr=None 
+[INFO][TRAINER] [EPOCH 25/100] Train Loss: 0.0463, Val Loss: 0.2654
+[INFO][TRAINER] [EPOCH 25/100] Valid: RMSE 1.5260 | R 0.6885 | CI 0.7501
+[INFO][TRAINER] Primary metric val_pearson improved: 0.6885
+[INFO][TRAINER] Metric val_ci improved: 0.7501
+[INFO][TRAINER] New best for primary metric val_pearson: 0.6885 (Saved to best_model.pt)
+[INFO][TRAINER] ---------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 26/100] progress=0.253 classic_lr=[1.25e-05] quantum_lr=None 
+[INFO][TRAINER] [EPOCH 26/100] Train Loss: 0.0419, Val Loss: 0.2674
+[INFO][TRAINER] [EPOCH 26/100] Valid: RMSE 1.5336 | R 0.6878 | CI 0.7491
+[INFO][TRAINER] EarlyStopping counter: 1/10
+[INFO][TRAINER] ---------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 27/100] progress=0.263 classic_lr=[1.25e-05] quantum_lr=None 
+[INFO][TRAINER] [EPOCH 27/100] Train Loss: 0.0395, Val Loss: 0.2682
+[INFO][TRAINER] [EPOCH 27/100] Valid: RMSE 1.5362 | R 0.6864 | CI 0.7484
+[INFO][TRAINER] EarlyStopping counter: 2/10
+[INFO][TRAINER] ---------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 28/100] progress=0.273 classic_lr=[1.25e-05] quantum_lr=None 
+[INFO][TRAINER] [EPOCH 28/100] Train Loss: 0.0368, Val Loss: 0.2725
+[INFO][TRAINER] [EPOCH 28/100] Valid: RMSE 1.5507 | R 0.6824 | CI 0.7455
+[INFO][TRAINER] EarlyStopping counter: 3/10
+[INFO][TRAINER] ---------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 29/100] progress=0.283 classic_lr=[1.25e-05] quantum_lr=None 
+[INFO][TRAINER] [EPOCH 29/100] Train Loss: 0.0341, Val Loss: 0.2705
+[INFO][TRAINER] [EPOCH 29/100] Valid: RMSE 1.5427 | R 0.6855 | CI 0.7475
+[INFO][TRAINER] EarlyStopping counter: 4/10
+[INFO][TRAINER] ---------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 30/100] progress=0.293 classic_lr=[6.25e-06] quantum_lr=None 
+[INFO][TRAINER] [EPOCH 30/100] Train Loss: 0.0299, Val Loss: 0.2658
+[INFO][TRAINER] [EPOCH 30/100] Valid: RMSE 1.5296 | R 0.6899 | CI 0.7499
+[INFO][TRAINER] Primary metric val_pearson improved: 0.6899
+[INFO][TRAINER] New best for primary metric val_pearson: 0.6899 (Saved to best_model.pt)
+[INFO][TRAINER] ---------------------------------------------------------------------------
+[INFO][TRAINER] Generating Multi-column ASCII Dashboard...
+[INFO][TRAINER] 
+               Learning Curve (Loss)                                              Validation RMSE
+┌──────────────────────────────────────────────────┐            ┌──────────────────────────────────────────────────┐
+│▘                                                 │ 0.4        │  ▘                                               │
+│                                                  │            │                                                  │
+│                                                  │            │                                                  │
+│  ▘▗                                              │            │                                                  │
+│     ▘ ▖                                          │ 0.3        │                                                  │
+│        ▝ ▗                                       │            │▖                                                 │ 1.8
+│            ▘▝ ▗                                  │            │                                                  │
+│                 ▘ ▖                              │            │     ▖                                            │
+│                    ▝ ▖                           │ 0.2        │   ▗                  ▘                           │
+│                        ▘                         │            │          ▗    ▝                                  │
+│                         ▗                        │            │        ▗                                         │
+│                           ▝ ▘▗                   │            │       ▘           ▘                              │
+│                                ▝                 │ 0.1        │            ▖           ▖              ▘          │ 1.6
+│                                  ▘ ▘▗ ▖          │            │             ▝   ▘  ▝      ▝ ▖▝ ▝ ▘ ▘▗        ▖   │
+│                                         ▘▝ ▝ ▘▗ ▗│            │                         ▗               ▖▝ ▝  ▝ ▗│
+└──────────────────────────────────────────────────┘            └──────────────────────────────────────────────────┘
+               10               20               30                            10               20               30
+[INFO][TRAINER] 
+              Correlation (Pearson R)                                          Ranking Accuracy (CI)
+┌──────────────────────────────────────────────────┐            ┌──────────────────────────────────────────────────┐
+│                         ▗               ▘▝ ▗ ▖▗ ▝│            │                         ▗          ▖    ▘▝ ▗  ▗ ▝│ 0.8
+│                 ▖      ▖    ▖▗ ▗ ▖ ▘▝ ▖          │            │                        ▖    ▖▗ ▗ ▖  ▝ ▖      ▘   │
+│             ▗ ▗   ▖       ▗                      │            │               ▗ ▘ ▖       ▗                      │
+│            ▖       ▝                             │ 0.65       │            ▖▝      ▝                             │
+│          ▗           ▖                           │            │          ▗                                       │
+│        ▝                                         │            │        ▗             ▘                           │
+│       ▘                                          │            │       ▖                                          │
+│                                                  │            │     ▖                                            │
+│     ▘                                            │ 0.60       │                                                  │
+│   ▝                                              │            │   ▝                                              │
+│                                                  │            │                                                  │ 0.7
+│                                                  │            │                                                  │
+│▘                                                 │ 0.55       │▖                                                 │
+│                                                  │            │                                                  │
+│  ▖                                               │            │  ▖                                               │
+└──────────────────────────────────────────────────┘            └──────────────────────────────────────────────────┘
+               10               20               30                            10               20               30
+[INFO][TRAINER] Final Performance Analytics:
+                Actual vs Predicted                                            Residuals Distribution
+┌──────────────────────────────────────────────────┐            ┌──────────────────────────────────────────────────┐
+│                                               ▄▄▀│            │                         ▗▚                       │
+│                                       ▖ ▘  ▄▞▀   │            │                        ▗▘▝▖                      │ 100
+│                                ▖▗      ▗▄▀▀ ▝  ▝▞│ 10         │                       ▗▘ │▚                      │
+│           ▝         ▗  ▗  ▗▗   ▗  ▘▗▄▞▀▘  ▘ ▘    │            │                       ▞  │ ▌                     │
+│                ▘       ▘ ▗▗ ▞ ▚▗▗▄▀▀▝▝▝▖   ▝▝▗▘  │            │                      ▗▘  │ ▐▖                    │
+│             ▗ ▝▞ ▗ ▝▚▐▝▝▚▌▝▟▞▄▄▀▘▄▘▝▌▘▝▝ ▘ ▗     │            │                      ▞   │  ▝▚                   │
+│     ▖  ▝▖    ▖▝ ▀▚▘ ▚▌▄▜▙▗▄▞▀▜▀▜▞▐ ▛         ▘   │            │                     ▗▘   │    ▜                  │
+│    ▝  ▝▐ ▖▘▘▗▗▘▖▌▌▚▖▙▛▗▄▀▘█▐▝▛▘▚▗   ▝▟           │            │                     ▞    │     ▚                 │
+│▖▝   ▘▝▞ ▌▝ ▄▌▛▝▄▖▝▛▄▞▀▘▜▜▞▄▝▛█ ▗ ▖▖  ▝▝          │            │                    ▗▘    │      ▚                │
+│   ▜▝▝▖▛▘▝▞ ▚▌▟▛▗▄▀▀▞▟▀▖▚▚▘ ▝▝  ▗       ▞         │            │                   ▗▘     │       ▚               │
+│ ▖▖ ▚▞█▗▖▞▀▝▄▄▄▀▘▐▛▄▀▚▖▛ ▝▛▀▞▌▘            ▖ ▝    │ 5          │                  ▗▘      │        ▚              │
+│▞▗  ▄▄▀▙▄▗▄▞▀ ▘█▝ ▚▝   ▘ ▖▘▚                      │            │               ▗▄▀▘       │         ▚▖            │
+│▞▚▝▘▜▄▄▄▀▘▛▘▝    ▚        ▖  ▝   ▘                │            │            ▗▀▀▘          │          ▝▀▄▖         │
+│▗ ▘▄▞▀▘▖   ▘ ▞ ▝                                  │            │           ▞▘             │             ▝▜▄▄▄     │
+│▄▀▀                                               │            │▚▄▄▄▄▀▀▀▀▀▀▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁│▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▝▀▚▄▄▄│ 0
+└──────────────────────────────────────────────────┘            └──────────────────────────────────────────────────┘
+          4         6          8        10                         -5                      0                      5
+[INFO][TRAINER] [EPOCH 31/100] progress=0.303 classic_lr=[6.25e-06] quantum_lr=None 
+[INFO][TRAINER] [EPOCH 31/100] Train Loss: 0.0276, Val Loss: 0.2703
+[INFO][TRAINER] [EPOCH 31/100] Valid: RMSE 1.5435 | R 0.6828 | CI 0.7465
+[INFO][TRAINER] EarlyStopping counter: 1/10
+[INFO][TRAINER] ---------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 32/100] progress=0.313 classic_lr=[6.25e-06] quantum_lr=None 
+[INFO][TRAINER] [EPOCH 32/100] Train Loss: 0.0270, Val Loss: 0.2692
+[INFO][TRAINER] [EPOCH 32/100] Valid: RMSE 1.5414 | R 0.6835 | CI 0.7466
+[INFO][TRAINER] EarlyStopping counter: 2/10
+[INFO][TRAINER] ---------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 33/100] progress=0.323 classic_lr=[6.25e-06] quantum_lr=None 
+[INFO][TRAINER] [EPOCH 33/100] Train Loss: 0.0258, Val Loss: 0.2696
+[INFO][TRAINER] [EPOCH 33/100] Valid: RMSE 1.5407 | R 0.6820 | CI 0.7457
+[INFO][TRAINER] EarlyStopping counter: 3/10
+[INFO][TRAINER] ---------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 34/100] progress=0.333 classic_lr=[3.125e-06] quantum_lr=None 
+[INFO][TRAINER] [EPOCH 34/100] Train Loss: 0.0238, Val Loss: 0.2712
+[INFO][TRAINER] [EPOCH 34/100] Valid: RMSE 1.5457 | R 0.6813 | CI 0.7460
+[INFO][TRAINER] EarlyStopping counter: 4/10
+[INFO][TRAINER] ---------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 35/100] progress=0.343 classic_lr=[3.125e-06] quantum_lr=None 
+[INFO][TRAINER] [EPOCH 35/100] Train Loss: 0.0231, Val Loss: 0.2712
+[INFO][TRAINER] [EPOCH 35/100] Valid: RMSE 1.5481 | R 0.6832 | CI 0.7468
+[INFO][TRAINER] EarlyStopping counter: 5/10
+[INFO][TRAINER] ---------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 36/100] progress=0.354 classic_lr=[3.125e-06] quantum_lr=None 
+[INFO][TRAINER] [EPOCH 36/100] Train Loss: 0.0226, Val Loss: 0.2718
+[INFO][TRAINER] [EPOCH 36/100] Valid: RMSE 1.5491 | R 0.6823 | CI 0.7464
+[INFO][TRAINER] EarlyStopping counter: 6/10
+[INFO][TRAINER] ---------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 37/100] progress=0.364 classic_lr=[3.125e-06] quantum_lr=None 
+[INFO][TRAINER] [EPOCH 37/100] Train Loss: 0.0220, Val Loss: 0.2720
+[INFO][TRAINER] [EPOCH 37/100] Valid: RMSE 1.5495 | R 0.6807 | CI 0.7452
+[INFO][TRAINER] EarlyStopping counter: 7/10
+[INFO][TRAINER] ---------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 38/100] progress=0.374 classic_lr=[1.5625e-06] quantum_lr=None 
+[INFO][TRAINER] [EPOCH 38/100] Train Loss: 0.0211, Val Loss: 0.2723
+[INFO][TRAINER] [EPOCH 38/100] Valid: RMSE 1.5504 | R 0.6800 | CI 0.7451
+[INFO][TRAINER] EarlyStopping counter: 8/10
+[INFO][TRAINER] ---------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 39/100] progress=0.384 classic_lr=[1.5625e-06] quantum_lr=None 
+[INFO][TRAINER] [EPOCH 39/100] Train Loss: 0.0207, Val Loss: 0.2720
+[INFO][TRAINER] [EPOCH 39/100] Valid: RMSE 1.5497 | R 0.6801 | CI 0.7452
+[INFO][TRAINER] EarlyStopping counter: 9/10
+[INFO][TRAINER] ---------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 40/100] progress=0.394 classic_lr=[1.5625e-06] quantum_lr=None 
+[INFO][TRAINER] [EPOCH 40/100] Train Loss: 0.0204, Val Loss: 0.2738
+[INFO][TRAINER] [EPOCH 40/100] Valid: RMSE 1.5553 | R 0.6791 | CI 0.7449
+[INFO][TRAINER] EarlyStopping counter: 10/10
+[INFO][TRAINER] [EPOCH 40/100] Early stopping triggered
+[INFO][TRAINER] ---------------------------------------------------------------------------
+[INFO][TRAINER] ---------------------------------------------------------------------------
+[INFO][TRAINER] Training completed. Best val_pearson: 0.6899 at epoch 30
+[INFO][EVALUATOR] Performance report saved to runs/DUMPLING_A1b_DimeNet_Initial_milestone_bs2_20260503_210815/model_performance_report.png
+[INFO][TEST] FINAL TEST (CORE SET)
+[INFO][TEST] Weights for the best model (epoch 30) loaded from runs/DUMPLING_A1b_DimeNet_Initial_milestone_bs2_20260503_210815/best_model.pt
+[INFO][TEST] FINAL TEST -> RMSE: 0.8091 | Pearson R: 0.6867 | CI: 0.7497
+[WARNING][TEST] Test RMSE is currently reported in evaluator/model scale, while validation RMSE in training logs is denormalized to pKd units. Do not compare the two RMSE values directly until test denormalization is added.
+[INFO][SUMMARY] Generating ASCII performance summary...
+[INFO][SUMMARY] Loss Curve:
+                              Learning Curve (Loss)
+┌────────────────────────────────────────────────────────────────────────────────┐
+│▘                                                                               │
+│                                                                                │ 0.4
+│                                                                                │
+│                                                                                │
+│                                                                                │
+│  ▘ ▖                                                                           │
+│      ▖                                                                         │
+│        ▖                                                                       │ 0.3
+│          ▝                                                                     │
+│            ▝                                                                   │
+│              ▝ ▝                                                               │
+│                  ▝ ▗                                                           │
+│                      ▗                                                         │
+│                        ▝                                                       │ 0.2
+│                          ▝ ▗                                                   │
+│                                                                                │
+│                                                                                │
+│                              ▝                                                 │
+│                                ▝ ▗                                             │
+│                                    ▝ ▗                                         │ 0.1
+│                                                                                │
+│                                         ▘ ▖                                    │
+│                                             ▘ ▖                                │
+│                                                 ▘ ▘ ▖ ▖ ▖                      │
+│                                                           ▘ ▘ ▘ ▘ ▖ ▖ ▗ ▗ ▗ ▗ ▗│
+└────────────────────────────────────────────────────────────────────────────────┘
+                  10                  20                   30                  40
+[INFO][SUMMARY] RMSE Curve:
+                                 Validation RMSE
+┌────────────────────────────────────────────────────────────────────────────────┐
+│  ▘                                                                             │
+│                                                                                │
+│                                                                                │ 1.9
+│                                                                                │
+│                                                                                │
+│                                                                                │
+│                                                                                │
+│                                                                                │
+│                                                                                │ 1.8
+│▖                                                                               │
+│                                                                                │
+│                                                                                │
+│      ▖                                                                         │
+│                          ▝                                                     │
+│    ▘                                                                           │ 1.7
+│                  ▝                                                             │
+│            ▝                                                                   │
+│                                                                                │
+│        ▘ ▝           ▗                                                         │
+│                                                                                │
+│                                               ▖                                │ 1.6
+│              ▝             ▗   ▗   ▗    ▖                                      │
+│                ▝   ▗   ▝         ▗   ▝    ▘ ▖                                 ▗│
+│                                                     ▖ ▘ ▖   ▖ ▖ ▖ ▘ ▘ ▝ ▝ ▝ ▝  │
+│                              ▗                  ▖ ▘       ▘                    │
+└────────────────────────────────────────────────────────────────────────────────┘
+                  10                  20                   30                  40
+[INFO][SUMMARY] Pearson (R) Curve:
+                             Correlation (Pearson R)
+┌────────────────────────────────────────────────────────────────────────────────┐
+│                              ▗                  ▘ ▖ ▖   ▖ ▘                    │
+│                                           ▖ ▖         ▘     ▘ ▘ ▘ ▖ ▘ ▝ ▗ ▗ ▗ ▗│
+│                            ▝     ▗ ▗    ▖     ▖                                │
+│                    ▝                 ▝                                         │
+│                ▝ ▝   ▝         ▗                                               │
+│                        ▝                                                       │
+│              ▝                                                                 │ 0.65
+│            ▗             ▗                                                     │
+│                                                                                │
+│          ▝                                                                     │
+│        ▖                                                                       │
+│                                                                                │
+│                                                                                │
+│      ▖                                                                         │ 0.60
+│                                                                                │
+│    ▖                                                                           │
+│                                                                                │
+│                                                                                │
+│                                                                                │
+│                                                                                │
+│▖                                                                               │
+│                                                                                │ 0.55
+│                                                                                │
+│                                                                                │
+│  ▖                                                                             │
+└────────────────────────────────────────────────────────────────────────────────┘
+                  10                  20                   30                  40
+[INFO][SUMMARY] Concordancy Index Curve:
+                              Ranking Accuracy (CI)
+┌────────────────────────────────────────────────────────────────────────────────┐
+│                              ▗                  ▘ ▖ ▖     ▘                    │
+│                                           ▘ ▖         ▖ ▘   ▖ ▘ ▖ ▖ ▘ ▗ ▗ ▗ ▗  │
+│                            ▗     ▗ ▗ ▗  ▖                                     ▝│
+│                    ▗                          ▘                                │ 0.74
+│                  ▝   ▗         ▗                                               │
+│                ▝       ▗                                                       │
+│              ▗                                                                 │
+│                                                                                │
+│            ▝             ▝                                                     │
+│          ▝                                                                     │
+│        ▖                                                                       │ 0.72
+│                                                                                │
+│                                                                                │
+│      ▘                                                                         │
+│                                                                                │
+│    ▖                                                                           │
+│                                                                                │
+│                                                                                │ 0.70
+│                                                                                │
+│                                                                                │
+│                                                                                │
+│▘                                                                               │
+│                                                                                │
+│                                                                                │
+│  ▖                                                                             │ 0.68
+└────────────────────────────────────────────────────────────────────────────────┘
+                  10                  20                   30                  40
+[INFO][SUMMARY] Actual vs Predicted Scatter Plot:
+                              Predicted = f(Actual)
+┌────────────────────────────────────────────────────────────────────────────────┐
+│                                                                             ▗▄▀│
+│                                                                  ▖       ▄▞▀▘  │
+│                                                              ▗        ▄▞▀      │
+│                                                                   ▗▄▀▀  ▖   ▝ ▗│
+│                                                   ▗  ▘         ▗▄▀▘ ▌  ▖     ▝ │ 10
+│                  ▝                ▖                    ▝  ▖ ▄▞▀▘               │
+│                         ▗             ▘    ▖▝ ▗    ▗     ▄▞▀  ▗           ▗    │
+│                                      ▝     ▘  ▖  ▚ ▗▀▗▄▀▀ ▖▝ ▘▘       ▝ ▘▗     │
+│                        ▗ ▗      ▞  ▘▗ ▗ ▗ ▘▗ ▘▗ ▗ ▗▄▀▘ ▖ ▗▝   ▖▝▖ ▝            │
+│                      ▘  ▞   ▗    ▝ ▖  ▖▝▘▄  ▀▙ ▄▞▀▘ ▝▖▌▝▗ ▝ ▘          ▘       │
+│             ▝             ▘▝▘▗  ▝ ▐ ▖ ▘▖ ▝  ▄▞▀▘▟▘▝▗ ▖▗  ▛              ▝      │
+│       ▄      ▗   ▖▗  ▝    ▗ ▝   ▗▞▘▝▝▗▝▘▗▄▀▀▗▖ ▖▖▖ ▗▗ ▝  ▘   ▖                 │
+│            ▘▗▘ ▖    ▗  ▘▗▖▝▗▘▝▗▗▗▗▜▝▀▗▄▀▘ ▟▞▗▘▀▗  ▝        ▝▗                  │
+│        ▖   ▖ ▄     ▗ ▗▚ ▖ ▘ ▗▗▗▄▝▖▄▄▀▘ ▖▌▝▝▘ ▄▝▘▝  ▘ ▘     ▝ ▖▖                │
+│▘ ▘        ▚  ▄ ▝  ▄▘▖ ▘ ▗▀▝ ▝▗ ▄▞▀▙▘▐ ▀▝▝ ▝▘ ▗ ▙▘  ▀  ▖▝                       │
+│     ▖▘▝▗  ▖▘▖ ▗ ▘ ▗▞  ▐▖▞ ▚▗▄▞▀▗ ▗▖▌  ▚▚▝    ▖▘    ▗           ▖▘              │
+│     ▝   ▝ ▘   ▖▐▖▗ ▗ ▖▚▞▗▄▀▘▄▖▝▘▞▘  ▄  ▗▖ ▖▗▗      ▀                           │
+│   ▗  ▝▖▞▐▘ ▖▖ ▌   ▖▗ ▄▄▀▘▗ ▝ ▄▖▘ ▘▗▗    ▐▝  ▞▐ ▘                        ▘      │ 5
+│▗▝        ▄▀  ▝▝   ▄▞▀  ▄▖▗ ▝▘▝▗   ▘▗▘   ▝▖▗                         ▝          │
+│▖▘▐   ▗▙▖▘▝▖▗▄▘▗▄▞▀▝▌ ▝ ▀▖▝  ▚▘         ▘   ▘                                   │
+│ ▞  ▄ ▗▘ ▗▙▘▗▄▀▘▚▘▘ ▖      ▗                   ▝     ▘                          │
+│▖ ▝    ▘▘▄▄▀▘▝  ▘           ▝            ▝                                      │
+│ ▖ ▖  ▄▞▀▗        ▘  ▞   ▘                                                      │
+│  ▗▄▞▀     ▝                                                                    │
+│▄▀▘                                                                             │
+└────────────────────────────────────────────────────────────────────────────────┘
+       3        4       5       6        7       8       9      10       11
+[INFO][SUMMARY] Errors Distribution (Residuals):
+                              Residuals Distribution
+┌────────────────────────────────────────────────────────────────────────────────┐
+│                                         ▗▌                                     │
+│                                        ▗▘▐                                     │
+│                                       ▗▘│ ▌                                    │ 100
+│                                      ▗▘ │ ▝▖                                   │
+│                                     ▗▘  │  ▚                                   │
+│                                     ▞   │  ▝▖                                  │
+│                                     ▌   │   ▚                                  │
+│                                    ▐    │    ▙                                 │
+│                                    ▌    │     ▚▖                               │
+│                                   ▐     │      ▝▖                              │
+│                                   ▌     │       ▝▚                             │
+│                                  ▐      │         ▌                            │
+│                                  ▞      │         ▝▖                           │
+│                                 ▗▘      │          ▝▖                          │ 50
+│                                 ▞       │           ▐                          │
+│                                ▞        │            ▚                         │
+│                               ▞         │             ▚                        │
+│                              ▞          │              ▚▖                      │
+│                            ▄▟           │               ▝▖                     │
+│                         ▗▄▀             │                ▝▄                    │
+│                     ▄▞▀▀▘               │                  ▀▚▖                 │
+│                   ▗▀                    │                    ▝▀▄               │
+│                  ▞▘                     │                       ▀▚▄▄           │
+│              ▗▄▄▛                       │                           ▀▀▚▄       │
+│▀▀▚▄▄▄▞▀▀▀▀▀▀▀▘▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁│▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▀▀▄▄▄▄▄│ 0
+└────────────────────────────────────────────────────────────────────────────────┘
+            -4             -2             0              2              4
+[INFO][SUMMARY] Generating Multi-column ASCII Dashboard...
+[INFO][SUMMARY] 
+               Learning Curve (Loss)                                              Validation RMSE
+┌──────────────────────────────────────────────────┐            ┌──────────────────────────────────────────────────┐
+│▘                                                 │ 0.4        │ ▝                                                │
+│                                                  │            │                                                  │
+│                                                  │            │                                                  │
+│ ▝▗                                               │            │                                                  │
+│    ▘▖▗                                           │            │                                                  │
+│       ▗                                          │            │▖                                                 │ 1.8
+│         ▘▘▗                                      │            │                                                  │
+│            ▝ ▖                                   │            │    ▖                                             │
+│               ▘▗ ▖                               │ 0.2        │  ▗             ▝                                 │
+│                                                  │            │       ▗   ▝                                      │
+│                   ▘▗                             │            │      ▗                                           │
+│                     ▝ ▖▖                         │            │     ▘        ▘                                   │
+│                         ▗                        │            │         ▖        ▖          ▘                    │ 1.6
+│                          ▝ ▘▘▗▗                  │            │          ▘ ▝  ▘    ▝▗ ▘▘▝▝ ▖     ▗       ▖▖▗▗ ▖▖▗│
+│                                 ▘▝▝ ▘▘▝▗ ▖▖▗▗ ▖▖▗│            │                   ▖          ▗▝ ▘ ▝ ▖▘▝▝         │
+└──────────────────────────────────────────────────┘            └──────────────────────────────────────────────────┘
+           10           20           30          40                        10           20           30          40
+[INFO][SUMMARY] 
+              Correlation (Pearson R)                                          Ranking Accuracy (CI)
+┌──────────────────────────────────────────────────┐            ┌──────────────────────────────────────────────────┐
+│                   ▖          ▝▝ ▖▗▗ ▘▖▗▗  ▖▗     │            │                   ▖      ▗   ▝▝ ▖ ▗ ▘▖▗   ▖      │ 0.8
+│            ▗     ▖  ▗ ▖▖▗▝ ▘▖            ▘  ▝ ▘▘▝│            │                  ▖  ▗ ▖▖▗  ▘▖    ▝     ▝ ▘ ▝▝ ▘▘▝│
+│          ▖▗  ▖     ▗                             │            │           ▗▝ ▖     ▗                             │
+│         ▖     ▘                                  │ 0.65       │         ▖▘    ▘                                  │
+│       ▗        ▗                                 │            │       ▗                                          │
+│      ▝                                           │            │      ▗         ▝                                 │
+│     ▘                                            │            │     ▖                                            │
+│                                                  │            │    ▖                                             │
+│    ▘                                             │ 0.60       │                                                  │
+│  ▝                                               │            │  ▝                                               │
+│                                                  │            │                                                  │ 0.7
+│                                                  │            │                                                  │
+│▘                                                 │ 0.55       │▖                                                 │
+│                                                  │            │                                                  │
+│ ▗                                                │            │ ▗                                                │
+└──────────────────────────────────────────────────┘            └──────────────────────────────────────────────────┘
+           10           20           30          40                        10           20           30          40
+[INFO][SUMMARY] Final Performance Analytics:
+                Actual vs Predicted                                            Residuals Distribution
+┌──────────────────────────────────────────────────┐            ┌──────────────────────────────────────────────────┐
+│                                               ▄▄▀│            │                         ▗▚                       │
+│                                       ▖ ▘  ▄▞▀   │            │                        ▗▘▝▖                      │ 100
+│                                ▖▗      ▗▄▀▀ ▝  ▝▞│ 10         │                       ▗▘ │▚                      │
+│           ▝         ▗  ▗  ▗▗   ▗  ▘▗▄▞▀▘  ▘ ▘    │            │                       ▞  │ ▌                     │
+│                ▘       ▘ ▗▗ ▞ ▚▗▗▄▀▀▝▝▝▖   ▝▝▗▘  │            │                      ▗▘  │ ▐▖                    │
+│             ▗ ▝▞ ▗ ▝▚▐▝▝▚▌▝▟▞▄▄▀▘▄▘▝▌▘▝▝ ▘ ▗     │            │                      ▞   │  ▝▚                   │
+│     ▖  ▝▖    ▖▝ ▀▚▘ ▚▌▄▜▙▗▄▞▀▜▀▜▞▐ ▛         ▘   │            │                     ▗▘   │    ▜                  │
+│    ▝  ▝▐ ▖▘▘▗▗▘▖▌▌▚▖▙▛▗▄▀▘█▐▝▛▘▚▗   ▝▟           │            │                     ▞    │     ▚                 │
+│▖▝   ▘▝▞ ▌▝ ▄▌▛▝▄▖▝▛▄▞▀▘▜▜▞▄▝▛█ ▗ ▖▖  ▝▝          │            │                    ▗▘    │      ▚                │
+│   ▜▝▝▖▛▘▝▞ ▚▌▟▛▗▄▀▀▞▟▀▖▚▚▘ ▝▝  ▗       ▞         │            │                   ▗▘     │       ▚               │
+│ ▖▖ ▚▞█▗▖▞▀▝▄▄▄▀▘▐▛▄▀▚▖▛ ▝▛▀▞▌▘            ▖ ▝    │ 5          │                  ▗▘      │        ▚              │
+│▞▗  ▄▄▀▙▄▗▄▞▀ ▘█▝ ▚▝   ▘ ▖▘▚                      │            │               ▗▄▀▘       │         ▚▖            │
+│▞▚▝▘▜▄▄▄▀▘▛▘▝    ▚        ▖  ▝   ▘                │            │            ▗▀▀▘          │          ▝▀▄▖         │
+│▗ ▘▄▞▀▘▖   ▘ ▞ ▝                                  │            │           ▞▘             │             ▝▜▄▄▄     │
+│▄▀▀                                               │            │▚▄▄▄▄▀▀▀▀▀▀▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁│▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▝▀▚▄▄▄│ 0
+└──────────────────────────────────────────────────┘            └──────────────────────────────────────────────────┘
+          4         6          8        10                         -5                      0                      5
+[INFO][EXPERIMENT] Experiment completed successfully.

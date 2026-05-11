@@ -1,0 +1,1723 @@
+[INFO][EXPERIMENT] Log file: runs/DUMPLING_A2_sanity_run_of_A1_from_new_codebase_20260509_010422/log.txt
+[INFO][EXPERIMENT] ================================================ *** STAGE: DATASET *** ================================================
+[INFO][EXPERIMENT] ========================================================================================================================
+[INFO][InteractionGraphParser] Initialized dist_threshold=5.0, ca_only=False
+[INFO][CNNParser] Initialized is_ligand=False
+[INFO][CNNParser] Initialized is_ligand=True
+[INFO][REGISTRY] Loaded bad complexes registry from bad_complexes.toml with 1 entries
+[INFO][EXPERIMENT] Preparing extraction for subset 'refined'.
+[INFO][EXTRACTION] Unpacking 4057 complexes.
+[DEBUG][EXTRACTION] Unpacking completed.
+[DEBUG][EXPERIMENT] Extraction for subset 'refined' completed in 1m 44.1s
+[INFO][EXPERIMENT] Preparing dataset build for subset 'refined'.
+[WARNING][REGISTRY] Excluded 1 complexes from subset refined using bad_complexes.toml: 4bps(training)
+[INFO][BUILD] Starting parallel parsing on 2 cores.
+[WARNING][CNNParser] Ligand processing failed: Can't kekulize mol.  Unkekulized atoms: 0 1 2 3 4 5 6 7 8
+[INFO][BUILD] Success: 4055, Errors: 1
+[WARNING][BUILD] Errors: Counter({"ligand_context_error: Can't kekulize mol.  Unkekulized atoms: 0 1 2 3 4 5 6 7 8": 1})
+[INFO][SAVE] Dataset saved to datasets/pdbbds_ref_DimeNet_interaction5.0_cf6aeac4125e7ef8ef773525c9171d94.pickle (compression: None)
+[INFO][SAVE] Metadata saved to datasets/pdbbds_ref_DimeNet_interaction5.0_cf6aeac4125e7ef8ef773525c9171d94_meta.json
+[DEBUG][EXPERIMENT] Dataset build for subset 'refined' completed in 2m 31.6s
+[INFO][SPLIT] Preparing train/val/test split.
+[INFO][SPLIT] Core as test: True
+[WARNING][DATASET] 1 core complexes are missing from refined dataset
+[INFO][SPLIT] Strategy: random
+[DEBUG][SPLIT] Total: 3766 | Train: 3202 | Val: 564
+[DEBUG][SPLIT] Train/val/test split completed in 0.0s
+[INFO][EXPERIMENT] Prepared splits | Train: 3202 | Val: 564 | Test: 289
+[INFO][NORMALIZATION] Preparing data normalization.
+[DEBUG][NORMALIZATION] Data normalization completed in 0.0s
+[INFO][NORMALIZATION] Data Stats: {'mean': 6.401942535915053, 'std': 1.9791400063456517}
+[INFO][NORMALIZATION] min value: -2.224169347191835, max value: 2.7881086969050095
+[DEBUG][CHECK] Performing quick data checks on the first training sample.
+[DEBUG][CHECK] Complex ID: 3ujb
+[DEBUG][CHECK] Graph atoms: 532
+[DEBUG][CHECK] Feature dimension: 4
+[DEBUG][CHECK] Coordinates present (pos): True
+[INFO][DATA_QUALITY] Data quality registry active: bad_complexes.toml (1 entries)
+[INFO][EXPERIMENT] Dataset preparation finished in 4m 15.8s
+[INFO][EXPERIMENT] ============================================== *** STAGE: ENRICHMENT *** ===============================================
+[INFO][EXPERIMENT] ========================================================================================================================
+[INFO][EXPERIMENT] Preparing training datasets and loaders.
+[INFO][PROTEIN_CONTEXT] Preparing protein context embedding precompute: mode=esm_frozen_whole, model=esm2_t33_650M_UR50D, batch_size=8, cache_path=protein_context_features
+[DEBUG][PROTEIN_CONTEXT] Preparing protein context precompute for split 'train' with 3202 sequences.
+[DEBUG][PROTEIN_CONTEXT] Protein context precompute for split 'train' completed in 2.8s (unique=2131, cached_before=2131, computed_now=0)
+[DEBUG][PROTEIN_CONTEXT] Preparing protein context precompute for split 'val' with 564 sequences.
+[DEBUG][PROTEIN_CONTEXT] Protein context precompute for split 'val' completed in 0.3s (unique=481, cached_before=481, computed_now=0)
+[DEBUG][PROTEIN_CONTEXT] Preparing protein context precompute for split 'test' with 289 sequences.
+[DEBUG][PROTEIN_CONTEXT] Protein context precompute for split 'test' completed in 0.1s (unique=219, cached_before=219, computed_now=0)
+[DEBUG][PROTEIN_CONTEXT] Protein context embedding precompute completed in 39.6s (split_unique_total=2831, cached_before_total=2831, computed_now_total=0)
+[INFO][LIGAND_CONTEXT] Preparing ligand context embedding precompute: mode=basic_rdkit, descriptor_set=basic_physchem_v1, batch_size=256, cache_path=ligand_context_features
+[DEBUG][LIGAND_CONTEXT] Preparing ligand context precompute for split 'train' with 3202 ligands.
+[WARNING][LIGAND_CONTEXT] Ligand context fallback to zero descriptor vector for unparsable SMILES: [H]C1:C([H]):C([H]):N(C([H])([H])OC([H])([H])N2:C([H]):C([H]):C(C(=O)N([H])[H]):C([H]):C:2[H]):C([H]):C:1[H]
+[WARNING][LIGAND_CONTEXT] Ligand context fallback to zero descriptor vector for unparsable SMILES: [H]OC([H])([H])C([H])([H])N([H])C1:C([H]):C(F):C([H]):C2:N:C(C([H])([H])C3:C([H]):C([H]):C4:C(:C:3[H])OC([H])([H])O4):N3:C(:C:1:2)N([H])C(N([H])[H])=N3
+[WARNING][LIGAND_CONTEXT] Ligand context fallback to zero descriptor vector for unparsable SMILES: [H]C1:C([H]):C(C([H])([H])C2:N:C3:C([H]):C(S(=O)(=O)N([H])[H]):C([H]):C([H]):C:3:C3:N:2N=C(N([H])[H])N3[H]):C([H]):C2:C:1OC([H])([H])O2
+[WARNING][LIGAND_CONTEXT] Ligand context fallback to zero descriptor vector for unparsable SMILES: [H]C1:C([H]):C([H]):C(C2:C3:C([H]):C(N([H])[H]):C([H]):C([H]):C:3:C3:C([H]):C([H]):C(N([H])[H]):C([H]):C:3:N:2C([H])([H])C([H])([H])C([H])([H])[N+](C([H])([H])[H])(C([H])([H])C([H])([H])[H])C([H])([H])C([H])([H])[H]):C([H]):C:1[H]
+[WARNING][LIGAND_CONTEXT] Ligand context fallback to zero descriptor vector for unparsable SMILES: [H]OC([H])([H])C([H])([H])N([H])C1:C([H]):C([H]):C2:C3:N(:C(C([H])([H])C4:C([H]):C([H]):C5:C(:C:4[H])OC([H])([H])O5):N:C:2:C:1[H])N=C(N([H])[H])N3[H]
+[WARNING][LIGAND_CONTEXT] Ligand context fallback to zero descriptor vector for unparsable SMILES: [H]ON1:C(N([H])C([H])([H])C(F)(F)C2:C([H]):C([H]):C([H]):C([H]):N:2O[H]):C([H]):C([H]):C(Cl):C:1C([H])([H])C(=O)N([H])[C@@]([H])(C1:C([H]):C([H]):C([H]):C(Cl):C:1[H])C([H])([H])[H]
+[WARNING][LIGAND_CONTEXT] Ligand context fallback to zero descriptor vector for unparsable SMILES: [H]C1:C([H]):C([H]):C(C([H])([H])[C@]([H])(C(=O)N2C([H])([H])C([H])([H])C([H])([H])[C@@]2([H])C(=O)N([H])C([H])([H])C2:C([H]):C([H]):C([H]):N(C([H])([H])[H]):C:2[H])[N+]([H])([H])[H]):C([H]):C:1[H]
+[WARNING][LIGAND_CONTEXT] Ligand context fallback to zero descriptor vector for unparsable SMILES: [H]C1:C(OC([H])([H])[H]):C([H]):C(C([H])([H])C2:N:C3:C([H]):C([H]):C([H]):C([H]):C:3:C3:N:2N=C(N([H])[H])N3[H]):C([H]):C:1OC([H])([H])[H]
+[WARNING][LIGAND_CONTEXT] Ligand context fallback to zero descriptor vector for unparsable SMILES: [H]C1:C([H]):C([H]):C(C([H])([H])[C@]([H])(C(=O)N2C([H])([H])C([H])([H])C([H])([H])[C@@]2([H])C(=O)N([H])C([H])([H])C2:C(Cl):C([H]):C([H]):N(C([H])([H])[H]):C:2[H])[N+]([H])([H])[H]):C([H]):C:1[H]
+[WARNING][LIGAND_CONTEXT] Ligand context fallback to zero descriptor vector for unparsable SMILES: [H]/C(C1=N(C([H])([H])[H])C2:C([H]):C([H]):C([H]):C([H]):C:2C1(C([H])([H])[H])C([H])([H])[H])=C(/[H])C([H])([H])C1:C([H]):C([H]):N(C([H])([H])C([H])([H])C([H])([H])S(=O)(=O)=O):C2:C([H]):C([H]):C([H]):C([H]):C:1:2
+[WARNING][LIGAND_CONTEXT] Ligand context fallback to zero descriptor vector for unparsable SMILES: [H]C1:C([H]):C(C([H])([H])C2:N:C3:C([H]):C([H]):C([H]):C(F):C:3:C3:N:2N=C(N([H])[H])N3[H]):C([H]):C2:C:1OC([H])([H])O2
+[WARNING][LIGAND_CONTEXT] Ligand context fallback to zero descriptor vector for unparsable SMILES: [H]C1:C([H]):C([H]):C2:C3:N(:C(C([H])([H])C([H])([H])C([H])([H])[H]):N:C:2:C:1[H])N=C(N([H])[H])N3[H]
+[WARNING][LIGAND_CONTEXT] Ligand context fallback to zero descriptor vector for unparsable SMILES: [H]C1:C([H]):C(C([H])([H])C2:N:C3:C([H]):C([H]):C([H]):C([H]):C:3:C3:N:2N=C(N([H])[H])N3[H]):C([H]):C2:C:1OC([H])([H])O2
+[WARNING][LIGAND_CONTEXT] Ligand context fallback to zero descriptor vector for unparsable SMILES: [H]C1:C([H]):C([H]):C(C2:C3:C([H]):C(N([H])[H]):C([H]):C([H]):C:3:C3:C([H]):C([H]):C(N([H])[H]):C([H]):C:3:N:2C([H])([H])C([H])([H])C([H])([H])C([H])([H])C([H])([H])C([H])([H])c2nnn(C([H])([H])C([H])([H])N([H])C3:C4:C(:N:C5:C([H]):C([H]):C([H]):C([H]):C:3:5)C([H])([H])C([H])([H])C([H])([H])C4([H])[H])c2[H]):C([H]):C:1[H]
+[WARNING][LIGAND_CONTEXT] Ligand context fallback to zero descriptor vector for unparsable SMILES: [H]C1=C2C([H])([H])C3:C4:C([H]):C5:C(:C([H]):C:4:C([H]):C([H]):N:3C([H])([H])[C@@]2([H])[C@]([H])(OC([H])([H])[H])C(OC([H])([H])[H])=C1[H])OC([H])([H])O5
+[WARNING][LIGAND_CONTEXT] Ligand context fallback to zero descriptor vector for unparsable SMILES: [H]OC1:C([H]):C(O[H]):C([H]):C(C([H])([H])C2:N:C3:C([H]):C([H]):C([H]):C([H]):C:3:C3:N:2N=C(N([H])[H])N3[H]):C:1[H]
+[WARNING][LIGAND_CONTEXT] Ligand context fallback to zero descriptor vector for unparsable SMILES: [H]OC([H])([H])C([H])([H])[C@@]1([H])N(C2:N:C3:N(:C(N([H])C([H])([H])C4:C([H]):C([H]):C([H]):[N+]([O-]):C:4[H]):C:2[H])N([H])C([H])=C3C([H])([H])C([H])([H])[H])C([H])([H])C([H])([H])C([H])([H])C1([H])[H]
+[WARNING][LIGAND_CONTEXT] Ligand context fallback to zero descriptor vector for unparsable SMILES: [H]C1:C([H]):C([H]):N(C([H])([H])C([H])(P(=O)(=O)=O)P(=O)(=O)=O):C([H]):C:1OC([H])([H])C([H])([H])C([H])([H])C([H])([H])C([H])([H])C([H])([H])C([H])([H])[H]
+[WARNING][LIGAND_CONTEXT] Ligand context fallback to zero descriptor vector for unparsable SMILES: [H]C1:C(C([H])([H])[H]):C(C([H])([H])[H]):C([H]):C2:C:1:N:c1c(=O)n([H])c(=O)n([H])c1:N:2C([H])([H])[H]
+[WARNING][LIGAND_CONTEXT] Ligand context fallback to zero descriptor vector for unparsable SMILES: [H]C1:C([H]):C([H]):C(C([H])([H])[C@]([H])(C(=O)N2C([H])([H])C([H])([H])C([H])([H])[C@@]2([H])C(=O)N([H])C([H])([H])C2:C([H]):C(Cl):C([H]):C([H]):N:2C([H])([H])[H])[N+]([H])([H])[H]):C([H]):C:1[H]
+[WARNING][LIGAND_CONTEXT] Ligand context fallback to zero descriptor vector for unparsable SMILES: [H]OC(C([H])([H])N1:C([H]):C([H]):C([H]):C(C2:C([H]):C([H]):C([H]):C(C3:C([H]):C([H]):C([H]):C([H]):C:3[H]):C:2[H]):C:1[H])(P(=O)(=O)=O)P(=O)(=O)=O
+[WARNING][LIGAND_CONTEXT] Ligand context fallback to zero descriptor vector for unparsable SMILES: [H]OC([H])([H])[C@@]1([H])O[C@@]([H])(c2nn([H])c3:C(N([H])[H]):N(C([H])([H])[H]):C([H]):N:c23)[C@]([H])(O[H])[C@]1([H])O[H]
+[DEBUG][LIGAND_CONTEXT] Ligand context precompute for split 'train' completed in 9.5s (unique=2567, cached_before=0, computed_now=2567)
+[DEBUG][LIGAND_CONTEXT] Preparing ligand context precompute for split 'val' with 564 ligands.
+[WARNING][LIGAND_CONTEXT] Ligand context fallback to zero descriptor vector for unparsable SMILES: [H]C1:C([H]):C([H]):C(C([H])([H])[C@]([H])(C(=O)N2C([H])([H])C([H])([H])C([H])([H])[C@@]2([H])C(=O)N([H])C([H])([H])C2:C([H]):C([H]):N(C([H])([H])[H]):C([H]):C:2[H])[N+]([H])([H])[H]):C([H]):C:1[H]
+[WARNING][LIGAND_CONTEXT] Ligand context fallback to zero descriptor vector for unparsable SMILES: [H]C1:C([H]):C([H]):C(C([H])([H])[C@]([H])(C(=O)N2C([H])([H])C([H])([H])C([H])([H])[C@@]2([H])C(=O)N([H])C([H])([H])C2:C([H]):C([H]):C([H]):C([H]):N:2C([H])([H])[H])[N+]([H])([H])[H]):C([H]):C:1[H]
+[DEBUG][LIGAND_CONTEXT] Ligand context precompute for split 'val' completed in 1.3s (unique=538, cached_before=141, computed_now=397)
+[DEBUG][LIGAND_CONTEXT] Preparing ligand context precompute for split 'test' with 289 ligands.
+[WARNING][LIGAND_CONTEXT] Ligand context fallback to zero descriptor vector for unparsable SMILES: [H]C1:N:C([H]):C2:N(:C:1[H])C(N([H])C(C([H])([H])[H])(C([H])([H])[H])C([H])([H])[H])=C(C1:C([H]):C([H]):C(c3c(C([H])([H])[H])noc3C([H])([H])[H]):C([H]):C:1[H])N2[H]
+[WARNING][LIGAND_CONTEXT] Ligand context fallback to zero descriptor vector for unparsable SMILES: [H]C1:C([H]):C(C2:C([H]):C([H]):C(OC([H])([H])[H]):C([H]):C:2[H]):N2:C(:C:1[H])N([H])C(N([H])C1:C([H]):C([H]):C(N3C([H])([H])C([H])([H])[N+]([H])(C([H])([H])[H])C([H])([H])C3([H])[H]):C([H]):C:1[H])=N2
+[DEBUG][LIGAND_CONTEXT] Ligand context precompute for split 'test' completed in 0.7s (unique=289, cached_before=52, computed_now=237)
+[DEBUG][LIGAND_CONTEXT] Ligand context embedding precompute completed in 12.9s (split_unique_total=3394, cached_before_total=193, computed_now_total=3201)
+[INFO][PROTEIN_CONTEXT] Preparing protein context prewarm: mode=esm_frozen_whole, model=esm2_t33_650M_UR50D, repr_layer=33, pooling=mean, cache_path=protein_context_features
+[DEBUG][PROTEIN_CONTEXT] Protein context encoder weights are warmed up in 13.4s.
+[INFO][PROTEIN_CONTEXT] Protein context settings -> mode=esm_frozen_whole, model=esm2_t33_650M_UR50D, repr_layer=33, pooling=mean, cache_path=protein_context_features, max_length=1022
+[INFO][LIGAND_CONTEXT] Ligand context settings -> mode=basic_rdkit, descriptor_set=basic_physchem_v1, cache_path=ligand_context_features, embedding_dim=7
+[INFO][EXPERIMENT] ============================================= *** STAGE: RUN SETTINGS *** ==============================================
+[INFO][EXPERIMENT] ========================================================================================================================
+[INFO][EXPERIMENT] Run settings -> source_subset=refined, core_as_test=True, splitter=random, batch_size=2, num_workers=0, splitter_seed=42, model=A1, epochs=100
+[INFO][MODEL] Global graph settings -> mode=interaction, dist_threshold=5.0, ca_only=False
+[INFO][MODEL] Global encoder settings -> hidden_channels=128, cutoff=5.0, max_num_neighbors=12, num_blocks=3, protein_context=esm_frozen_whole, ligand_context=basic_rdkit
+[INFO][MODEL] Head settings -> mode=global_local_concat
+[INFO][MODEL] Local branch configuration present but ignored because model=A1: local_graph=radius, local_encoder=DimeNet
+[INFO][OPTIMIZER] Optimizer settings -> type=AdamW, lr=0.0001, weight_decay=0.01
+[INFO][MODEL] Preparing model initialization.
+[DEBUG][MODEL] Model initialization completed in 25.2s
+[INFO][EXPERIMENT] Launch on: cuda
+[INFO][OPTIMIZER] Parameter summary: total=652.13M | trainable=1.09M | frozen=651.04M | groups=5
+[INFO][OPTIMIZER] Optimizer split -> classic=652.13M params in 664 tensors (100.0%) | quantum=0 params in 0 tensors (0.0%)
+[INFO][OPTIMIZER] gnn                          | split=classic | status=trainable | params= 895.37K (trainable=895.37K, frozen=0)
+[INFO][OPTIMIZER] head                         | split=classic | status=trainable | params=  24.70K (trainable=24.70K, frozen=0)
+[INFO][OPTIMIZER] ligand_context_projector     | split=classic | status=trainable | params=   1.04K (trainable=1.04K, frozen=0)
+[INFO][OPTIMIZER] protein_context_encoder      | split=classic | status=frozen    | params= 651.04M (trainable=0, frozen=651.04M)
+[INFO][OPTIMIZER] protein_context_projector    | split=classic | status=trainable | params= 166.53K (trainable=166.53K, frozen=0)
+[DEBUG][OPTIMIZER] gnn                          | split=classic | status=trainable | tensors=114 (trainable=114, frozen=0) | params= 895.37K | trainable= 895.37K (100.0%) | frozen=       0 (0.0%) | classic= 895.37K | quantum=       0
+[DEBUG][OPTIMIZER] head                         | split=classic | status=trainable | tensors=  4 (trainable=4, frozen=0) | params=  24.70K | trainable=  24.70K (100.0%) | frozen=       0 (0.0%) | classic=  24.70K | quantum=       0
+[DEBUG][OPTIMIZER] ligand_context_projector     | split=classic | status=trainable | tensors=  4 (trainable=4, frozen=0) | params=   1.04K | trainable=   1.04K (100.0%) | frozen=       0 (0.0%) | classic=   1.04K | quantum=       0
+[DEBUG][OPTIMIZER] protein_context_encoder      | split=classic | status=frozen    | tensors=538 (trainable=0, frozen=538) | params= 651.04M | trainable=       0 (0.0%) | frozen= 651.04M (100.0%) | classic= 651.04M | quantum=       0
+[DEBUG][OPTIMIZER] protein_context_projector    | split=classic | status=trainable | tensors=  4 (trainable=4, frozen=0) | params= 166.53K | trainable= 166.53K (100.0%) | frozen=       0 (0.0%) | classic= 166.53K | quantum=       0
+[WARNING][OPTIMIZER] Quantum: No quantum parameters found, optimizer disabled
+[INFO][LossFunction] Using built-in PyTorch loss HuberLoss
+[INFO][LossFunction] Slope regularization: False
+[INFO][METRICS] Primary metric: val_pearson with mode max
+[INFO][METRICS] Early stopping enabled with patience 10
+[INFO][METRICS] Monitors: {'val_pearson': 'max', 'val_rmse': 'min', 'train_loss': 'ignore', 'val_ci': 'max'}
+[INFO][EXPERIMENT] =============================================== *** STAGE: TRAINING *** ================================================
+[INFO][EXPERIMENT] ========================================================================================================================
+[INFO][TRAINER] [EPOCH 1/100] progress=0.000 classic_lr=[0.0001] quantum_lr=None 
+[DEBUG][MEMORY] epoch_1_start | rss=4.8GB | rss_peak=7.2GB | sys_avail=6.5GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=2.6GB | cuda_max_alloc=2.5GB | cuda_max_reserved=2.6GB
+[INFO][TRAINER] [EPOCH 1/100] Preparing training epoch.
+[DEBUG][MEMORY] train_epoch_start | batch=0/1601 | rss=4.8GB | rss_peak=7.2GB | sys_avail=6.5GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=2.6GB | cuda_max_alloc=2.5GB | cuda_max_reserved=2.6GB
+[DEBUG][MEMORY] train_epoch_end | batch=1601/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.0GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.0GB
+[DEBUG][MEMORY] epoch_1_after_train | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.0GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.0GB
+[DEBUG][TRAINER] [EPOCH 1/100] Training pass completed in 1m 48.7s
+[INFO][TRAINER] [EPOCH 1/100] Validation.
+[DEBUG][MEMORY] epoch_1_after_val | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.0GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.0GB
+[DEBUG][TRAINER] [EPOCH 1/100] Preparing train-set evaluation metrics.
+[INFO][TRAINER] [EPOCH 1/100] Train Loss: 0.3623, Val Loss: 0.3494
+[DEBUG][TRAINER] [EPOCH 1/100] Train_time=1m 48.7s | Val_time=10.4s | Train_eval_time=55.0s | epoch_time=1m 59.2s
+[DEBUG][TRAINER] [EPOCH 1/100] Preparing denormalized validation metrics.
+[DEBUG][TRAINER] [EPOCH 1/100] Denormalized validation metrics prepared in 0.0s
+[INFO][TRAINER] [EPOCH 1/100] Train(eval): RMSE 1.6684 | R 0.6099 | CI 0.7188
+[INFO][TRAINER] [EPOCH 1/100] Valid: RMSE 1.7425 | R 0.6096 | CI 0.7126
+[DEBUG][TRAINER] [EPOCH 1/100] Checking monitored metrics for improvements.
+[INFO][TRAINER] Improved: Primary metric 'val_pearson': 0.6096
+[INFO][TRAINER] Improved: Secondary metric 'val_rmse': 1.7425
+[INFO][TRAINER] Improved: Secondary metric 'val_ci': 0.7126
+[DEBUG][TRAINER] [EPOCH 1/100] Metric improvement check completed in 0.0s
+[DEBUG][TRAINER] [EPOCH 1/100] Saving best model.
+[DEBUG][TRAINER] [EPOCH 1/100] Best model checkpoint saved in 0.0s
+[DEBUG][TRAINER] New best for primary metric val_pearson: 0.6096 (Saved to best_model.pt)
+[DEBUG][TRAINER] [EPOCH 1/100] Updating early stopping state.
+[DEBUG][TRAINER] [EPOCH 1/100] Saving history.json.
+[DEBUG][TRAINER] [EPOCH 1/100] history.json saved in 0.0s
+[DEBUG][TRAINER] [EPOCH 1/100] Updating schedulers.
+[DEBUG][TRAINER] [EPOCH 1/100] Schedulers updated in 0.0s
+[INFO][TRAINER] ------------------------------------------------------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 2/100] progress=0.010 classic_lr=[0.0001] quantum_lr=None 
+[DEBUG][MEMORY] epoch_2_start | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.0GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.0GB
+[INFO][TRAINER] [EPOCH 2/100] Preparing training epoch.
+[DEBUG][MEMORY] train_epoch_start | batch=0/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.0GB | cuda_max_alloc=2.5GB | cuda_max_reserved=6.0GB
+[DEBUG][MEMORY] train_epoch_end | batch=1601/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.0GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.0GB
+[DEBUG][MEMORY] epoch_2_after_train | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.0GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.0GB
+[DEBUG][TRAINER] [EPOCH 2/100] Training pass completed in 1m 43.9s
+[INFO][TRAINER] [EPOCH 2/100] Validation.
+[DEBUG][MEMORY] epoch_2_after_val | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.0GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.0GB
+[DEBUG][TRAINER] [EPOCH 2/100] Preparing train-set evaluation metrics.
+[INFO][TRAINER] [EPOCH 2/100] Train Loss: 0.2981, Val Loss: 0.3365
+[DEBUG][TRAINER] [EPOCH 2/100] Train_time=1m 43.9s | Val_time=9.4s | Train_eval_time=55.1s | epoch_time=1m 53.3s
+[DEBUG][TRAINER] [EPOCH 2/100] Preparing denormalized validation metrics.
+[DEBUG][TRAINER] [EPOCH 2/100] Denormalized validation metrics prepared in 0.0s
+[INFO][TRAINER] [EPOCH 2/100] Train(eval): RMSE 1.6308 | R 0.6313 | CI 0.7285
+[INFO][TRAINER] [EPOCH 2/100] Valid: RMSE 1.7302 | R 0.6169 | CI 0.7185
+[DEBUG][TRAINER] [EPOCH 2/100] Checking monitored metrics for improvements.
+[INFO][TRAINER] Improved: Primary metric 'val_pearson': 0.6169
+[INFO][TRAINER] Improved: Secondary metric 'val_rmse': 1.7302
+[INFO][TRAINER] Improved: Secondary metric 'val_ci': 0.7185
+[DEBUG][TRAINER] [EPOCH 2/100] Metric improvement check completed in 0.0s
+[DEBUG][TRAINER] [EPOCH 2/100] Saving best model.
+[DEBUG][TRAINER] [EPOCH 2/100] Best model checkpoint saved in 0.0s
+[DEBUG][TRAINER] New best for primary metric val_pearson: 0.6169 (Saved to best_model.pt)
+[DEBUG][TRAINER] [EPOCH 2/100] Updating early stopping state.
+[DEBUG][TRAINER] [EPOCH 2/100] Saving history.json.
+[DEBUG][TRAINER] [EPOCH 2/100] history.json saved in 0.0s
+[DEBUG][TRAINER] [EPOCH 2/100] Updating schedulers.
+[DEBUG][TRAINER] [EPOCH 2/100] Schedulers updated in 0.0s
+[INFO][TRAINER] ------------------------------------------------------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 3/100] progress=0.020 classic_lr=[0.0001] quantum_lr=None 
+[DEBUG][MEMORY] epoch_3_start | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.0GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.0GB
+[INFO][TRAINER] [EPOCH 3/100] Preparing training epoch.
+[DEBUG][MEMORY] train_epoch_start | batch=0/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.0GB | cuda_max_alloc=2.5GB | cuda_max_reserved=6.0GB
+[DEBUG][MEMORY] train_epoch_end | batch=1601/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=4.1GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] epoch_3_after_train | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=4.1GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 3/100] Training pass completed in 1m 45.0s
+[INFO][TRAINER] [EPOCH 3/100] Validation.
+[DEBUG][MEMORY] epoch_3_after_val | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=4.1GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 3/100] Preparing train-set evaluation metrics.
+[INFO][TRAINER] [EPOCH 3/100] Train Loss: 0.2825, Val Loss: 0.2841
+[DEBUG][TRAINER] [EPOCH 3/100] Train_time=1m 45.0s | Val_time=9.9s | Train_eval_time=55.5s | epoch_time=1m 54.9s
+[DEBUG][TRAINER] [EPOCH 3/100] Preparing denormalized validation metrics.
+[DEBUG][TRAINER] [EPOCH 3/100] Denormalized validation metrics prepared in 0.0s
+[INFO][TRAINER] [EPOCH 3/100] Train(eval): RMSE 1.4801 | R 0.6782 | CI 0.7508
+[INFO][TRAINER] [EPOCH 3/100] Valid: RMSE 1.5720 | R 0.6640 | CI 0.7406
+[DEBUG][TRAINER] [EPOCH 3/100] Checking monitored metrics for improvements.
+[INFO][TRAINER] Improved: Primary metric 'val_pearson': 0.6640
+[INFO][TRAINER] Improved: Secondary metric 'val_rmse': 1.5720
+[INFO][TRAINER] Improved: Secondary metric 'val_ci': 0.7406
+[DEBUG][TRAINER] [EPOCH 3/100] Metric improvement check completed in 0.0s
+[DEBUG][TRAINER] [EPOCH 3/100] Saving best model.
+[DEBUG][TRAINER] [EPOCH 3/100] Best model checkpoint saved in 0.0s
+[DEBUG][TRAINER] New best for primary metric val_pearson: 0.6640 (Saved to best_model.pt)
+[DEBUG][TRAINER] [EPOCH 3/100] Updating early stopping state.
+[DEBUG][TRAINER] [EPOCH 3/100] Saving history.json.
+[DEBUG][TRAINER] [EPOCH 3/100] history.json saved in 0.0s
+[DEBUG][TRAINER] [EPOCH 3/100] Updating schedulers.
+[DEBUG][TRAINER] [EPOCH 3/100] Schedulers updated in 0.0s
+[INFO][TRAINER] ------------------------------------------------------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 4/100] progress=0.030 classic_lr=[0.0001] quantum_lr=None 
+[DEBUG][MEMORY] epoch_4_start | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=4.1GB | cuda_max_reserved=6.5GB
+[INFO][TRAINER] [EPOCH 4/100] Preparing training epoch.
+[DEBUG][MEMORY] train_epoch_start | batch=0/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=2.5GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] train_epoch_end | batch=1601/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] epoch_4_after_train | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 4/100] Training pass completed in 1m 47.0s
+[INFO][TRAINER] [EPOCH 4/100] Validation.
+[DEBUG][MEMORY] epoch_4_after_val | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 4/100] Preparing train-set evaluation metrics.
+[INFO][TRAINER] [EPOCH 4/100] Train Loss: 0.2656, Val Loss: 0.2815
+[DEBUG][TRAINER] [EPOCH 4/100] Train_time=1m 47.0s | Val_time=9.5s | Train_eval_time=57.2s | epoch_time=1m 56.5s
+[DEBUG][TRAINER] [EPOCH 4/100] Preparing denormalized validation metrics.
+[DEBUG][TRAINER] [EPOCH 4/100] Denormalized validation metrics prepared in 0.0s
+[INFO][TRAINER] [EPOCH 4/100] Train(eval): RMSE 1.4381 | R 0.7015 | CI 0.7568
+[INFO][TRAINER] [EPOCH 4/100] Valid: RMSE 1.5446 | R 0.6815 | CI 0.7433
+[DEBUG][TRAINER] [EPOCH 4/100] Checking monitored metrics for improvements.
+[INFO][TRAINER] Improved: Primary metric 'val_pearson': 0.6815
+[INFO][TRAINER] Improved: Secondary metric 'val_rmse': 1.5446
+[INFO][TRAINER] Improved: Secondary metric 'val_ci': 0.7433
+[DEBUG][TRAINER] [EPOCH 4/100] Metric improvement check completed in 0.0s
+[DEBUG][TRAINER] [EPOCH 4/100] Saving best model.
+[DEBUG][TRAINER] [EPOCH 4/100] Best model checkpoint saved in 0.0s
+[DEBUG][TRAINER] New best for primary metric val_pearson: 0.6815 (Saved to best_model.pt)
+[DEBUG][TRAINER] [EPOCH 4/100] Updating early stopping state.
+[DEBUG][TRAINER] [EPOCH 4/100] Saving history.json.
+[DEBUG][TRAINER] [EPOCH 4/100] history.json saved in 0.0s
+[DEBUG][TRAINER] [EPOCH 4/100] Updating schedulers.
+[DEBUG][TRAINER] [EPOCH 4/100] Schedulers updated in 0.0s
+[INFO][TRAINER] ------------------------------------------------------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 5/100] progress=0.040 classic_lr=[0.0001] quantum_lr=None 
+[DEBUG][MEMORY] epoch_5_start | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[INFO][TRAINER] [EPOCH 5/100] Preparing training epoch.
+[DEBUG][MEMORY] train_epoch_start | batch=0/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=2.5GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] train_epoch_end | batch=1601/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] epoch_5_after_train | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 5/100] Training pass completed in 1m 45.3s
+[INFO][TRAINER] [EPOCH 5/100] Validation.
+[DEBUG][MEMORY] epoch_5_after_val | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 5/100] Preparing train-set evaluation metrics.
+[INFO][TRAINER] [EPOCH 5/100] Train Loss: 0.2518, Val Loss: 0.2994
+[DEBUG][TRAINER] [EPOCH 5/100] Train_time=1m 45.3s | Val_time=9.9s | Train_eval_time=54.8s | epoch_time=1m 55.2s
+[DEBUG][TRAINER] [EPOCH 5/100] Preparing denormalized validation metrics.
+[DEBUG][TRAINER] [EPOCH 5/100] Denormalized validation metrics prepared in 0.0s
+[INFO][TRAINER] [EPOCH 5/100] Train(eval): RMSE 1.4907 | R 0.7163 | CI 0.7697
+[INFO][TRAINER] [EPOCH 5/100] Valid: RMSE 1.6028 | R 0.6847 | CI 0.7473
+[DEBUG][TRAINER] [EPOCH 5/100] Checking monitored metrics for improvements.
+[INFO][TRAINER] Improved: Primary metric 'val_pearson': 0.6847
+[INFO][TRAINER] Improved: Secondary metric 'val_ci': 0.7473
+[DEBUG][TRAINER] [EPOCH 5/100] Metric improvement check completed in 0.0s
+[DEBUG][TRAINER] [EPOCH 5/100] Saving best model.
+[DEBUG][TRAINER] [EPOCH 5/100] Best model checkpoint saved in 0.0s
+[DEBUG][TRAINER] New best for primary metric val_pearson: 0.6847 (Saved to best_model.pt)
+[DEBUG][TRAINER] [EPOCH 5/100] Updating early stopping state.
+[DEBUG][TRAINER] [EPOCH 5/100] Saving history.json.
+[DEBUG][TRAINER] [EPOCH 5/100] history.json saved in 0.0s
+[DEBUG][TRAINER] [EPOCH 5/100] Updating schedulers.
+[DEBUG][TRAINER] [EPOCH 5/100] Schedulers updated in 0.0s
+[INFO][TRAINER] ------------------------------------------------------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 6/100] progress=0.051 classic_lr=[0.0001] quantum_lr=None 
+[DEBUG][MEMORY] epoch_6_start | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.5GB
+[INFO][TRAINER] [EPOCH 6/100] Preparing training epoch.
+[DEBUG][MEMORY] train_epoch_start | batch=0/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=2.5GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] train_epoch_end | batch=1601/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] epoch_6_after_train | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 6/100] Training pass completed in 1m 44.1s
+[INFO][TRAINER] [EPOCH 6/100] Validation.
+[DEBUG][MEMORY] epoch_6_after_val | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 6/100] Preparing train-set evaluation metrics.
+[INFO][TRAINER] [EPOCH 6/100] Train Loss: 0.2389, Val Loss: 0.3176
+[DEBUG][TRAINER] [EPOCH 6/100] Train_time=1m 44.1s | Val_time=9.5s | Train_eval_time=55.0s | epoch_time=1m 53.6s
+[DEBUG][TRAINER] [EPOCH 6/100] Preparing denormalized validation metrics.
+[DEBUG][TRAINER] [EPOCH 6/100] Denormalized validation metrics prepared in 0.0s
+[INFO][TRAINER] [EPOCH 6/100] Train(eval): RMSE 1.5280 | R 0.7413 | CI 0.7771
+[INFO][TRAINER] [EPOCH 6/100] Valid: RMSE 1.6745 | R 0.6956 | CI 0.7525
+[DEBUG][TRAINER] [EPOCH 6/100] Checking monitored metrics for improvements.
+[INFO][TRAINER] Improved: Primary metric 'val_pearson': 0.6956
+[INFO][TRAINER] Improved: Secondary metric 'val_ci': 0.7525
+[DEBUG][TRAINER] [EPOCH 6/100] Metric improvement check completed in 0.0s
+[DEBUG][TRAINER] [EPOCH 6/100] Saving best model.
+[DEBUG][TRAINER] [EPOCH 6/100] Best model checkpoint saved in 0.0s
+[DEBUG][TRAINER] New best for primary metric val_pearson: 0.6956 (Saved to best_model.pt)
+[DEBUG][TRAINER] [EPOCH 6/100] Updating early stopping state.
+[DEBUG][TRAINER] [EPOCH 6/100] Saving history.json.
+[DEBUG][TRAINER] [EPOCH 6/100] history.json saved in 0.0s
+[DEBUG][TRAINER] [EPOCH 6/100] Updating schedulers.
+[DEBUG][TRAINER] [EPOCH 6/100] Schedulers updated in 0.0s
+[INFO][TRAINER] ------------------------------------------------------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 7/100] progress=0.061 classic_lr=[0.0001] quantum_lr=None 
+[DEBUG][MEMORY] epoch_7_start | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[INFO][TRAINER] [EPOCH 7/100] Preparing training epoch.
+[DEBUG][MEMORY] train_epoch_start | batch=0/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=2.5GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] train_epoch_end | batch=1601/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] epoch_7_after_train | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 7/100] Training pass completed in 1m 43.9s
+[INFO][TRAINER] [EPOCH 7/100] Validation.
+[DEBUG][MEMORY] epoch_7_after_val | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 7/100] Preparing train-set evaluation metrics.
+[INFO][TRAINER] [EPOCH 7/100] Train Loss: 0.2286, Val Loss: 0.2749
+[DEBUG][TRAINER] [EPOCH 7/100] Train_time=1m 43.9s | Val_time=9.9s | Train_eval_time=54.8s | epoch_time=1m 53.8s
+[DEBUG][TRAINER] [EPOCH 7/100] Preparing denormalized validation metrics.
+[DEBUG][TRAINER] [EPOCH 7/100] Denormalized validation metrics prepared in 0.0s
+[INFO][TRAINER] [EPOCH 7/100] Train(eval): RMSE 1.3581 | R 0.7620 | CI 0.7888
+[INFO][TRAINER] [EPOCH 7/100] Valid: RMSE 1.5343 | R 0.7065 | CI 0.7558
+[DEBUG][TRAINER] [EPOCH 7/100] Checking monitored metrics for improvements.
+[INFO][TRAINER] Improved: Primary metric 'val_pearson': 0.7065
+[INFO][TRAINER] Improved: Secondary metric 'val_rmse': 1.5343
+[INFO][TRAINER] Improved: Secondary metric 'val_ci': 0.7558
+[DEBUG][TRAINER] [EPOCH 7/100] Metric improvement check completed in 0.0s
+[DEBUG][TRAINER] [EPOCH 7/100] Saving best model.
+[DEBUG][TRAINER] [EPOCH 7/100] Best model checkpoint saved in 0.0s
+[DEBUG][TRAINER] New best for primary metric val_pearson: 0.7065 (Saved to best_model.pt)
+[DEBUG][TRAINER] [EPOCH 7/100] Updating early stopping state.
+[DEBUG][TRAINER] [EPOCH 7/100] Saving history.json.
+[DEBUG][TRAINER] [EPOCH 7/100] history.json saved in 0.0s
+[DEBUG][TRAINER] [EPOCH 7/100] Updating schedulers.
+[DEBUG][TRAINER] [EPOCH 7/100] Schedulers updated in 0.0s
+[INFO][TRAINER] ------------------------------------------------------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 8/100] progress=0.071 classic_lr=[0.0001] quantum_lr=None 
+[DEBUG][MEMORY] epoch_8_start | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[INFO][TRAINER] [EPOCH 8/100] Preparing training epoch.
+[DEBUG][MEMORY] train_epoch_start | batch=0/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=2.5GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] train_epoch_end | batch=1601/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] epoch_8_after_train | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 8/100] Training pass completed in 1m 44.0s
+[INFO][TRAINER] [EPOCH 8/100] Validation.
+[DEBUG][MEMORY] epoch_8_after_val | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 8/100] Preparing train-set evaluation metrics.
+[INFO][TRAINER] [EPOCH 8/100] Train Loss: 0.2181, Val Loss: 0.2843
+[DEBUG][TRAINER] [EPOCH 8/100] Train_time=1m 44.0s | Val_time=9.1s | Train_eval_time=55.2s | epoch_time=1m 53.1s
+[DEBUG][TRAINER] [EPOCH 8/100] Preparing denormalized validation metrics.
+[DEBUG][TRAINER] [EPOCH 8/100] Denormalized validation metrics prepared in 0.0s
+[INFO][TRAINER] [EPOCH 8/100] Train(eval): RMSE 1.3675 | R 0.7648 | CI 0.7894
+[INFO][TRAINER] [EPOCH 8/100] Valid: RMSE 1.5923 | R 0.6941 | CI 0.7535
+[DEBUG][TRAINER] [EPOCH 8/100] Checking monitored metrics for improvements.
+[DEBUG][TRAINER] [EPOCH 8/100] Metric improvement check completed in 0.0s
+[DEBUG][TRAINER] [EPOCH 8/100] Updating early stopping state.
+[INFO][TRAINER] EarlyStopping counter: 1/10
+[DEBUG][TRAINER] [EPOCH 8/100] Saving history.json.
+[DEBUG][TRAINER] [EPOCH 8/100] history.json saved in 0.0s
+[DEBUG][TRAINER] [EPOCH 8/100] Updating schedulers.
+[DEBUG][TRAINER] [EPOCH 8/100] Schedulers updated in 0.0s
+[INFO][TRAINER] ------------------------------------------------------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 9/100] progress=0.081 classic_lr=[0.0001] quantum_lr=None 
+[DEBUG][MEMORY] epoch_9_start | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.5GB
+[INFO][TRAINER] [EPOCH 9/100] Preparing training epoch.
+[DEBUG][MEMORY] train_epoch_start | batch=0/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=2.5GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] train_epoch_end | batch=1601/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=4.1GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] epoch_9_after_train | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=4.1GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 9/100] Training pass completed in 1m 44.2s
+[INFO][TRAINER] [EPOCH 9/100] Validation.
+[DEBUG][MEMORY] epoch_9_after_val | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=4.1GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 9/100] Preparing train-set evaluation metrics.
+[INFO][TRAINER] [EPOCH 9/100] Train Loss: 0.2095, Val Loss: 0.2807
+[DEBUG][TRAINER] [EPOCH 9/100] Train_time=1m 44.2s | Val_time=9.9s | Train_eval_time=55.0s | epoch_time=1m 54.1s
+[DEBUG][TRAINER] [EPOCH 9/100] Preparing denormalized validation metrics.
+[DEBUG][TRAINER] [EPOCH 9/100] Denormalized validation metrics prepared in 0.0s
+[INFO][TRAINER] [EPOCH 9/100] Train(eval): RMSE 1.2986 | R 0.7561 | CI 0.7840
+[INFO][TRAINER] [EPOCH 9/100] Valid: RMSE 1.5505 | R 0.6688 | CI 0.7378
+[DEBUG][TRAINER] [EPOCH 9/100] Checking monitored metrics for improvements.
+[DEBUG][TRAINER] [EPOCH 9/100] Metric improvement check completed in 0.0s
+[DEBUG][TRAINER] [EPOCH 9/100] Updating early stopping state.
+[INFO][TRAINER] EarlyStopping counter: 2/10
+[DEBUG][TRAINER] [EPOCH 9/100] Saving history.json.
+[DEBUG][TRAINER] [EPOCH 9/100] history.json saved in 0.0s
+[DEBUG][TRAINER] [EPOCH 9/100] Updating schedulers.
+[DEBUG][TRAINER] [EPOCH 9/100] Schedulers updated in 0.0s
+[INFO][TRAINER] ------------------------------------------------------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 10/100] progress=0.091 classic_lr=[0.0001] quantum_lr=None 
+[DEBUG][MEMORY] epoch_10_start | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=4.1GB | cuda_max_reserved=6.5GB
+[INFO][TRAINER] [EPOCH 10/100] Preparing training epoch.
+[DEBUG][MEMORY] train_epoch_start | batch=0/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=2.5GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] train_epoch_end | batch=1601/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] epoch_10_after_train | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 10/100] Training pass completed in 1m 44.5s
+[INFO][TRAINER] [EPOCH 10/100] Validation.
+[DEBUG][MEMORY] epoch_10_after_val | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 10/100] Preparing train-set evaluation metrics.
+[INFO][TRAINER] [EPOCH 10/100] Train Loss: 0.1994, Val Loss: 0.2549
+[DEBUG][TRAINER] [EPOCH 10/100] Train_time=1m 44.5s | Val_time=9.2s | Train_eval_time=55.5s | epoch_time=1m 53.7s
+[DEBUG][TRAINER] [EPOCH 10/100] Preparing denormalized validation metrics.
+[DEBUG][TRAINER] [EPOCH 10/100] Denormalized validation metrics prepared in 0.0s
+[INFO][TRAINER] [EPOCH 10/100] Train(eval): RMSE 1.2114 | R 0.7964 | CI 0.8093
+[INFO][TRAINER] [EPOCH 10/100] Valid: RMSE 1.4813 | R 0.7078 | CI 0.7615
+[DEBUG][TRAINER] [EPOCH 10/100] Checking monitored metrics for improvements.
+[INFO][TRAINER] Improved: Primary metric 'val_pearson': 0.7078
+[INFO][TRAINER] Improved: Secondary metric 'val_rmse': 1.4813
+[INFO][TRAINER] Improved: Secondary metric 'val_ci': 0.7615
+[DEBUG][TRAINER] [EPOCH 10/100] Metric improvement check completed in 0.0s
+[DEBUG][TRAINER] [EPOCH 10/100] Saving best model.
+[DEBUG][TRAINER] [EPOCH 10/100] Best model checkpoint saved in 0.0s
+[DEBUG][TRAINER] New best for primary metric val_pearson: 0.7078 (Saved to best_model.pt)
+[DEBUG][TRAINER] [EPOCH 10/100] Updating early stopping state.
+[DEBUG][TRAINER] [EPOCH 10/100] Saving history.json.
+[DEBUG][TRAINER] [EPOCH 10/100] history.json saved in 0.0s
+[DEBUG][TRAINER] [EPOCH 10/100] Updating schedulers.
+[DEBUG][TRAINER] [EPOCH 10/100] Schedulers updated in 0.0s
+[DEBUG][TRAINER] [EPOCH 10/100] Rendering ASCII dashboard.
+[INFO][TRAINER] Generating Multi-column ASCII Dashboard.
+[INFO][TRAINER] 
+Learning Curve (Loss)                                           Validation RMSE
+▘=Train Loss  *=Val Loss                                        ▘=Train RMSE  *=Val RMSE
++------------------------------------------------+              +------------------------------------------------+
+|▘                                               | 0.3623       |*    *                                          | 1.7425
+|*                                               |              |                                                |
+|     *                                          |              |▘                         *                     |
+|                          *                     | 0.3216       |     ▘               *               *          | 1.6097
+|                                                |              |          *     *                         *     |
+|     ▘               *                          |              |                          ▘    *                |
+|          ▘     *              *     *    *     | 0.2808       |          ▘          ▘                         *| 1.4770
+|                ▘                               |              |                ▘                               |
+|                     ▘                         *|              |                                     ▘          |
+|                          ▘                     | 0.2401       |                               ▘                | 1.3442
+|                               ▘                |              |                                          ▘     |
+|                                     ▘    ▘     |              |                                                |
+|                                               ▘| 0.1994       |                                               ▘| 1.2114
++------------------------------------------------+              +------------------------------------------------+
+1                                             10                1                                             10
+[INFO][TRAINER] 
+Correlation (Pearson R)                                         Ranking Accuracy (CI)
+▘=Train Pearson  *=Val Pearson                                  ▘=Train CI  *=Val CI
++------------------------------------------------+              +------------------------------------------------+
+|                                               ▘| 0.7964       |                                               ▘| 0.8093
+|                                                |              |                                                |
+|                               ▘     ▘          |              |                                     ▘          |
+|                                          ▘     | 0.7497       |                               ▘          ▘     | 0.7851
+|                          ▘                     |              |                          ▘                     |
+|                     ▘                          |              |                     ▘                          |
+|                ▘         *    *               *| 0.7030       |                                               *| 0.7610
+|                *    *               *          |              |          ▘     ▘         *    *     *          |
+|          ▘                               *     |              |                *    *                          |
+|          *                                     | 0.6563       |          *                               *     | 0.7368
+|                                                |              |     ▘                                          |
+|     ▘                                          |              |▘    *                                          |
+|▘    *                                          | 0.6096       |*                                               | 0.7126
++------------------------------------------------+              +------------------------------------------------+
+1                                             10                1                                             10
+[INFO][TRAINER] Final Performance Analytics:
+                Actual vs Predicted                                            Residuals Distribution
+┌──────────────────────────────────────────────────┐            ┌──────────────────────────────────────────────────┐
+│                                               ▄▄▀│            │                              ▗▜                  │
+│                                            ▄▞▀   │            │                             ▗▘│▚                 │
+│                                 ▗   ▖ ▖▗▄▀▀     ▗│ 10         │                            ▄▘ │ ▚▄▄              │
+│                ▖               ▚   ▗▄▞▀▘ ▖▖ ▐  ▝▘│            │                          ▗▞   │    ▀▖            │
+│                        ▞▚    ▐▘▖▗▄▀▀▖▗▗    ▐▄▗▘  │            │                        ▄▞▘    │     ▌            │
+│             ▝       ▀▟ ▚▘▛▐▗▚▄▄▀▘▘▌▜▟▗ ▘▝▘▖      │            │                       ▞       │     ▐            │
+│         ▖ ▗      ▗  ▀▌▗▙▖▗▄▞▀▘▛▗▜▝▖ ▖ ▝▝         │            │                      ▐        │      ▌           │ 50
+│        ▞▘ ▖   ▖▘▌▌ ▝▘▟▗▄▀▘▛▜ █▚▟▝▗▝▌▖▝▐      ▖   │            │                     ▗▘        │      ▐           │
+│   ▗  ▝▗    ▄▄▘▟▄▝▖▚▄▞▀▘▚▜▄▙▐▜▄▘▟▖▚▘▗ ▝ ▖  ▖      │            │                     ▞         │       ▌          │
+│    ▖▖ ▞▗▖▘▚▞▘▀█▗▄▀▀▚▗▚▚▙█▟▗▀▘▀ ▞     ▀           │            │                    ▞          │       ▝▖         │
+│▗ ▗▖█▞▙▗▟██▞█▄▄▀▘▞██▌▄▐▄▝▗▘▌▝▖▚ ▀                 │ 5          │                  ▗▞           │        ▚         │
+│▛▝ ▗▐▄▛▛▚▗▄▞▀ ▘ ▞▛ ▀ ▖▗▝▝ ▖   ▖  ▖      ▝    ▗    │            │                 ▗▘            │         ▚        │
+│▗█▌ ▘▀▄▄▀▘          ▖  ▘                          │            │                ▗▘             │         ▝▚▖      │
+│▖  ▄▞▀▘                                           │            │            ▄▄▄▄▞              │           ▝▚▄▖   │
+│▄▀▀                                               │            │▄▄▄▄▄▄▄▄▄▞▀▀▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁│▁▁▁▁▁▁▁▁▁▁▁▁▁▁▝▀▀▚│ 0
+└──────────────────────────────────────────────────┘            └──────────────────────────────────────────────────┘
+          4         6          8        10                             -5          -2           0           2
+[DEBUG][TRAINER] [EPOCH 10/100] ASCII dashboard rendered in 0.0s
+[INFO][TRAINER] ------------------------------------------------------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 11/100] progress=0.101 classic_lr=[0.0001] quantum_lr=None 
+[DEBUG][MEMORY] epoch_11_start | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[INFO][TRAINER] [EPOCH 11/100] Preparing training epoch.
+[DEBUG][MEMORY] train_epoch_start | batch=0/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=2.5GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] train_epoch_end | batch=1601/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] epoch_11_after_train | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 11/100] Training pass completed in 1m 44.5s
+[INFO][TRAINER] [EPOCH 11/100] Validation.
+[DEBUG][MEMORY] epoch_11_after_val | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 11/100] Preparing train-set evaluation metrics.
+[INFO][TRAINER] [EPOCH 11/100] Train Loss: 0.1921, Val Loss: 0.2473
+[DEBUG][TRAINER] [EPOCH 11/100] Train_time=1m 44.5s | Val_time=9.9s | Train_eval_time=54.9s | epoch_time=1m 54.4s
+[DEBUG][TRAINER] [EPOCH 11/100] Preparing denormalized validation metrics.
+[DEBUG][TRAINER] [EPOCH 11/100] Denormalized validation metrics prepared in 0.0s
+[INFO][TRAINER] [EPOCH 11/100] Train(eval): RMSE 1.1880 | R 0.8066 | CI 0.8102
+[INFO][TRAINER] [EPOCH 11/100] Valid: RMSE 1.4637 | R 0.7165 | CI 0.7630
+[DEBUG][TRAINER] [EPOCH 11/100] Checking monitored metrics for improvements.
+[INFO][TRAINER] Improved: Primary metric 'val_pearson': 0.7165
+[INFO][TRAINER] Improved: Secondary metric 'val_rmse': 1.4637
+[INFO][TRAINER] Improved: Secondary metric 'val_ci': 0.7630
+[DEBUG][TRAINER] [EPOCH 11/100] Metric improvement check completed in 0.0s
+[DEBUG][TRAINER] [EPOCH 11/100] Saving best model.
+[DEBUG][TRAINER] [EPOCH 11/100] Best model checkpoint saved in 0.0s
+[DEBUG][TRAINER] New best for primary metric val_pearson: 0.7165 (Saved to best_model.pt)
+[DEBUG][TRAINER] [EPOCH 11/100] Updating early stopping state.
+[DEBUG][TRAINER] [EPOCH 11/100] Saving history.json.
+[DEBUG][TRAINER] [EPOCH 11/100] history.json saved in 0.0s
+[DEBUG][TRAINER] [EPOCH 11/100] Updating schedulers.
+[DEBUG][TRAINER] [EPOCH 11/100] Schedulers updated in 0.0s
+[INFO][TRAINER] ------------------------------------------------------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 12/100] progress=0.111 classic_lr=[0.0001] quantum_lr=None 
+[DEBUG][MEMORY] epoch_12_start | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[INFO][TRAINER] [EPOCH 12/100] Preparing training epoch.
+[DEBUG][MEMORY] train_epoch_start | batch=0/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=2.5GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] train_epoch_end | batch=1601/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=4.0GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] epoch_12_after_train | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=4.0GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 12/100] Training pass completed in 1m 44.7s
+[INFO][TRAINER] [EPOCH 12/100] Validation.
+[DEBUG][MEMORY] epoch_12_after_val | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=4.0GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 12/100] Preparing train-set evaluation metrics.
+[INFO][TRAINER] [EPOCH 12/100] Train Loss: 0.1784, Val Loss: 0.2660
+[DEBUG][TRAINER] [EPOCH 12/100] Train_time=1m 44.7s | Val_time=9.3s | Train_eval_time=54.9s | epoch_time=1m 54.0s
+[DEBUG][TRAINER] [EPOCH 12/100] Preparing denormalized validation metrics.
+[DEBUG][TRAINER] [EPOCH 12/100] Denormalized validation metrics prepared in 0.0s
+[INFO][TRAINER] [EPOCH 12/100] Train(eval): RMSE 1.2352 | R 0.8085 | CI 0.8109
+[INFO][TRAINER] [EPOCH 12/100] Valid: RMSE 1.5226 | R 0.7121 | CI 0.7593
+[DEBUG][TRAINER] [EPOCH 12/100] Checking monitored metrics for improvements.
+[DEBUG][TRAINER] [EPOCH 12/100] Metric improvement check completed in 0.0s
+[DEBUG][TRAINER] [EPOCH 12/100] Updating early stopping state.
+[INFO][TRAINER] EarlyStopping counter: 1/10
+[DEBUG][TRAINER] [EPOCH 12/100] Saving history.json.
+[DEBUG][TRAINER] [EPOCH 12/100] history.json saved in 0.0s
+[DEBUG][TRAINER] [EPOCH 12/100] Updating schedulers.
+[DEBUG][TRAINER] [EPOCH 12/100] Schedulers updated in 0.0s
+[INFO][TRAINER] ------------------------------------------------------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 13/100] progress=0.121 classic_lr=[0.0001] quantum_lr=None 
+[DEBUG][MEMORY] epoch_13_start | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=4.0GB | cuda_max_reserved=6.5GB
+[INFO][TRAINER] [EPOCH 13/100] Preparing training epoch.
+[DEBUG][MEMORY] train_epoch_start | batch=0/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=2.5GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] train_epoch_end | batch=1601/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] epoch_13_after_train | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 13/100] Training pass completed in 1m 44.3s
+[INFO][TRAINER] [EPOCH 13/100] Validation.
+[DEBUG][MEMORY] epoch_13_after_val | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 13/100] Preparing train-set evaluation metrics.
+[INFO][TRAINER] [EPOCH 13/100] Train Loss: 0.1677, Val Loss: 0.2418
+[DEBUG][TRAINER] [EPOCH 13/100] Train_time=1m 44.3s | Val_time=9.9s | Train_eval_time=55.2s | epoch_time=1m 54.2s
+[DEBUG][TRAINER] [EPOCH 13/100] Preparing denormalized validation metrics.
+[DEBUG][TRAINER] [EPOCH 13/100] Denormalized validation metrics prepared in 0.0s
+[INFO][TRAINER] [EPOCH 13/100] Train(eval): RMSE 1.0898 | R 0.8477 | CI 0.8359
+[INFO][TRAINER] [EPOCH 13/100] Valid: RMSE 1.4396 | R 0.7311 | CI 0.7691
+[DEBUG][TRAINER] [EPOCH 13/100] Checking monitored metrics for improvements.
+[INFO][TRAINER] Improved: Primary metric 'val_pearson': 0.7311
+[INFO][TRAINER] Improved: Secondary metric 'val_rmse': 1.4396
+[INFO][TRAINER] Improved: Secondary metric 'val_ci': 0.7691
+[DEBUG][TRAINER] [EPOCH 13/100] Metric improvement check completed in 0.0s
+[DEBUG][TRAINER] [EPOCH 13/100] Saving best model.
+[DEBUG][TRAINER] [EPOCH 13/100] Best model checkpoint saved in 0.0s
+[DEBUG][TRAINER] New best for primary metric val_pearson: 0.7311 (Saved to best_model.pt)
+[DEBUG][TRAINER] [EPOCH 13/100] Updating early stopping state.
+[DEBUG][TRAINER] [EPOCH 13/100] Saving history.json.
+[DEBUG][TRAINER] [EPOCH 13/100] history.json saved in 0.0s
+[DEBUG][TRAINER] [EPOCH 13/100] Updating schedulers.
+[DEBUG][TRAINER] [EPOCH 13/100] Schedulers updated in 0.0s
+[INFO][TRAINER] ------------------------------------------------------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 14/100] progress=0.131 classic_lr=[0.0001] quantum_lr=None 
+[DEBUG][MEMORY] epoch_14_start | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.5GB
+[INFO][TRAINER] [EPOCH 14/100] Preparing training epoch.
+[DEBUG][MEMORY] train_epoch_start | batch=0/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=2.5GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] train_epoch_end | batch=1601/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] epoch_14_after_train | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 14/100] Training pass completed in 1m 44.7s
+[INFO][TRAINER] [EPOCH 14/100] Validation.
+[DEBUG][MEMORY] epoch_14_after_val | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 14/100] Preparing train-set evaluation metrics.
+[INFO][TRAINER] [EPOCH 14/100] Train Loss: 0.1609, Val Loss: 0.2577
+[DEBUG][TRAINER] [EPOCH 14/100] Train_time=1m 44.7s | Val_time=9.1s | Train_eval_time=54.9s | epoch_time=1m 53.8s
+[DEBUG][TRAINER] [EPOCH 14/100] Preparing denormalized validation metrics.
+[DEBUG][TRAINER] [EPOCH 14/100] Denormalized validation metrics prepared in 0.0s
+[INFO][TRAINER] [EPOCH 14/100] Train(eval): RMSE 1.1413 | R 0.8561 | CI 0.8409
+[INFO][TRAINER] [EPOCH 14/100] Valid: RMSE 1.4919 | R 0.7299 | CI 0.7684
+[DEBUG][TRAINER] [EPOCH 14/100] Checking monitored metrics for improvements.
+[DEBUG][TRAINER] [EPOCH 14/100] Metric improvement check completed in 0.0s
+[DEBUG][TRAINER] [EPOCH 14/100] Updating early stopping state.
+[INFO][TRAINER] EarlyStopping counter: 1/10
+[DEBUG][TRAINER] [EPOCH 14/100] Saving history.json.
+[DEBUG][TRAINER] [EPOCH 14/100] history.json saved in 0.0s
+[DEBUG][TRAINER] [EPOCH 14/100] Updating schedulers.
+[DEBUG][TRAINER] [EPOCH 14/100] Schedulers updated in 0.0s
+[INFO][TRAINER] ------------------------------------------------------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 15/100] progress=0.141 classic_lr=[0.0001] quantum_lr=None 
+[DEBUG][MEMORY] epoch_15_start | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.5GB
+[INFO][TRAINER] [EPOCH 15/100] Preparing training epoch.
+[DEBUG][MEMORY] train_epoch_start | batch=0/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=2.5GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] train_epoch_end | batch=1601/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=4.1GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] epoch_15_after_train | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=4.1GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 15/100] Training pass completed in 1m 43.9s
+[INFO][TRAINER] [EPOCH 15/100] Validation.
+[DEBUG][MEMORY] epoch_15_after_val | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=4.1GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 15/100] Preparing train-set evaluation metrics.
+[INFO][TRAINER] [EPOCH 15/100] Train Loss: 0.1515, Val Loss: 0.2288
+[DEBUG][TRAINER] [EPOCH 15/100] Train_time=1m 43.9s | Val_time=9.8s | Train_eval_time=54.8s | epoch_time=1m 53.7s
+[DEBUG][TRAINER] [EPOCH 15/100] Preparing denormalized validation metrics.
+[DEBUG][TRAINER] [EPOCH 15/100] Denormalized validation metrics prepared in 0.0s
+[INFO][TRAINER] [EPOCH 15/100] Train(eval): RMSE 0.9843 | R 0.8692 | CI 0.8497
+[INFO][TRAINER] [EPOCH 15/100] Valid: RMSE 1.4038 | R 0.7409 | CI 0.7706
+[DEBUG][TRAINER] [EPOCH 15/100] Checking monitored metrics for improvements.
+[INFO][TRAINER] Improved: Primary metric 'val_pearson': 0.7409
+[INFO][TRAINER] Improved: Secondary metric 'val_rmse': 1.4038
+[INFO][TRAINER] Improved: Secondary metric 'val_ci': 0.7706
+[DEBUG][TRAINER] [EPOCH 15/100] Metric improvement check completed in 0.0s
+[DEBUG][TRAINER] [EPOCH 15/100] Saving best model.
+[DEBUG][TRAINER] [EPOCH 15/100] Best model checkpoint saved in 0.0s
+[DEBUG][TRAINER] New best for primary metric val_pearson: 0.7409 (Saved to best_model.pt)
+[DEBUG][TRAINER] [EPOCH 15/100] Updating early stopping state.
+[DEBUG][TRAINER] [EPOCH 15/100] Saving history.json.
+[DEBUG][TRAINER] [EPOCH 15/100] history.json saved in 0.0s
+[DEBUG][TRAINER] [EPOCH 15/100] Updating schedulers.
+[DEBUG][TRAINER] [EPOCH 15/100] Schedulers updated in 0.0s
+[INFO][TRAINER] ------------------------------------------------------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 16/100] progress=0.152 classic_lr=[0.0001] quantum_lr=None 
+[DEBUG][MEMORY] epoch_16_start | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=4.1GB | cuda_max_reserved=6.5GB
+[INFO][TRAINER] [EPOCH 16/100] Preparing training epoch.
+[DEBUG][MEMORY] train_epoch_start | batch=0/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=2.5GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] train_epoch_end | batch=1601/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] epoch_16_after_train | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 16/100] Training pass completed in 1m 44.5s
+[INFO][TRAINER] [EPOCH 16/100] Validation.
+[DEBUG][MEMORY] epoch_16_after_val | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 16/100] Preparing train-set evaluation metrics.
+[INFO][TRAINER] [EPOCH 16/100] Train Loss: 0.1394, Val Loss: 0.2306
+[DEBUG][TRAINER] [EPOCH 16/100] Train_time=1m 44.5s | Val_time=9.1s | Train_eval_time=54.6s | epoch_time=1m 53.5s
+[DEBUG][TRAINER] [EPOCH 16/100] Preparing denormalized validation metrics.
+[DEBUG][TRAINER] [EPOCH 16/100] Denormalized validation metrics prepared in 0.0s
+[INFO][TRAINER] [EPOCH 16/100] Train(eval): RMSE 0.9531 | R 0.8810 | CI 0.8575
+[INFO][TRAINER] [EPOCH 16/100] Valid: RMSE 1.4098 | R 0.7418 | CI 0.7704
+[DEBUG][TRAINER] [EPOCH 16/100] Checking monitored metrics for improvements.
+[INFO][TRAINER] Improved: Primary metric 'val_pearson': 0.7418
+[DEBUG][TRAINER] [EPOCH 16/100] Metric improvement check completed in 0.0s
+[DEBUG][TRAINER] [EPOCH 16/100] Saving best model.
+[DEBUG][TRAINER] [EPOCH 16/100] Best model checkpoint saved in 0.0s
+[DEBUG][TRAINER] New best for primary metric val_pearson: 0.7418 (Saved to best_model.pt)
+[DEBUG][TRAINER] [EPOCH 16/100] Updating early stopping state.
+[DEBUG][TRAINER] [EPOCH 16/100] Saving history.json.
+[DEBUG][TRAINER] [EPOCH 16/100] history.json saved in 0.0s
+[DEBUG][TRAINER] [EPOCH 16/100] Updating schedulers.
+[DEBUG][TRAINER] [EPOCH 16/100] Schedulers updated in 0.0s
+[INFO][TRAINER] ------------------------------------------------------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 17/100] progress=0.162 classic_lr=[0.0001] quantum_lr=None 
+[DEBUG][MEMORY] epoch_17_start | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[INFO][TRAINER] [EPOCH 17/100] Preparing training epoch.
+[DEBUG][MEMORY] train_epoch_start | batch=0/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=2.5GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] train_epoch_end | batch=1601/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] epoch_17_after_train | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 17/100] Training pass completed in 1m 44.2s
+[INFO][TRAINER] [EPOCH 17/100] Validation.
+[DEBUG][MEMORY] epoch_17_after_val | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 17/100] Preparing train-set evaluation metrics.
+[INFO][TRAINER] [EPOCH 17/100] Train Loss: 0.1315, Val Loss: 0.2520
+[DEBUG][TRAINER] [EPOCH 17/100] Train_time=1m 44.2s | Val_time=9.8s | Train_eval_time=54.8s | epoch_time=1m 54.1s
+[DEBUG][TRAINER] [EPOCH 17/100] Preparing denormalized validation metrics.
+[DEBUG][TRAINER] [EPOCH 17/100] Denormalized validation metrics prepared in 0.0s
+[INFO][TRAINER] [EPOCH 17/100] Train(eval): RMSE 1.0117 | R 0.8846 | CI 0.8593
+[INFO][TRAINER] [EPOCH 17/100] Valid: RMSE 1.4787 | R 0.7234 | CI 0.7657
+[DEBUG][TRAINER] [EPOCH 17/100] Checking monitored metrics for improvements.
+[DEBUG][TRAINER] [EPOCH 17/100] Metric improvement check completed in 0.0s
+[DEBUG][TRAINER] [EPOCH 17/100] Updating early stopping state.
+[INFO][TRAINER] EarlyStopping counter: 1/10
+[DEBUG][TRAINER] [EPOCH 17/100] Saving history.json.
+[DEBUG][TRAINER] [EPOCH 17/100] history.json saved in 0.0s
+[DEBUG][TRAINER] [EPOCH 17/100] Updating schedulers.
+[DEBUG][TRAINER] [EPOCH 17/100] Schedulers updated in 0.0s
+[INFO][TRAINER] ------------------------------------------------------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 18/100] progress=0.172 classic_lr=[0.0001] quantum_lr=None 
+[DEBUG][MEMORY] epoch_18_start | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[INFO][TRAINER] [EPOCH 18/100] Preparing training epoch.
+[DEBUG][MEMORY] train_epoch_start | batch=0/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=2.5GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] train_epoch_end | batch=1601/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] epoch_18_after_train | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 18/100] Training pass completed in 1m 44.2s
+[INFO][TRAINER] [EPOCH 18/100] Validation.
+[DEBUG][MEMORY] epoch_18_after_val | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 18/100] Preparing train-set evaluation metrics.
+[INFO][TRAINER] [EPOCH 18/100] Train Loss: 0.1265, Val Loss: 0.2413
+[DEBUG][TRAINER] [EPOCH 18/100] Train_time=1m 44.2s | Val_time=9.4s | Train_eval_time=54.8s | epoch_time=1m 53.5s
+[DEBUG][TRAINER] [EPOCH 18/100] Preparing denormalized validation metrics.
+[DEBUG][TRAINER] [EPOCH 18/100] Denormalized validation metrics prepared in 0.0s
+[INFO][TRAINER] [EPOCH 18/100] Train(eval): RMSE 0.9144 | R 0.8921 | CI 0.8676
+[INFO][TRAINER] [EPOCH 18/100] Valid: RMSE 1.4442 | R 0.7255 | CI 0.7661
+[DEBUG][TRAINER] [EPOCH 18/100] Checking monitored metrics for improvements.
+[DEBUG][TRAINER] [EPOCH 18/100] Metric improvement check completed in 0.0s
+[DEBUG][TRAINER] [EPOCH 18/100] Updating early stopping state.
+[INFO][TRAINER] EarlyStopping counter: 2/10
+[DEBUG][TRAINER] [EPOCH 18/100] Saving history.json.
+[DEBUG][TRAINER] [EPOCH 18/100] history.json saved in 0.0s
+[DEBUG][TRAINER] [EPOCH 18/100] Updating schedulers.
+[DEBUG][TRAINER] [EPOCH 18/100] Schedulers updated in 0.0s
+[INFO][TRAINER] ------------------------------------------------------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 19/100] progress=0.182 classic_lr=[0.0001] quantum_lr=None 
+[DEBUG][MEMORY] epoch_19_start | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.5GB
+[INFO][TRAINER] [EPOCH 19/100] Preparing training epoch.
+[DEBUG][MEMORY] train_epoch_start | batch=0/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=2.5GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] train_epoch_end | batch=1601/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] epoch_19_after_train | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 19/100] Training pass completed in 1m 44.4s
+[INFO][TRAINER] [EPOCH 19/100] Validation.
+[DEBUG][MEMORY] epoch_19_after_val | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 19/100] Preparing train-set evaluation metrics.
+[INFO][TRAINER] [EPOCH 19/100] Train Loss: 0.1149, Val Loss: 0.2390
+[DEBUG][TRAINER] [EPOCH 19/100] Train_time=1m 44.4s | Val_time=9.9s | Train_eval_time=54.6s | epoch_time=1m 54.2s
+[DEBUG][TRAINER] [EPOCH 19/100] Preparing denormalized validation metrics.
+[DEBUG][TRAINER] [EPOCH 19/100] Denormalized validation metrics prepared in 0.0s
+[INFO][TRAINER] [EPOCH 19/100] Train(eval): RMSE 0.9419 | R 0.8802 | CI 0.8600
+[INFO][TRAINER] [EPOCH 19/100] Valid: RMSE 1.4377 | R 0.7307 | CI 0.7664
+[DEBUG][TRAINER] [EPOCH 19/100] Checking monitored metrics for improvements.
+[DEBUG][TRAINER] [EPOCH 19/100] Metric improvement check completed in 0.0s
+[DEBUG][TRAINER] [EPOCH 19/100] Updating early stopping state.
+[INFO][TRAINER] EarlyStopping counter: 3/10
+[DEBUG][TRAINER] [EPOCH 19/100] Saving history.json.
+[DEBUG][TRAINER] [EPOCH 19/100] history.json saved in 0.0s
+[DEBUG][TRAINER] [EPOCH 19/100] Updating schedulers.
+[DEBUG][TRAINER] [EPOCH 19/100] Schedulers updated in 0.0s
+[INFO][TRAINER] ------------------------------------------------------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 20/100] progress=0.192 classic_lr=[5e-05] quantum_lr=None 
+[DEBUG][MEMORY] epoch_20_start | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[INFO][TRAINER] [EPOCH 20/100] Preparing training epoch.
+[DEBUG][MEMORY] train_epoch_start | batch=0/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=2.5GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] train_epoch_end | batch=1601/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] epoch_20_after_train | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 20/100] Training pass completed in 1m 43.6s
+[INFO][TRAINER] [EPOCH 20/100] Validation.
+[DEBUG][MEMORY] epoch_20_after_val | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 20/100] Preparing train-set evaluation metrics.
+[INFO][TRAINER] [EPOCH 20/100] Train Loss: 0.0862, Val Loss: 0.2277
+[DEBUG][TRAINER] [EPOCH 20/100] Train_time=1m 43.6s | Val_time=9.6s | Train_eval_time=54.5s | epoch_time=1m 53.2s
+[DEBUG][TRAINER] [EPOCH 20/100] Preparing denormalized validation metrics.
+[DEBUG][TRAINER] [EPOCH 20/100] Denormalized validation metrics prepared in 0.0s
+[INFO][TRAINER] [EPOCH 20/100] Train(eval): RMSE 0.7571 | R 0.9251 | CI 0.8934
+[INFO][TRAINER] [EPOCH 20/100] Valid: RMSE 1.4042 | R 0.7463 | CI 0.7736
+[DEBUG][TRAINER] [EPOCH 20/100] Checking monitored metrics for improvements.
+[INFO][TRAINER] Improved: Primary metric 'val_pearson': 0.7463
+[INFO][TRAINER] Improved: Secondary metric 'val_ci': 0.7736
+[DEBUG][TRAINER] [EPOCH 20/100] Metric improvement check completed in 0.0s
+[DEBUG][TRAINER] [EPOCH 20/100] Saving best model.
+[DEBUG][TRAINER] [EPOCH 20/100] Best model checkpoint saved in 0.0s
+[DEBUG][TRAINER] New best for primary metric val_pearson: 0.7463 (Saved to best_model.pt)
+[DEBUG][TRAINER] [EPOCH 20/100] Updating early stopping state.
+[DEBUG][TRAINER] [EPOCH 20/100] Saving history.json.
+[DEBUG][TRAINER] [EPOCH 20/100] history.json saved in 0.0s
+[DEBUG][TRAINER] [EPOCH 20/100] Updating schedulers.
+[DEBUG][TRAINER] [EPOCH 20/100] Schedulers updated in 0.0s
+[DEBUG][TRAINER] [EPOCH 20/100] Rendering ASCII dashboard.
+[INFO][TRAINER] Generating Multi-column ASCII Dashboard.
+[INFO][TRAINER] 
+Learning Curve (Loss)                                           Validation RMSE
+▘=Train Loss  *=Val Loss                                        ▘=Train RMSE  *=Val RMSE
++------------------------------------------------+              +------------------------------------------------+
+|▘                                               | 0.3623       |* *                                             | 1.7425
+|* *                                             |              |▘ ▘         *                                   |
+|            *                                   |              |     * *  *      *  *                           |
+|  ▘  ▘    *      *                              | 0.2933       |     ▘    ▘ ▘  *      *  * *    *       *       | 1.4961
+|       ▘       *    *      *                    |              |       ▘                      *    * *    *  * *|
+|          ▘ ▘         *  *    * *       * *  *  |              |               ▘ ▘  ▘                           |
+|               ▘ ▘                 * *         *| 0.2242       |                      ▘    ▘                    | 1.2498
+|                    ▘ ▘  ▘                      |              |                         ▘      ▘               |
+|                           ▘  ▘                 |              |                              ▘                 |
+|                                ▘  ▘            | 0.1552       |                                   ▘    ▘       | 1.0034
+|                                     ▘  ▘ ▘     |              |                                     ▘    ▘  ▘  |
+|                                             ▘  |              |                                                |
+|                                               ▘| 0.0862       |                                               ▘| 0.7571
++------------------------------------------------+              +------------------------------------------------+
+1                                             20                1                                             20
+[INFO][TRAINER] 
+Correlation (Pearson R)                                         Ranking Accuracy (CI)
+▘=Train Pearson  *=Val Pearson                                  ▘=Train CI  *=Val CI
++------------------------------------------------+              +------------------------------------------------+
+|                                               ▘| 0.9251       |                                               ▘| 0.8934
+|                                          ▘     |              |                                                |
+|                                   ▘ ▘  ▘    ▘  |              |                                     ▘  ▘ ▘  ▘  |
+|                              ▘ ▘               | 0.8462       |                                ▘  ▘            | 0.8482
+|                           ▘                    |              |                              ▘                 |
+|                      ▘  ▘                      |              |                           ▘                    |
+|               ▘ ▘  ▘                           | 0.7673       |                      ▘  ▘                      | 0.8030
+|            ▘                 * *  * *       * *|              |               ▘ ▘  ▘                           |
+|          ▘    *      *  * *            * *     |              |          ▘ ▘                 * *  * *  * *  * *|
+|     ▘ ▘  * *    *                              | 0.6885       |     ▘ ▘    *  * *    *  * *                    | 0.7578
+|     *              *                           |              |     * *  *         *                           |
+|  ▘                                             |              |  ▘                                             |
+|▘ *                                             | 0.6096       |▘ *                                             | 0.7126
++------------------------------------------------+              +------------------------------------------------+
+1                                             20                1                                             20
+[INFO][TRAINER] Final Performance Analytics:
+                Actual vs Predicted                                            Residuals Distribution
+┌──────────────────────────────────────────────────┐            ┌──────────────────────────────────────────────────┐
+│                                               ▄▄▀│            │                            ▗▄▞▜                  │ 100
+│                                            ▄▞▀   │            │                            ▞ │ ▚                 │
+│                                ▝    ▖ ▖▗▄▀▀ ▟  ▝▀│ 10         │                           ▗▘ │  ▌                │
+│                 ▘    ▘  ▚     ▚ ▘▌  ▄▞▀▘ ▖▝ ▖▗▖  │            │                           ▞  │  ▝▖               │
+│              ▝         ▗▝▝▄▌▄▖▖▀▗▄▀▀█▙ ▐ ▗ ▝▗    │            │                          ▗▘  │   ▝▚              │
+│                 ▖ ▌ ▝▟▀▟▜▝▚▙▛▄▄▀▘▖▞▄▖ ▖          │            │                          ▐   │     ▚             │
+│        ▖ ▘ ▚  ▖▚▖▝▌ ▀▐▌▟▗▗▄▞▀▐█▐▘▘▄▝▞▗▞      ▖   │            │                         ▄▘   │      ▌            │
+│    ▝ ▗ ▗▝▖▖ ▖▄▖▖▞▙▜▛█▌▗▄▀▘▟▗▀▙▌ ▄▞▘▗ ▀▗   ▝      │            │                        ▞     │      ▐            │
+│         ▐▘▝▖▜▘▟▜▟▛▌▄▞▀▘▙██▗▚█▝▖▗▘    ▝ ▘         │            │                       ▞      │       ▚           │
+│ ▝   ▐ ▘▗▘▙▙▝▜▖ ▗▄▀▀▐ ▀▝▘▀▀ ▖▖▝  ▖                │            │                      ▐       │       ▝▖          │
+│ ▗ ▖ ▗▝▞▝▀█▜▗▄▄▀▘▐▙▚▌  █▌ ▛ ▖    ▗      ▝         │ 5          │                     ▗▘       │        ▚          │
+│ ▝▖ ▄▛▌▚▜▗▄▞▀▝▝▖▚ ▞▜▖ ▗ ▘ ▝   ▝              ▗    │            │                     ▞        │         ▚         │
+│  ▜▐ ▐▄▄▀▘ ▚▘▘▖ ▘   ▗ ▖                           │            │                   ▄▀         │          ▚▖       │
+│  ▐▄▞▀▝▝     ▘                                    │            │                ▄▄▀           │           ▝▚▖     │
+│▄▀▀                                               │            │▄▄▄▄▄▄▄▄▄▄▄▄▀▀▀▀▁▁▁▁▁▁▁▁▁▁▁▁▁▁│▁▁▁▁▁▁▁▁▁▁▁▁▁▝▀▀▀▀▀│ 0
+└──────────────────────────────────────────────────┘            └──────────────────────────────────────────────────┘
+    2           5            8          10                              -5         -2          0          2
+[DEBUG][TRAINER] [EPOCH 20/100] ASCII dashboard rendered in 0.0s
+[INFO][TRAINER] ------------------------------------------------------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 21/100] progress=0.202 classic_lr=[5e-05] quantum_lr=None 
+[DEBUG][MEMORY] epoch_21_start | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[INFO][TRAINER] [EPOCH 21/100] Preparing training epoch.
+[DEBUG][MEMORY] train_epoch_start | batch=0/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=2.5GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] train_epoch_end | batch=1601/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] epoch_21_after_train | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 21/100] Training pass completed in 1m 44.6s
+[INFO][TRAINER] [EPOCH 21/100] Validation.
+[DEBUG][MEMORY] epoch_21_after_val | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 21/100] Preparing train-set evaluation metrics.
+[INFO][TRAINER] [EPOCH 21/100] Train Loss: 0.0738, Val Loss: 0.2319
+[DEBUG][TRAINER] [EPOCH 21/100] Train_time=1m 44.6s | Val_time=9.9s | Train_eval_time=55.1s | epoch_time=1m 54.5s
+[DEBUG][TRAINER] [EPOCH 21/100] Preparing denormalized validation metrics.
+[DEBUG][TRAINER] [EPOCH 21/100] Denormalized validation metrics prepared in 0.0s
+[INFO][TRAINER] [EPOCH 21/100] Train(eval): RMSE 0.7059 | R 0.9345 | CI 0.9013
+[INFO][TRAINER] [EPOCH 21/100] Valid: RMSE 1.4211 | R 0.7386 | CI 0.7713
+[DEBUG][TRAINER] [EPOCH 21/100] Checking monitored metrics for improvements.
+[DEBUG][TRAINER] [EPOCH 21/100] Metric improvement check completed in 0.0s
+[DEBUG][TRAINER] [EPOCH 21/100] Updating early stopping state.
+[INFO][TRAINER] EarlyStopping counter: 1/10
+[DEBUG][TRAINER] [EPOCH 21/100] Saving history.json.
+[DEBUG][TRAINER] [EPOCH 21/100] history.json saved in 0.0s
+[DEBUG][TRAINER] [EPOCH 21/100] Updating schedulers.
+[DEBUG][TRAINER] [EPOCH 21/100] Schedulers updated in 0.0s
+[INFO][TRAINER] ------------------------------------------------------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 22/100] progress=0.212 classic_lr=[5e-05] quantum_lr=None 
+[DEBUG][MEMORY] epoch_22_start | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[INFO][TRAINER] [EPOCH 22/100] Preparing training epoch.
+[DEBUG][MEMORY] train_epoch_start | batch=0/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=2.5GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] train_epoch_end | batch=1601/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=4.0GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] epoch_22_after_train | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=4.0GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 22/100] Training pass completed in 1m 44.4s
+[INFO][TRAINER] [EPOCH 22/100] Validation.
+[DEBUG][MEMORY] epoch_22_after_val | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=4.0GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 22/100] Preparing train-set evaluation metrics.
+[INFO][TRAINER] [EPOCH 22/100] Train Loss: 0.0659, Val Loss: 0.2299
+[DEBUG][TRAINER] [EPOCH 22/100] Train_time=1m 44.4s | Val_time=9.8s | Train_eval_time=55.1s | epoch_time=1m 54.3s
+[DEBUG][TRAINER] [EPOCH 22/100] Preparing denormalized validation metrics.
+[DEBUG][TRAINER] [EPOCH 22/100] Denormalized validation metrics prepared in 0.0s
+[INFO][TRAINER] [EPOCH 22/100] Train(eval): RMSE 0.7441 | R 0.9380 | CI 0.9037
+[INFO][TRAINER] [EPOCH 22/100] Valid: RMSE 1.4030 | R 0.7497 | CI 0.7743
+[DEBUG][TRAINER] [EPOCH 22/100] Checking monitored metrics for improvements.
+[INFO][TRAINER] Improved: Primary metric 'val_pearson': 0.7497
+[INFO][TRAINER] Improved: Secondary metric 'val_rmse': 1.4030
+[INFO][TRAINER] Improved: Secondary metric 'val_ci': 0.7743
+[DEBUG][TRAINER] [EPOCH 22/100] Metric improvement check completed in 0.0s
+[DEBUG][TRAINER] [EPOCH 22/100] Saving best model.
+[DEBUG][TRAINER] [EPOCH 22/100] Best model checkpoint saved in 0.0s
+[DEBUG][TRAINER] New best for primary metric val_pearson: 0.7497 (Saved to best_model.pt)
+[DEBUG][TRAINER] [EPOCH 22/100] Updating early stopping state.
+[DEBUG][TRAINER] [EPOCH 22/100] Saving history.json.
+[DEBUG][TRAINER] [EPOCH 22/100] history.json saved in 0.0s
+[DEBUG][TRAINER] [EPOCH 22/100] Updating schedulers.
+[DEBUG][TRAINER] [EPOCH 22/100] Schedulers updated in 0.0s
+[INFO][TRAINER] ------------------------------------------------------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 23/100] progress=0.222 classic_lr=[5e-05] quantum_lr=None 
+[DEBUG][MEMORY] epoch_23_start | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=4.0GB | cuda_max_reserved=6.5GB
+[INFO][TRAINER] [EPOCH 23/100] Preparing training epoch.
+[DEBUG][MEMORY] train_epoch_start | batch=0/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=2.5GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] train_epoch_end | batch=1601/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] epoch_23_after_train | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 23/100] Training pass completed in 1m 44.8s
+[INFO][TRAINER] [EPOCH 23/100] Validation.
+[DEBUG][MEMORY] epoch_23_after_val | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 23/100] Preparing train-set evaluation metrics.
+[INFO][TRAINER] [EPOCH 23/100] Train Loss: 0.0602, Val Loss: 0.2330
+[DEBUG][TRAINER] [EPOCH 23/100] Train_time=1m 44.8s | Val_time=9.9s | Train_eval_time=55.2s | epoch_time=1m 54.8s
+[DEBUG][TRAINER] [EPOCH 23/100] Preparing denormalized validation metrics.
+[DEBUG][TRAINER] [EPOCH 23/100] Denormalized validation metrics prepared in 0.0s
+[INFO][TRAINER] [EPOCH 23/100] Train(eval): RMSE 0.6350 | R 0.9487 | CI 0.9151
+[INFO][TRAINER] [EPOCH 23/100] Valid: RMSE 1.4312 | R 0.7406 | CI 0.7705
+[DEBUG][TRAINER] [EPOCH 23/100] Checking monitored metrics for improvements.
+[DEBUG][TRAINER] [EPOCH 23/100] Metric improvement check completed in 0.0s
+[DEBUG][TRAINER] [EPOCH 23/100] Updating early stopping state.
+[INFO][TRAINER] EarlyStopping counter: 1/10
+[DEBUG][TRAINER] [EPOCH 23/100] Saving history.json.
+[DEBUG][TRAINER] [EPOCH 23/100] history.json saved in 0.0s
+[DEBUG][TRAINER] [EPOCH 23/100] Updating schedulers.
+[DEBUG][TRAINER] [EPOCH 23/100] Schedulers updated in 0.0s
+[INFO][TRAINER] ------------------------------------------------------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 24/100] progress=0.232 classic_lr=[5e-05] quantum_lr=None 
+[DEBUG][MEMORY] epoch_24_start | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[INFO][TRAINER] [EPOCH 24/100] Preparing training epoch.
+[DEBUG][MEMORY] train_epoch_start | batch=0/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=2.5GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] train_epoch_end | batch=1601/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] epoch_24_after_train | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 24/100] Training pass completed in 1m 44.1s
+[INFO][TRAINER] [EPOCH 24/100] Validation.
+[DEBUG][MEMORY] epoch_24_after_val | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 24/100] Preparing train-set evaluation metrics.
+[INFO][TRAINER] [EPOCH 24/100] Train Loss: 0.0549, Val Loss: 0.2212
+[DEBUG][TRAINER] [EPOCH 24/100] Train_time=1m 44.1s | Val_time=9.7s | Train_eval_time=54.8s | epoch_time=1m 53.8s
+[DEBUG][TRAINER] [EPOCH 24/100] Preparing denormalized validation metrics.
+[DEBUG][TRAINER] [EPOCH 24/100] Denormalized validation metrics prepared in 0.0s
+[INFO][TRAINER] [EPOCH 24/100] Train(eval): RMSE 0.6370 | R 0.9505 | CI 0.9166
+[INFO][TRAINER] [EPOCH 24/100] Valid: RMSE 1.3757 | R 0.7512 | CI 0.7762
+[DEBUG][TRAINER] [EPOCH 24/100] Checking monitored metrics for improvements.
+[INFO][TRAINER] Improved: Primary metric 'val_pearson': 0.7512
+[INFO][TRAINER] Improved: Secondary metric 'val_rmse': 1.3757
+[INFO][TRAINER] Improved: Secondary metric 'val_ci': 0.7762
+[DEBUG][TRAINER] [EPOCH 24/100] Metric improvement check completed in 0.0s
+[DEBUG][TRAINER] [EPOCH 24/100] Saving best model.
+[DEBUG][TRAINER] [EPOCH 24/100] Best model checkpoint saved in 0.0s
+[DEBUG][TRAINER] New best for primary metric val_pearson: 0.7512 (Saved to best_model.pt)
+[DEBUG][TRAINER] [EPOCH 24/100] Updating early stopping state.
+[DEBUG][TRAINER] [EPOCH 24/100] Saving history.json.
+[DEBUG][TRAINER] [EPOCH 24/100] history.json saved in 0.0s
+[DEBUG][TRAINER] [EPOCH 24/100] Updating schedulers.
+[DEBUG][TRAINER] [EPOCH 24/100] Schedulers updated in 0.0s
+[INFO][TRAINER] ------------------------------------------------------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 25/100] progress=0.242 classic_lr=[5e-05] quantum_lr=None 
+[DEBUG][MEMORY] epoch_25_start | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.5GB
+[INFO][TRAINER] [EPOCH 25/100] Preparing training epoch.
+[DEBUG][MEMORY] train_epoch_start | batch=0/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=2.5GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] train_epoch_end | batch=1601/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] epoch_25_after_train | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 25/100] Training pass completed in 1m 44.8s
+[INFO][TRAINER] [EPOCH 25/100] Validation.
+[DEBUG][MEMORY] epoch_25_after_val | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 25/100] Preparing train-set evaluation metrics.
+[INFO][TRAINER] [EPOCH 25/100] Train Loss: 0.0507, Val Loss: 0.2289
+[DEBUG][TRAINER] [EPOCH 25/100] Train_time=1m 44.8s | Val_time=9.9s | Train_eval_time=54.9s | epoch_time=1m 54.7s
+[DEBUG][TRAINER] [EPOCH 25/100] Preparing denormalized validation metrics.
+[DEBUG][TRAINER] [EPOCH 25/100] Denormalized validation metrics prepared in 0.0s
+[INFO][TRAINER] [EPOCH 25/100] Train(eval): RMSE 0.6107 | R 0.9588 | CI 0.9240
+[INFO][TRAINER] [EPOCH 25/100] Valid: RMSE 1.4088 | R 0.7468 | CI 0.7743
+[DEBUG][TRAINER] [EPOCH 25/100] Checking monitored metrics for improvements.
+[DEBUG][TRAINER] [EPOCH 25/100] Metric improvement check completed in 0.0s
+[DEBUG][TRAINER] [EPOCH 25/100] Updating early stopping state.
+[INFO][TRAINER] EarlyStopping counter: 1/10
+[DEBUG][TRAINER] [EPOCH 25/100] Saving history.json.
+[DEBUG][TRAINER] [EPOCH 25/100] history.json saved in 0.0s
+[DEBUG][TRAINER] [EPOCH 25/100] Updating schedulers.
+[DEBUG][TRAINER] [EPOCH 25/100] Schedulers updated in 0.0s
+[INFO][TRAINER] ------------------------------------------------------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 26/100] progress=0.253 classic_lr=[5e-05] quantum_lr=None 
+[DEBUG][MEMORY] epoch_26_start | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[INFO][TRAINER] [EPOCH 26/100] Preparing training epoch.
+[DEBUG][MEMORY] train_epoch_start | batch=0/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=2.5GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] train_epoch_end | batch=1601/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] epoch_26_after_train | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 26/100] Training pass completed in 1m 44.2s
+[INFO][TRAINER] [EPOCH 26/100] Validation.
+[DEBUG][MEMORY] epoch_26_after_val | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 26/100] Preparing train-set evaluation metrics.
+[INFO][TRAINER] [EPOCH 26/100] Train Loss: 0.0461, Val Loss: 0.2237
+[DEBUG][TRAINER] [EPOCH 26/100] Train_time=1m 44.2s | Val_time=9.8s | Train_eval_time=54.7s | epoch_time=1m 54.0s
+[DEBUG][TRAINER] [EPOCH 26/100] Preparing denormalized validation metrics.
+[DEBUG][TRAINER] [EPOCH 26/100] Denormalized validation metrics prepared in 0.0s
+[INFO][TRAINER] [EPOCH 26/100] Train(eval): RMSE 0.5632 | R 0.9589 | CI 0.9236
+[INFO][TRAINER] [EPOCH 26/100] Valid: RMSE 1.3852 | R 0.7491 | CI 0.7760
+[DEBUG][TRAINER] [EPOCH 26/100] Checking monitored metrics for improvements.
+[DEBUG][TRAINER] [EPOCH 26/100] Metric improvement check completed in 0.0s
+[DEBUG][TRAINER] [EPOCH 26/100] Updating early stopping state.
+[INFO][TRAINER] EarlyStopping counter: 2/10
+[DEBUG][TRAINER] [EPOCH 26/100] Saving history.json.
+[DEBUG][TRAINER] [EPOCH 26/100] history.json saved in 0.0s
+[DEBUG][TRAINER] [EPOCH 26/100] Updating schedulers.
+[DEBUG][TRAINER] [EPOCH 26/100] Schedulers updated in 0.0s
+[INFO][TRAINER] ------------------------------------------------------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 27/100] progress=0.263 classic_lr=[5e-05] quantum_lr=None 
+[DEBUG][MEMORY] epoch_27_start | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.5GB
+[INFO][TRAINER] [EPOCH 27/100] Preparing training epoch.
+[DEBUG][MEMORY] train_epoch_start | batch=0/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=2.5GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] train_epoch_end | batch=1601/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] epoch_27_after_train | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 27/100] Training pass completed in 1m 44.4s
+[INFO][TRAINER] [EPOCH 27/100] Validation.
+[DEBUG][MEMORY] epoch_27_after_val | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 27/100] Preparing train-set evaluation metrics.
+[INFO][TRAINER] [EPOCH 27/100] Train Loss: 0.0430, Val Loss: 0.2273
+[DEBUG][TRAINER] [EPOCH 27/100] Train_time=1m 44.4s | Val_time=9.8s | Train_eval_time=54.7s | epoch_time=1m 54.2s
+[DEBUG][TRAINER] [EPOCH 27/100] Preparing denormalized validation metrics.
+[DEBUG][TRAINER] [EPOCH 27/100] Denormalized validation metrics prepared in 0.0s
+[INFO][TRAINER] [EPOCH 27/100] Train(eval): RMSE 0.5973 | R 0.9603 | CI 0.9257
+[INFO][TRAINER] [EPOCH 27/100] Valid: RMSE 1.4074 | R 0.7530 | CI 0.7756
+[DEBUG][TRAINER] [EPOCH 27/100] Checking monitored metrics for improvements.
+[INFO][TRAINER] Improved: Primary metric 'val_pearson': 0.7530
+[DEBUG][TRAINER] [EPOCH 27/100] Metric improvement check completed in 0.0s
+[DEBUG][TRAINER] [EPOCH 27/100] Saving best model.
+[DEBUG][TRAINER] [EPOCH 27/100] Best model checkpoint saved in 0.0s
+[DEBUG][TRAINER] New best for primary metric val_pearson: 0.7530 (Saved to best_model.pt)
+[DEBUG][TRAINER] [EPOCH 27/100] Updating early stopping state.
+[DEBUG][TRAINER] [EPOCH 27/100] Saving history.json.
+[DEBUG][TRAINER] [EPOCH 27/100] history.json saved in 0.0s
+[DEBUG][TRAINER] [EPOCH 27/100] Updating schedulers.
+[DEBUG][TRAINER] [EPOCH 27/100] Schedulers updated in 0.0s
+[INFO][TRAINER] ------------------------------------------------------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 28/100] progress=0.273 classic_lr=[5e-05] quantum_lr=None 
+[DEBUG][MEMORY] epoch_28_start | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[INFO][TRAINER] [EPOCH 28/100] Preparing training epoch.
+[DEBUG][MEMORY] train_epoch_start | batch=0/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=2.5GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] train_epoch_end | batch=1601/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] epoch_28_after_train | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 28/100] Training pass completed in 1m 44.0s
+[INFO][TRAINER] [EPOCH 28/100] Validation.
+[DEBUG][MEMORY] epoch_28_after_val | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 28/100] Preparing train-set evaluation metrics.
+[INFO][TRAINER] [EPOCH 28/100] Train Loss: 0.0396, Val Loss: 0.2242
+[DEBUG][TRAINER] [EPOCH 28/100] Train_time=1m 44.0s | Val_time=9.9s | Train_eval_time=54.6s | epoch_time=1m 53.9s
+[DEBUG][TRAINER] [EPOCH 28/100] Preparing denormalized validation metrics.
+[DEBUG][TRAINER] [EPOCH 28/100] Denormalized validation metrics prepared in 0.0s
+[INFO][TRAINER] [EPOCH 28/100] Train(eval): RMSE 0.5409 | R 0.9656 | CI 0.9302
+[INFO][TRAINER] [EPOCH 28/100] Valid: RMSE 1.3876 | R 0.7533 | CI 0.7740
+[DEBUG][TRAINER] [EPOCH 28/100] Checking monitored metrics for improvements.
+[INFO][TRAINER] Improved: Primary metric 'val_pearson': 0.7533
+[DEBUG][TRAINER] [EPOCH 28/100] Metric improvement check completed in 0.0s
+[DEBUG][TRAINER] [EPOCH 28/100] Saving best model.
+[DEBUG][TRAINER] [EPOCH 28/100] Best model checkpoint saved in 0.0s
+[DEBUG][TRAINER] New best for primary metric val_pearson: 0.7533 (Saved to best_model.pt)
+[DEBUG][TRAINER] [EPOCH 28/100] Updating early stopping state.
+[DEBUG][TRAINER] [EPOCH 28/100] Saving history.json.
+[DEBUG][TRAINER] [EPOCH 28/100] history.json saved in 0.0s
+[DEBUG][TRAINER] [EPOCH 28/100] Updating schedulers.
+[DEBUG][TRAINER] [EPOCH 28/100] Schedulers updated in 0.0s
+[INFO][TRAINER] ------------------------------------------------------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 29/100] progress=0.283 classic_lr=[2.5e-05] quantum_lr=None 
+[DEBUG][MEMORY] epoch_29_start | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[INFO][TRAINER] [EPOCH 29/100] Preparing training epoch.
+[DEBUG][MEMORY] train_epoch_start | batch=0/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=2.5GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] train_epoch_end | batch=1601/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] epoch_29_after_train | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 29/100] Training pass completed in 1m 44.6s
+[INFO][TRAINER] [EPOCH 29/100] Validation.
+[DEBUG][MEMORY] epoch_29_after_val | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 29/100] Preparing train-set evaluation metrics.
+[INFO][TRAINER] [EPOCH 29/100] Train Loss: 0.0278, Val Loss: 0.2191
+[DEBUG][TRAINER] [EPOCH 29/100] Train_time=1m 44.6s | Val_time=9.6s | Train_eval_time=54.9s | epoch_time=1m 54.2s
+[DEBUG][TRAINER] [EPOCH 29/100] Preparing denormalized validation metrics.
+[DEBUG][TRAINER] [EPOCH 29/100] Denormalized validation metrics prepared in 0.0s
+[INFO][TRAINER] [EPOCH 29/100] Train(eval): RMSE 0.4205 | R 0.9786 | CI 0.9505
+[INFO][TRAINER] [EPOCH 29/100] Valid: RMSE 1.3828 | R 0.7545 | CI 0.7781
+[DEBUG][TRAINER] [EPOCH 29/100] Checking monitored metrics for improvements.
+[INFO][TRAINER] Improved: Primary metric 'val_pearson': 0.7545
+[INFO][TRAINER] Improved: Secondary metric 'val_ci': 0.7781
+[DEBUG][TRAINER] [EPOCH 29/100] Metric improvement check completed in 0.0s
+[DEBUG][TRAINER] [EPOCH 29/100] Saving best model.
+[DEBUG][TRAINER] [EPOCH 29/100] Best model checkpoint saved in 0.0s
+[DEBUG][TRAINER] New best for primary metric val_pearson: 0.7545 (Saved to best_model.pt)
+[DEBUG][TRAINER] [EPOCH 29/100] Updating early stopping state.
+[DEBUG][TRAINER] [EPOCH 29/100] Saving history.json.
+[DEBUG][TRAINER] [EPOCH 29/100] history.json saved in 0.0s
+[DEBUG][TRAINER] [EPOCH 29/100] Updating schedulers.
+[DEBUG][TRAINER] [EPOCH 29/100] Schedulers updated in 0.0s
+[INFO][TRAINER] ------------------------------------------------------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 30/100] progress=0.293 classic_lr=[2.5e-05] quantum_lr=None 
+[DEBUG][MEMORY] epoch_30_start | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[INFO][TRAINER] [EPOCH 30/100] Preparing training epoch.
+[DEBUG][MEMORY] train_epoch_start | batch=0/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=2.5GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] train_epoch_end | batch=1601/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] epoch_30_after_train | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 30/100] Training pass completed in 1m 43.8s
+[INFO][TRAINER] [EPOCH 30/100] Validation.
+[DEBUG][MEMORY] epoch_30_after_val | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 30/100] Preparing train-set evaluation metrics.
+[INFO][TRAINER] [EPOCH 30/100] Train Loss: 0.0237, Val Loss: 0.2246
+[DEBUG][TRAINER] [EPOCH 30/100] Train_time=1m 43.8s | Val_time=9.8s | Train_eval_time=54.6s | epoch_time=1m 53.6s
+[DEBUG][TRAINER] [EPOCH 30/100] Preparing denormalized validation metrics.
+[DEBUG][TRAINER] [EPOCH 30/100] Denormalized validation metrics prepared in 0.0s
+[INFO][TRAINER] [EPOCH 30/100] Train(eval): RMSE 0.4301 | R 0.9803 | CI 0.9525
+[INFO][TRAINER] [EPOCH 30/100] Valid: RMSE 1.3944 | R 0.7489 | CI 0.7769
+[DEBUG][TRAINER] [EPOCH 30/100] Checking monitored metrics for improvements.
+[DEBUG][TRAINER] [EPOCH 30/100] Metric improvement check completed in 0.0s
+[DEBUG][TRAINER] [EPOCH 30/100] Updating early stopping state.
+[INFO][TRAINER] EarlyStopping counter: 1/10
+[DEBUG][TRAINER] [EPOCH 30/100] Saving history.json.
+[DEBUG][TRAINER] [EPOCH 30/100] history.json saved in 0.0s
+[DEBUG][TRAINER] [EPOCH 30/100] Updating schedulers.
+[DEBUG][TRAINER] [EPOCH 30/100] Schedulers updated in 0.0s
+[DEBUG][TRAINER] [EPOCH 30/100] Rendering ASCII dashboard.
+[INFO][TRAINER] Generating Multi-column ASCII Dashboard.
+[INFO][TRAINER] 
+Learning Curve (Loss)                                           Validation RMSE
+▘=Train Loss  *=Val Loss                                        ▘=Train RMSE  *=Val RMSE
++------------------------------------------------+              +------------------------------------------------+
+|▘                                               | 0.3623       |* *                                             | 1.7425
+|  *                                             |              |▘ ▘   * *  *                                    |
+|  ▘   * *                                       |              |   ▘ *▘ ▘ *  * *  *  *    *                     |
+|   ▘ ▘    ** *    *                             | 0.2776       |     ▘    ▘▘    *  *   **   ** ** * ** * ** ** *| 1.4120
+|      ▘ ▘      **  * *    * **                  |              |             ▘                                  |
+|          ▘▘ ▘         **      ** * ** * ** ** *|              |               ▘▘ ▘  ▘                          |
+|               ▘▘                               | 0.1930       |                   ▘                            | 1.0815
+|                  ▘▘ ▘ ▘                        |              |                       ▘▘ ▘  ▘                  |
+|                        ▘ ▘ ▘                   |              |                            ▘                   |
+|                             ▘                  | 0.1083       |                               ▘▘ ▘             | 0.7510
+|                               ▘▘               |              |                                    ▘▘ ▘  ▘     |
+|                                  ▘ ▘▘ ▘ ▘▘ ▘   |              |                                         ▘  ▘   |
+|                                             ▘ ▘| 0.0237       |                                             ▘ ▘| 0.4205
++------------------------------------------------+              +------------------------------------------------+
+1                                             30                1                                             30
+[INFO][TRAINER] 
+Correlation (Pearson R)                                         Ranking Accuracy (CI)
+▘=Train Pearson  *=Val Pearson                                  ▘=Train CI  *=Val CI
++------------------------------------------------+              +------------------------------------------------+
+|                                            ▘▘ ▘| 0.9803       |                                             ▘ ▘| 0.9525
+|                                ▘ ▘ ▘▘ ▘ ▘▘     |              |                                       ▘ ▘▘ ▘   |
+|                               ▘                |              |                                  ▘ ▘▘          |
+|                        ▘ ▘ ▘▘                  | 0.8876       |                               ▘▘               | 0.8926
+|                   ▘ ▘ ▘                        |              |                            ▘                   |
+|                                                |              |                       ▘▘ ▘  ▘                  |
+|               ▘▘ ▘                             | 0.7949       |                   ▘ ▘                          | 0.8326
+|          ▘▘ ▘                    *  *   ** ** *|              |               ▘▘ ▘                             |
+|        ▘          * * ** * ** **   *  *        |              |          ▘▘ ▘                                  |
+|     ▘▘ * **   ** *                             | 0.7023       |      ▘ ▘       *  * * ** * ** ** * ** * ** ** *| 0.7726
+|   ▘ **      *                                  |              |   ▘ ▘* * **   *  *                             |
+|  ▘                                             |              |  ▘*         *                                  |
+|▘ *                                             | 0.6096       |▘ *                                             | 0.7126
++------------------------------------------------+              +------------------------------------------------+
+1                                             30                1                                             30
+[INFO][TRAINER] Final Performance Analytics:
+                Actual vs Predicted                                            Residuals Distribution
+┌──────────────────────────────────────────────────┐            ┌──────────────────────────────────────────────────┐
+│                                               ▄▄▀│            │                          ▗▄▄▞▀▜                  │ 100
+│                                           ▘▄▞▀ ▗▞│            │                         ▗▘ │  ▝▖                 │
+│              ▗ ▗               ▗ ▖    ▖▗▄▀▀ ▝    │ 10         │                         ▞  │   ▚                 │
+│                     ▝   ▄     ▄▗▖▗▗ ▄▞▀▘  ▘▝▚▝▖  │            │                        ▗▘  │   ▝▖                │
+│                ▗ ▗▘  ▖  ▝▗▖▌▙▘▞▖▗▄▀▀▗▗▗▗ ▚       │            │                        ▞   │    ▌                │
+│          ▖          ▝▗▄▗▝▗█▌▌▄▄▀▘▄▞ ▀ ▀      ▘   │            │                       ▗▘   │    ▐                │
+│    ▗     ▘  ▗ ▘▗▗▞▌ ▄▙▛▜▀▗▄▞▀▟▞▐▌▖▚▖▘▟▘          │            │                       ▞    │     ▌               │
+│      ▖ ▗  ▖▀▀▖▖▀▄▐▞▟▀█▗▄▀▘▚▀▌▙▀ ▚▘▘ ▝     ▝      │            │                      ▐     │     ▐               │
+│       ▚▗▞▘▗▖▚▖▟▟█▞▘▄▞▀▘▜▄▜▘▌▞▘▘▗▖▘ ▐ ▘▗▖         │            │                     ▗▘     │      ▚              │
+│ ▞   ▗ ▖▗ ▙▄▝█▗▝▗▄▀▀▙▘▖▚▀▌▄▐ ▘ ▖ ▝                │            │                     ▞      │      ▝▖             │
+│  ▗  ▐▝▄▚▟▖▌▐▄▄▀▘▗▚▚  ▗▝▌ ▞   ▗         ▝         │ 5          │                    ▞       │       ▚             │
+│ ▀▝ ▖▚▄▟█▗▄▞▀▞▝▘▘▝▌▜▖ ▘▞  ▝▝  ▗              ▝    │            │                   ▞        │        ▚▖           │
+│ ▗ ▜ ▙▄▄▀▘ ▘  ▖     ▗                             │            │                 ▄▀         │         ▝▄          │
+│  ▌▄▞▀ ▀▘  ▘ ▘                                    │            │              ▗▞▀           │           ▀▄▄▖      │
+│▄▀▀▘                                              │            │▄▄▄▄▄▄▄▄▄▀▀▀▀▀▘▁▁▁▁▁▁▁▁▁▁▁▁▁│▁▁▁▁▁▁▁▁▁▁▁▁▁▁▝▀▀▚▄▄▀│ 0
+└──────────────────────────────────────────────────┘            └──────────────────────────────────────────────────┘
+   2            5            8          10                            -5         -2          0          2
+[DEBUG][TRAINER] [EPOCH 30/100] ASCII dashboard rendered in 0.0s
+[INFO][TRAINER] ------------------------------------------------------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 31/100] progress=0.303 classic_lr=[2.5e-05] quantum_lr=None 
+[DEBUG][MEMORY] epoch_31_start | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.5GB
+[INFO][TRAINER] [EPOCH 31/100] Preparing training epoch.
+[DEBUG][MEMORY] train_epoch_start | batch=0/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=2.5GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] train_epoch_end | batch=1601/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] epoch_31_after_train | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 31/100] Training pass completed in 1m 44.4s
+[INFO][TRAINER] [EPOCH 31/100] Validation.
+[DEBUG][MEMORY] epoch_31_after_val | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 31/100] Preparing train-set evaluation metrics.
+[INFO][TRAINER] [EPOCH 31/100] Train Loss: 0.0207, Val Loss: 0.2201
+[DEBUG][TRAINER] [EPOCH 31/100] Train_time=1m 44.4s | Val_time=9.4s | Train_eval_time=54.7s | epoch_time=1m 53.7s
+[DEBUG][TRAINER] [EPOCH 31/100] Preparing denormalized validation metrics.
+[DEBUG][TRAINER] [EPOCH 31/100] Denormalized validation metrics prepared in 0.0s
+[INFO][TRAINER] [EPOCH 31/100] Train(eval): RMSE 0.3745 | R 0.9825 | CI 0.9575
+[INFO][TRAINER] [EPOCH 31/100] Valid: RMSE 1.3843 | R 0.7548 | CI 0.7791
+[DEBUG][TRAINER] [EPOCH 31/100] Checking monitored metrics for improvements.
+[INFO][TRAINER] Improved: Primary metric 'val_pearson': 0.7548
+[INFO][TRAINER] Improved: Secondary metric 'val_ci': 0.7791
+[DEBUG][TRAINER] [EPOCH 31/100] Metric improvement check completed in 0.0s
+[DEBUG][TRAINER] [EPOCH 31/100] Saving best model.
+[DEBUG][TRAINER] [EPOCH 31/100] Best model checkpoint saved in 0.0s
+[DEBUG][TRAINER] New best for primary metric val_pearson: 0.7548 (Saved to best_model.pt)
+[DEBUG][TRAINER] [EPOCH 31/100] Updating early stopping state.
+[DEBUG][TRAINER] [EPOCH 31/100] Saving history.json.
+[DEBUG][TRAINER] [EPOCH 31/100] history.json saved in 0.0s
+[DEBUG][TRAINER] [EPOCH 31/100] Updating schedulers.
+[DEBUG][TRAINER] [EPOCH 31/100] Schedulers updated in 0.0s
+[INFO][TRAINER] ------------------------------------------------------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 32/100] progress=0.313 classic_lr=[2.5e-05] quantum_lr=None 
+[DEBUG][MEMORY] epoch_32_start | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.5GB
+[INFO][TRAINER] [EPOCH 32/100] Preparing training epoch.
+[DEBUG][MEMORY] train_epoch_start | batch=0/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=2.5GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] train_epoch_end | batch=1601/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.5GB
+[DEBUG][MEMORY] epoch_32_after_train | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 32/100] Training pass completed in 1m 43.9s
+[INFO][TRAINER] [EPOCH 32/100] Validation.
+[DEBUG][MEMORY] epoch_32_after_val | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.5GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.5GB
+[DEBUG][TRAINER] [EPOCH 32/100] Preparing train-set evaluation metrics.
+[INFO][TRAINER] [EPOCH 32/100] Train Loss: 0.0193, Val Loss: 0.2216
+[DEBUG][TRAINER] [EPOCH 32/100] Train_time=1m 43.9s | Val_time=9.8s | Train_eval_time=54.7s | epoch_time=1m 53.8s
+[DEBUG][TRAINER] [EPOCH 32/100] Preparing denormalized validation metrics.
+[DEBUG][TRAINER] [EPOCH 32/100] Denormalized validation metrics prepared in 0.0s
+[INFO][TRAINER] [EPOCH 32/100] Train(eval): RMSE 0.3721 | R 0.9846 | CI 0.9594
+[INFO][TRAINER] [EPOCH 32/100] Valid: RMSE 1.3846 | R 0.7521 | CI 0.7769
+[DEBUG][TRAINER] [EPOCH 32/100] Checking monitored metrics for improvements.
+[DEBUG][TRAINER] [EPOCH 32/100] Metric improvement check completed in 0.0s
+[DEBUG][TRAINER] [EPOCH 32/100] Updating early stopping state.
+[INFO][TRAINER] EarlyStopping counter: 1/10
+[DEBUG][TRAINER] [EPOCH 32/100] Saving history.json.
+[DEBUG][TRAINER] [EPOCH 32/100] history.json saved in 0.0s
+[DEBUG][TRAINER] [EPOCH 32/100] Updating schedulers.
+[DEBUG][TRAINER] [EPOCH 32/100] Schedulers updated in 0.0s
+[INFO][TRAINER] ------------------------------------------------------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 33/100] progress=0.323 classic_lr=[2.5e-05] quantum_lr=None 
+[DEBUG][MEMORY] epoch_33_start | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.7GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.7GB
+[INFO][TRAINER] [EPOCH 33/100] Preparing training epoch.
+[DEBUG][MEMORY] train_epoch_start | batch=0/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.7GB | cuda_max_alloc=2.5GB | cuda_max_reserved=6.7GB
+[DEBUG][MEMORY] train_epoch_end | batch=1601/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.7GB | cuda_max_alloc=4.0GB | cuda_max_reserved=6.7GB
+[DEBUG][MEMORY] epoch_33_after_train | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.7GB | cuda_max_alloc=4.0GB | cuda_max_reserved=6.7GB
+[DEBUG][TRAINER] [EPOCH 33/100] Training pass completed in 1m 44.3s
+[INFO][TRAINER] [EPOCH 33/100] Validation.
+[DEBUG][MEMORY] epoch_33_after_val | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.7GB | cuda_max_alloc=4.0GB | cuda_max_reserved=6.7GB
+[DEBUG][TRAINER] [EPOCH 33/100] Preparing train-set evaluation metrics.
+[INFO][TRAINER] [EPOCH 33/100] Train Loss: 0.0180, Val Loss: 0.2211
+[DEBUG][TRAINER] [EPOCH 33/100] Train_time=1m 44.3s | Val_time=9.0s | Train_eval_time=54.9s | epoch_time=1m 53.3s
+[DEBUG][TRAINER] [EPOCH 33/100] Preparing denormalized validation metrics.
+[DEBUG][TRAINER] [EPOCH 33/100] Denormalized validation metrics prepared in 0.0s
+[INFO][TRAINER] [EPOCH 33/100] Train(eval): RMSE 0.3409 | R 0.9854 | CI 0.9605
+[INFO][TRAINER] [EPOCH 33/100] Valid: RMSE 1.3852 | R 0.7517 | CI 0.7767
+[DEBUG][TRAINER] [EPOCH 33/100] Checking monitored metrics for improvements.
+[DEBUG][TRAINER] [EPOCH 33/100] Metric improvement check completed in 0.0s
+[DEBUG][TRAINER] [EPOCH 33/100] Updating early stopping state.
+[INFO][TRAINER] EarlyStopping counter: 2/10
+[DEBUG][TRAINER] [EPOCH 33/100] Saving history.json.
+[DEBUG][TRAINER] [EPOCH 33/100] history.json saved in 0.0s
+[DEBUG][TRAINER] [EPOCH 33/100] Updating schedulers.
+[DEBUG][TRAINER] [EPOCH 33/100] Schedulers updated in 0.0s
+[INFO][TRAINER] ------------------------------------------------------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 34/100] progress=0.333 classic_lr=[1.25e-05] quantum_lr=None 
+[DEBUG][MEMORY] epoch_34_start | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.7GB | cuda_max_alloc=4.0GB | cuda_max_reserved=6.7GB
+[INFO][TRAINER] [EPOCH 34/100] Preparing training epoch.
+[DEBUG][MEMORY] train_epoch_start | batch=0/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.7GB | cuda_max_alloc=2.5GB | cuda_max_reserved=6.7GB
+[DEBUG][MEMORY] train_epoch_end | batch=1601/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.7GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.7GB
+[DEBUG][MEMORY] epoch_34_after_train | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.7GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.7GB
+[DEBUG][TRAINER] [EPOCH 34/100] Training pass completed in 1m 44.4s
+[INFO][TRAINER] [EPOCH 34/100] Validation.
+[DEBUG][MEMORY] epoch_34_after_val | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.7GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.7GB
+[DEBUG][TRAINER] [EPOCH 34/100] Preparing train-set evaluation metrics.
+[INFO][TRAINER] [EPOCH 34/100] Train Loss: 0.0134, Val Loss: 0.2202
+[DEBUG][TRAINER] [EPOCH 34/100] Train_time=1m 44.4s | Val_time=9.8s | Train_eval_time=54.8s | epoch_time=1m 54.3s
+[DEBUG][TRAINER] [EPOCH 34/100] Preparing denormalized validation metrics.
+[DEBUG][TRAINER] [EPOCH 34/100] Denormalized validation metrics prepared in 0.0s
+[INFO][TRAINER] [EPOCH 34/100] Train(eval): RMSE 0.3018 | R 0.9889 | CI 0.9698
+[INFO][TRAINER] [EPOCH 34/100] Valid: RMSE 1.3791 | R 0.7512 | CI 0.7761
+[DEBUG][TRAINER] [EPOCH 34/100] Checking monitored metrics for improvements.
+[DEBUG][TRAINER] [EPOCH 34/100] Metric improvement check completed in 0.0s
+[DEBUG][TRAINER] [EPOCH 34/100] Updating early stopping state.
+[INFO][TRAINER] EarlyStopping counter: 3/10
+[DEBUG][TRAINER] [EPOCH 34/100] Saving history.json.
+[DEBUG][TRAINER] [EPOCH 34/100] history.json saved in 0.0s
+[DEBUG][TRAINER] [EPOCH 34/100] Updating schedulers.
+[DEBUG][TRAINER] [EPOCH 34/100] Schedulers updated in 0.0s
+[INFO][TRAINER] ------------------------------------------------------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 35/100] progress=0.343 classic_lr=[1.25e-05] quantum_lr=None 
+[DEBUG][MEMORY] epoch_35_start | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.7GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.7GB
+[INFO][TRAINER] [EPOCH 35/100] Preparing training epoch.
+[DEBUG][MEMORY] train_epoch_start | batch=0/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.7GB | cuda_max_alloc=2.5GB | cuda_max_reserved=6.7GB
+[DEBUG][MEMORY] train_epoch_end | batch=1601/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.7GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.7GB
+[DEBUG][MEMORY] epoch_35_after_train | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.7GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.7GB
+[DEBUG][TRAINER] [EPOCH 35/100] Training pass completed in 1m 43.9s
+[INFO][TRAINER] [EPOCH 35/100] Validation.
+[DEBUG][MEMORY] epoch_35_after_val | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.7GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.7GB
+[DEBUG][TRAINER] [EPOCH 35/100] Preparing train-set evaluation metrics.
+[INFO][TRAINER] [EPOCH 35/100] Train Loss: 0.0117, Val Loss: 0.2220
+[DEBUG][TRAINER] [EPOCH 35/100] Train_time=1m 43.9s | Val_time=9.1s | Train_eval_time=54.4s | epoch_time=1m 53.0s
+[DEBUG][TRAINER] [EPOCH 35/100] Preparing denormalized validation metrics.
+[DEBUG][TRAINER] [EPOCH 35/100] Denormalized validation metrics prepared in 0.0s
+[INFO][TRAINER] [EPOCH 35/100] Train(eval): RMSE 0.2953 | R 0.9898 | CI 0.9724
+[INFO][TRAINER] [EPOCH 35/100] Valid: RMSE 1.3862 | R 0.7508 | CI 0.7764
+[DEBUG][TRAINER] [EPOCH 35/100] Checking monitored metrics for improvements.
+[DEBUG][TRAINER] [EPOCH 35/100] Metric improvement check completed in 0.0s
+[DEBUG][TRAINER] [EPOCH 35/100] Updating early stopping state.
+[INFO][TRAINER] EarlyStopping counter: 4/10
+[DEBUG][TRAINER] [EPOCH 35/100] Saving history.json.
+[DEBUG][TRAINER] [EPOCH 35/100] history.json saved in 0.0s
+[DEBUG][TRAINER] [EPOCH 35/100] Updating schedulers.
+[DEBUG][TRAINER] [EPOCH 35/100] Schedulers updated in 0.0s
+[INFO][TRAINER] ------------------------------------------------------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 36/100] progress=0.354 classic_lr=[1.25e-05] quantum_lr=None 
+[DEBUG][MEMORY] epoch_36_start | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.7GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.7GB
+[INFO][TRAINER] [EPOCH 36/100] Preparing training epoch.
+[DEBUG][MEMORY] train_epoch_start | batch=0/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.7GB | cuda_max_alloc=2.5GB | cuda_max_reserved=6.7GB
+[DEBUG][MEMORY] train_epoch_end | batch=1601/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.7GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.7GB
+[DEBUG][MEMORY] epoch_36_after_train | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.7GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.7GB
+[DEBUG][TRAINER] [EPOCH 36/100] Training pass completed in 1m 44.2s
+[INFO][TRAINER] [EPOCH 36/100] Validation.
+[DEBUG][MEMORY] epoch_36_after_val | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.7GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.7GB
+[DEBUG][TRAINER] [EPOCH 36/100] Preparing train-set evaluation metrics.
+[INFO][TRAINER] [EPOCH 36/100] Train Loss: 0.0106, Val Loss: 0.2222
+[DEBUG][TRAINER] [EPOCH 36/100] Train_time=1m 44.2s | Val_time=9.8s | Train_eval_time=54.3s | epoch_time=1m 54.0s
+[DEBUG][TRAINER] [EPOCH 36/100] Preparing denormalized validation metrics.
+[DEBUG][TRAINER] [EPOCH 36/100] Denormalized validation metrics prepared in 0.0s
+[INFO][TRAINER] [EPOCH 36/100] Train(eval): RMSE 0.2699 | R 0.9909 | CI 0.9749
+[INFO][TRAINER] [EPOCH 36/100] Valid: RMSE 1.3896 | R 0.7484 | CI 0.7762
+[DEBUG][TRAINER] [EPOCH 36/100] Checking monitored metrics for improvements.
+[DEBUG][TRAINER] [EPOCH 36/100] Metric improvement check completed in 0.0s
+[DEBUG][TRAINER] [EPOCH 36/100] Updating early stopping state.
+[INFO][TRAINER] EarlyStopping counter: 5/10
+[DEBUG][TRAINER] [EPOCH 36/100] Saving history.json.
+[DEBUG][TRAINER] [EPOCH 36/100] history.json saved in 0.0s
+[DEBUG][TRAINER] [EPOCH 36/100] Updating schedulers.
+[DEBUG][TRAINER] [EPOCH 36/100] Schedulers updated in 0.0s
+[INFO][TRAINER] ------------------------------------------------------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 37/100] progress=0.364 classic_lr=[1.25e-05] quantum_lr=None 
+[DEBUG][MEMORY] epoch_37_start | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.7GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.7GB
+[INFO][TRAINER] [EPOCH 37/100] Preparing training epoch.
+[DEBUG][MEMORY] train_epoch_start | batch=0/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.7GB | cuda_max_alloc=2.5GB | cuda_max_reserved=6.7GB
+[DEBUG][MEMORY] train_epoch_end | batch=1601/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.7GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.7GB
+[DEBUG][MEMORY] epoch_37_after_train | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.7GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.7GB
+[DEBUG][TRAINER] [EPOCH 37/100] Training pass completed in 1m 43.4s
+[INFO][TRAINER] [EPOCH 37/100] Validation.
+[DEBUG][MEMORY] epoch_37_after_val | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.7GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.7GB
+[DEBUG][TRAINER] [EPOCH 37/100] Preparing train-set evaluation metrics.
+[INFO][TRAINER] [EPOCH 37/100] Train Loss: 0.0100, Val Loss: 0.2219
+[DEBUG][TRAINER] [EPOCH 37/100] Train_time=1m 43.4s | Val_time=9.6s | Train_eval_time=54.1s | epoch_time=1m 53.0s
+[DEBUG][TRAINER] [EPOCH 37/100] Preparing denormalized validation metrics.
+[DEBUG][TRAINER] [EPOCH 37/100] Denormalized validation metrics prepared in 0.0s
+[INFO][TRAINER] [EPOCH 37/100] Train(eval): RMSE 0.2611 | R 0.9913 | CI 0.9752
+[INFO][TRAINER] [EPOCH 37/100] Valid: RMSE 1.3868 | R 0.7511 | CI 0.7769
+[DEBUG][TRAINER] [EPOCH 37/100] Checking monitored metrics for improvements.
+[DEBUG][TRAINER] [EPOCH 37/100] Metric improvement check completed in 0.0s
+[DEBUG][TRAINER] [EPOCH 37/100] Updating early stopping state.
+[INFO][TRAINER] EarlyStopping counter: 6/10
+[DEBUG][TRAINER] [EPOCH 37/100] Saving history.json.
+[DEBUG][TRAINER] [EPOCH 37/100] history.json saved in 0.0s
+[DEBUG][TRAINER] [EPOCH 37/100] Updating schedulers.
+[DEBUG][TRAINER] [EPOCH 37/100] Schedulers updated in 0.0s
+[INFO][TRAINER] ------------------------------------------------------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 38/100] progress=0.374 classic_lr=[6.25e-06] quantum_lr=None 
+[DEBUG][MEMORY] epoch_38_start | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.7GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.7GB
+[INFO][TRAINER] [EPOCH 38/100] Preparing training epoch.
+[DEBUG][MEMORY] train_epoch_start | batch=0/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.7GB | cuda_max_alloc=2.5GB | cuda_max_reserved=6.7GB
+[DEBUG][MEMORY] train_epoch_end | batch=1601/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.7GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.7GB
+[DEBUG][MEMORY] epoch_38_after_train | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.7GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.7GB
+[DEBUG][TRAINER] [EPOCH 38/100] Training pass completed in 1m 43.7s
+[INFO][TRAINER] [EPOCH 38/100] Validation.
+[DEBUG][MEMORY] epoch_38_after_val | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.7GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.7GB
+[DEBUG][TRAINER] [EPOCH 38/100] Preparing train-set evaluation metrics.
+[INFO][TRAINER] [EPOCH 38/100] Train Loss: 0.0083, Val Loss: 0.2212
+[DEBUG][TRAINER] [EPOCH 38/100] Train_time=1m 43.7s | Val_time=9.5s | Train_eval_time=54.4s | epoch_time=1m 53.2s
+[DEBUG][TRAINER] [EPOCH 38/100] Preparing denormalized validation metrics.
+[DEBUG][TRAINER] [EPOCH 38/100] Denormalized validation metrics prepared in 0.0s
+[INFO][TRAINER] [EPOCH 38/100] Train(eval): RMSE 0.2408 | R 0.9927 | CI 0.9810
+[INFO][TRAINER] [EPOCH 38/100] Valid: RMSE 1.3855 | R 0.7503 | CI 0.7765
+[DEBUG][TRAINER] [EPOCH 38/100] Checking monitored metrics for improvements.
+[DEBUG][TRAINER] [EPOCH 38/100] Metric improvement check completed in 0.0s
+[DEBUG][TRAINER] [EPOCH 38/100] Updating early stopping state.
+[INFO][TRAINER] EarlyStopping counter: 7/10
+[DEBUG][TRAINER] [EPOCH 38/100] Saving history.json.
+[DEBUG][TRAINER] [EPOCH 38/100] history.json saved in 0.0s
+[DEBUG][TRAINER] [EPOCH 38/100] Updating schedulers.
+[DEBUG][TRAINER] [EPOCH 38/100] Schedulers updated in 0.0s
+[INFO][TRAINER] ------------------------------------------------------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 39/100] progress=0.384 classic_lr=[6.25e-06] quantum_lr=None 
+[DEBUG][MEMORY] epoch_39_start | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.7GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.7GB
+[INFO][TRAINER] [EPOCH 39/100] Preparing training epoch.
+[DEBUG][MEMORY] train_epoch_start | batch=0/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.7GB | cuda_max_alloc=2.5GB | cuda_max_reserved=6.7GB
+[DEBUG][MEMORY] train_epoch_end | batch=1601/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.7GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.7GB
+[DEBUG][MEMORY] epoch_39_after_train | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.7GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.7GB
+[DEBUG][TRAINER] [EPOCH 39/100] Training pass completed in 1m 43.5s
+[INFO][TRAINER] [EPOCH 39/100] Validation.
+[DEBUG][MEMORY] epoch_39_after_val | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.7GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.7GB
+[DEBUG][TRAINER] [EPOCH 39/100] Preparing train-set evaluation metrics.
+[INFO][TRAINER] [EPOCH 39/100] Train Loss: 0.0076, Val Loss: 0.2217
+[DEBUG][TRAINER] [EPOCH 39/100] Train_time=1m 43.5s | Val_time=9.9s | Train_eval_time=54.7s | epoch_time=1m 53.4s
+[DEBUG][TRAINER] [EPOCH 39/100] Preparing denormalized validation metrics.
+[DEBUG][TRAINER] [EPOCH 39/100] Denormalized validation metrics prepared in 0.0s
+[INFO][TRAINER] [EPOCH 39/100] Train(eval): RMSE 0.2401 | R 0.9928 | CI 0.9812
+[INFO][TRAINER] [EPOCH 39/100] Valid: RMSE 1.3889 | R 0.7506 | CI 0.7766
+[DEBUG][TRAINER] [EPOCH 39/100] Checking monitored metrics for improvements.
+[DEBUG][TRAINER] [EPOCH 39/100] Metric improvement check completed in 0.0s
+[DEBUG][TRAINER] [EPOCH 39/100] Updating early stopping state.
+[INFO][TRAINER] EarlyStopping counter: 8/10
+[DEBUG][TRAINER] [EPOCH 39/100] Saving history.json.
+[DEBUG][TRAINER] [EPOCH 39/100] history.json saved in 0.0s
+[DEBUG][TRAINER] [EPOCH 39/100] Updating schedulers.
+[DEBUG][TRAINER] [EPOCH 39/100] Schedulers updated in 0.0s
+[INFO][TRAINER] ------------------------------------------------------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 40/100] progress=0.394 classic_lr=[6.25e-06] quantum_lr=None 
+[DEBUG][MEMORY] epoch_40_start | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.7GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.7GB
+[INFO][TRAINER] [EPOCH 40/100] Preparing training epoch.
+[DEBUG][MEMORY] train_epoch_start | batch=0/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.7GB | cuda_max_alloc=2.5GB | cuda_max_reserved=6.7GB
+[DEBUG][MEMORY] train_epoch_end | batch=1601/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.7GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.7GB
+[DEBUG][MEMORY] epoch_40_after_train | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.7GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.7GB
+[DEBUG][TRAINER] [EPOCH 40/100] Training pass completed in 1m 44.7s
+[INFO][TRAINER] [EPOCH 40/100] Validation.
+[DEBUG][MEMORY] epoch_40_after_val | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.7GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.7GB
+[DEBUG][TRAINER] [EPOCH 40/100] Preparing train-set evaluation metrics.
+[INFO][TRAINER] [EPOCH 40/100] Train Loss: 0.0072, Val Loss: 0.2221
+[DEBUG][TRAINER] [EPOCH 40/100] Train_time=1m 44.7s | Val_time=9.2s | Train_eval_time=54.6s | epoch_time=1m 53.9s
+[DEBUG][TRAINER] [EPOCH 40/100] Preparing denormalized validation metrics.
+[DEBUG][TRAINER] [EPOCH 40/100] Denormalized validation metrics prepared in 0.0s
+[INFO][TRAINER] [EPOCH 40/100] Train(eval): RMSE 0.2272 | R 0.9935 | CI 0.9830
+[INFO][TRAINER] [EPOCH 40/100] Valid: RMSE 1.3881 | R 0.7492 | CI 0.7760
+[DEBUG][TRAINER] [EPOCH 40/100] Checking monitored metrics for improvements.
+[DEBUG][TRAINER] [EPOCH 40/100] Metric improvement check completed in 0.0s
+[DEBUG][TRAINER] [EPOCH 40/100] Updating early stopping state.
+[INFO][TRAINER] EarlyStopping counter: 9/10
+[DEBUG][TRAINER] [EPOCH 40/100] Saving history.json.
+[DEBUG][TRAINER] [EPOCH 40/100] history.json saved in 0.0s
+[DEBUG][TRAINER] [EPOCH 40/100] Updating schedulers.
+[DEBUG][TRAINER] [EPOCH 40/100] Schedulers updated in 0.0s
+[DEBUG][TRAINER] [EPOCH 40/100] Rendering ASCII dashboard.
+[INFO][TRAINER] Generating Multi-column ASCII Dashboard.
+[INFO][TRAINER] 
+Learning Curve (Loss)                                           Validation RMSE
+▘=Train Loss  *=Val Loss                                        ▘=Train RMSE  *=Val RMSE
++------------------------------------------------+              +------------------------------------------------+
+|▘                                               | 0.3623       |**                                              | 1.7425
+| *                                              |              |▘▘*  ** *                                       |
+| ▘   **                                         |              |  ▘ ▘▘▘*  ***** *  ** *    *                    |
+|  ▘ ▘  ** *  *                                  | 0.2735       |       ▘▘        **    ***  **** ***** ***** ***| 1.3637
+|     ▘▘    ** * * *** * ** *                    |              |          ▘▘▘▘                                  |
+|       ▘▘ ▘      *     *    **** ***** ***** ***|              |              ▘ ▘                               |
+|           ▘▘▘                                  | 0.1847       |                 ▘▘▘  ▘                         | 0.9848
+|              ▘ ▘▘                              |              |                    ▘                           |
+|                  ▘▘▘ ▘                         |              |                       ▘▘▘                      |
+|                       ▘                        | 0.0960       |                           ▘▘▘▘▘                | 0.6060
+|                        ▘▘ ▘▘                   |              |                                 ▘▘▘            |
+|                             ▘▘▘ ▘▘▘            |              |                                    ▘▘ ▘▘▘      |
+|                                    ▘▘ ▘▘▘▘▘ ▘▘▘| 0.0072       |                                          ▘▘ ▘▘▘| 0.2272
++------------------------------------------------+              +------------------------------------------------+
+1                                             40                1                                             40
+[INFO][TRAINER] 
+Correlation (Pearson R)                                         Ranking Accuracy (CI)
+▘=Train Pearson  *=Val Pearson                                  ▘=Train CI  *=Val CI
++------------------------------------------------+              +------------------------------------------------+
+|                                  ▘▘▘▘ ▘▘▘▘▘ ▘▘▘| 0.9935       |                                         ▘▘▘ ▘▘▘| 0.9830
+|                           ▘▘▘▘▘ ▘              |              |                                  ▘▘▘▘ ▘▘       |
+|                       ▘▘▘                      |              |                                 ▘              |
+|                   ▘▘                           | 0.8975       |                           ▘▘▘▘▘                | 0.9154
+|                ▘▘▘   ▘                         |              |                       ▘▘▘                      |
+|              ▘                                 |              |                   ▘▘ ▘                         |
+|           ▘▘▘                                  | 0.8016       |                ▘▘▘                             | 0.8478
+|       ▘▘ ▘                       * *           |              |              ▘                                 |
+|      ▘       * ***** **** ***** * * * ***** ***|              |           ▘▘▘                                  |
+|    ▘▘***  ***                                  | 0.7056       |     ▘▘▘▘ ▘   *  **    *** ***** ***** ***** ***| 0.7802
+|  ▘ **    *                                     |              |  ▘ ▘****  ***  *  ** *                         |
+| ▘                                              |              | ▘* *     *                                     |
+|▘*                                              | 0.6096       |▘*                                              | 0.7126
++------------------------------------------------+              +------------------------------------------------+
+1                                             40                1                                             40
+[INFO][TRAINER] Final Performance Analytics:
+                Actual vs Predicted                                            Residuals Distribution
+┌──────────────────────────────────────────────────┐            ┌──────────────────────────────────────────────────┐
+│                                               ▄▄▀│            │                            ▐▖                    │
+│                                           ▝▄▞▀ ▗▝│            │                            ▌▝▖                   │
+│                                  ▝    ▄▗▄▀▀ ▝   ▘│ 10         │                           ▐ │▝▄                  │ 100
+│               ▝  ▘   ▝   ▘  ▄ ▗▖▄▗▖▖▄▞▀▘ ▗  ▌▝▖  │            │                          ▗▘ │ ▝▚                 │
+│                  ▖ ▌     ▌▐▗▟▐▗▖▗▄▀▀▌▞▘▘▘    ▌   │            │                          ▞  │   ▀▖               │
+│           ▖          ▗▜▀▄▄▙▜▐▄▄▀▘▚▜▖▘ ▌▘ ▝       │            │                         ▗▘  │    ▚               │
+│      ▖      ▗  ▖▄ ▟▘ █▟▚█▗▄▞▀▙█▛▚▐ ▄▄▄▌   ▗      │            │                        ▗▘   │    ▝▖              │
+│         ▝▗▖▘▘▞▌▖▞▄█▙█▟▗▄▀▘▛▜▜▗█ ▝▟▝  ▝           │            │                        ▞    │     ▚              │
+│   ▖   ▗▗▚▐ ▗▗▚▛▀▜█▞▄▞▀▘▀▟▙▞▘▜▀▝ ▐▖  ▘  ▀         │            │                       ▞     │     ▝▖             │
+│   ▘   ▖▄ ▖█▟▝█ ▗▄▀▀▄▀ ▘▜▀▀▘▝ ▘▗ ▘       ▘        │            │                      ▞      │      ▌             │
+│   ▗▌  ▘▝▛▙▙▘▄▄▀▘█▐▙▗▝ ▝▐  ▌▀  ▘                  │ 5          │                    ▗▛       │      ▝▖            │
+│  ▝ ▗▄▝▜▟▗▄▞▀▞▞▝ ▘ ▘▜▖ ▖▘  ▗                  ▘   │            │                   ▄▘        │       ▝▖           │
+│   ▚ ▖▄▄▀▘▜   ▗ ▘    ▗         ▘                  │            │                 ▗▞          │        ▝▖          │
+│   ▄▞▀         ▘                                  │            │              ▗▄▀▘           │         ▝▀▄▄       │
+│▄▀▀▖                                              │            │▄▄▄▄▄▄▄▄▙▄▄▄▀▀▘▁▁▁▁▁▁▁▁▁▁▁▁▁▁│▁▁▁▁▁▁▁▁▁▁▁▁▁▀▀▀▀▀▀▄│ 0
+└──────────────────────────────────────────────────┘            └──────────────────────────────────────────────────┘
+     2           5           8           10                            -5         -2          0          2
+[DEBUG][TRAINER] [EPOCH 40/100] ASCII dashboard rendered in 0.0s
+[INFO][TRAINER] ------------------------------------------------------------------------------------------------------------------------
+[INFO][TRAINER] [EPOCH 41/100] progress=0.404 classic_lr=[6.25e-06] quantum_lr=None 
+[DEBUG][MEMORY] epoch_41_start | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.7GB | cuda_max_alloc=3.8GB | cuda_max_reserved=6.7GB
+[INFO][TRAINER] [EPOCH 41/100] Preparing training epoch.
+[DEBUG][MEMORY] train_epoch_start | batch=0/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.7GB | cuda_max_alloc=2.5GB | cuda_max_reserved=6.7GB
+[DEBUG][MEMORY] train_epoch_end | batch=1601/1601 | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.7GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.7GB
+[DEBUG][MEMORY] epoch_41_after_train | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.7GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.7GB
+[DEBUG][TRAINER] [EPOCH 41/100] Training pass completed in 1m 44.7s
+[INFO][TRAINER] [EPOCH 41/100] Validation.
+[DEBUG][MEMORY] epoch_41_after_val | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.7GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.7GB
+[DEBUG][TRAINER] [EPOCH 41/100] Preparing train-set evaluation metrics.
+[INFO][TRAINER] [EPOCH 41/100] Train Loss: 0.0069, Val Loss: 0.2235
+[DEBUG][TRAINER] [EPOCH 41/100] Train_time=1m 44.7s | Val_time=10.0s | Train_eval_time=54.6s | epoch_time=1m 54.7s
+[DEBUG][TRAINER] [EPOCH 41/100] Preparing denormalized validation metrics.
+[DEBUG][TRAINER] [EPOCH 41/100] Denormalized validation metrics prepared in 0.0s
+[INFO][TRAINER] [EPOCH 41/100] Train(eval): RMSE 0.2267 | R 0.9938 | CI 0.9836
+[INFO][TRAINER] [EPOCH 41/100] Valid: RMSE 1.3924 | R 0.7485 | CI 0.7756
+[DEBUG][TRAINER] [EPOCH 41/100] Checking monitored metrics for improvements.
+[DEBUG][TRAINER] [EPOCH 41/100] Metric improvement check completed in 0.0s
+[DEBUG][TRAINER] [EPOCH 41/100] Updating early stopping state.
+[INFO][TRAINER] EarlyStopping counter: 10/10
+[INFO][TRAINER] [EPOCH 41/100] Early stopping triggered
+[DEBUG][TRAINER] [EPOCH 41/100] Saving history.json.
+[DEBUG][TRAINER] [EPOCH 41/100] history.json saved in 0.0s
+[INFO][TRAINER] Training completed. Best val_pearson: 0.7548 at epoch 31
+[DEBUG][EXPERIMENT] Training loop completed in 1h 55m 29.3s
+[INFO][EXPERIMENT] ================================================ *** STAGE: TESTING *** ================================================
+[INFO][EXPERIMENT] ========================================================================================================================
+[DEBUG][TEST] Preparing final performance report plot.
+[INFO][EVALUATOR] Performance report saved to runs/DUMPLING_A2_sanity_run_of_A1_from_new_codebase_20260509_010422/model_performance_report.png
+[INFO][EVALUATOR] Scatter diagnostics saved to runs/DUMPLING_A2_sanity_run_of_A1_from_new_codebase_20260509_010422/best_validation_scatter_diagnostics.json
+[DEBUG][TEST] Final performance report plot completed in 2.0s
+[DEBUG][MEMORY] test_start | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.7GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.7GB
+[DEBUG][TEST] Loading best checkpoint for final test.
+[DEBUG][TEST] Weights for the best model (epoch 31) loaded from runs/DUMPLING_A2_sanity_run_of_A1_from_new_codebase_20260509_010422/best_model.pt in 0.0s
+[DEBUG][TEST] Preparing final test metric evaluation.
+[DEBUG][MEMORY] test_after_eval | rss=5.0GB | rss_peak=7.2GB | sys_avail=6.3GB | sys_total=12.7GB | cuda_alloc=2.5GB | cuda_reserved=6.7GB | cuda_max_alloc=3.9GB | cuda_max_reserved=6.7GB
+[INFO][TEST] FINAL TEST -> RMSE: 1.4061 | Pearson R: 0.7666 | CI: 0.7834 | eval_time=5.1s
+[DEBUG][TEST] Saving final test results.
+[DEBUG][TEST] Final test results saved in 0.0s
+[DEBUG][TEST] Final test evaluation completed in 7.1s
+[INFO][SUMMARY] Generating ASCII performance summary.
+[INFO][SUMMARY] Loss Curve:
+Learning Curve (Loss)
+▘=Train Loss  *=Val Loss
++------------------------------------------------------------------------------+
+|▘                                                                             | 0.3623
+|*                                                                             |
+|  *                                                                           |
+|          *                                                                   |
+|  ▘     *                                                                     |
+|    ▘ *     ** *                                                              |
+|      ▘              *   *                                                    | 0.2654
+|        ▘        * *   *       * *                                            |
+|          ▘ ▘              * *     * ** * *   *   *                           |
+|             ▘ ▘                            *   *   * * * * * * ** * * * * * *|
+|                 ▘                                                            |
+|                   ▘ ▘                                                        | 0.1846
+|                       ▘ ▘                                                    |
+|                           ▘                                                  |
+|                             ▘ ▘                                              |
+|                                 ▘ ▘                                          |
+|                                                                              | 0.1038
+|                                     ▘                                        |
+|                                      ▘ ▘                                     |
+|                                          ▘ ▘ ▘                               |
+|                                                ▘ ▘ ▘                         |
+|                                                      ▘ ▘ ▘ ▘ ▘               |
+|                                                                ▘▘ ▘ ▘ ▘ ▘ ▘ ▘| 0.0069
++------------------------------------------------------------------------------+
+1                                                                           41
+[INFO][SUMMARY] RMSE Curve:
+Validation RMSE
+▘=Train RMSE  *=Val RMSE
++------------------------------------------------------------------------------+
+|* *                                                                           | 1.7425
+|▘         *                                                                   |
+|  ▘ *   *    *                                                                |
+|      *   ▘ *  *     *                                                        |
+|    ▘ ▘ ▘        * *   * *     * * *                                          |
+|             ▘             * *       ** * * * * * * * * * * * * ** * * * * * *|
+|            ▘  ▘                                                              | 1.3291
+|                     ▘                                                        |
+|                 ▘ ▘                                                          |
+|                       ▘ ▘                                                    |
+|                                                                              |
+|                           ▘ ▘ ▘                                              | 0.9846
+|                                 ▘ ▘                                          |
+|                                                                              |
+|                                     ▘  ▘                                     |
+|                                      ▘                                       |
+|                                          ▘ ▘ ▘                               | 0.6401
+|                                                ▘ ▘ ▘                         |
+|                                                                              |
+|                                                      ▘ ▘                     |
+|                                                          ▘ ▘ ▘               |
+|                                                                ▘▘ ▘          |
+|                                                                     ▘ ▘ ▘ ▘ ▘| 0.2267
++------------------------------------------------------------------------------+
+1                                                                           41
+[INFO][SUMMARY] Pearson (R) Curve:
+Correlation (Pearson R)
+▘=Train Pearson  *=Val Pearson
++------------------------------------------------------------------------------+
+|                                                              ▘ ▘▘ ▘ ▘ ▘ ▘ ▘ ▘| 0.9938
+|                                                      ▘ ▘ ▘ ▘                 |
+|                                            ▘ ▘ ▘ ▘ ▘                         |
+|                                      ▘ ▘ ▘                                   |
+|                                     ▘                                        |
+|                                                                              |
+|                             ▘ ▘ ▘                                            | 0.8891
+|                           ▘       ▘                                          |
+|                       ▘ ▘                                                    |
+|                                                                              |
+|                                                                              |
+|                 ▘ ▘ ▘                                                        | 0.8017
+|                                                                              |
+|            ▘▘                                                                |
+|          ▘    ▘           * *       *  *   * * * * * * * * * * ** * * * * * *|
+|                       * *     * * *  *   *                                   |
+|        ▘   *    * * *                                                        | 0.7144
+|      ▘   *  *                                                                |
+|    ▘ * *                                                                     |
+|    *          *                                                              |
+|                                                                              |
+|  ▘                                                                           |
+|▘ *                                                                           | 0.6096
++------------------------------------------------------------------------------+
+1                                                                           41
+[INFO][SUMMARY] Concordancy Index Curve:
+Ranking Accuracy (CI)
+▘=Train CI  *=Val CI
++------------------------------------------------------------------------------+
+|                                                                       ▘ ▘ ▘ ▘| 0.9836
+|                                                                ▘▘ ▘ ▘        |
+|                                                          ▘ ▘ ▘               |
+|                                                      ▘ ▘                     |
+|                                                    ▘                         |
+|                                            ▘ ▘ ▘ ▘                           |
+|                                        ▘ ▘                                   | 0.9097
+|                                     ▘▘                                       |
+|                                                                              |
+|                                 ▘                                            |
+|                             ▘ ▘   ▘                                          |
+|                           ▘                                                  | 0.8481
+|                       ▘ ▘                                                    |
+|                                                                              |
+|                 ▘ ▘ ▘                                                        |
+|                                                                              |
+|            ▘▘ ▘                                                              | 0.7865
+|        ▘ ▘            * * * *       ** * * * * * * * * * * * * ** * * * * * *|
+|      ▘     *    * * *         * * *                                          |
+|    ▘   * *  *                                                                |
+|    * *        *                                                              |
+|▘ ▘                                                                           |
+|* *                                                                           | 0.7126
++------------------------------------------------------------------------------+
+1                                                                           41
+[INFO][SUMMARY] Actual vs Predicted Scatter Plot:
+                              Predicted = f(Actual)
+┌────────────────────────────────────────────────────────────────────────────────┐
+│                                                                             ▗▄▀│
+│                                                                     ▗    ▄▞▀▘  │
+│                                                                       ▄▞▀     ▝│
+│                                                       ▗           ▗▄▀▀  ▖   ▝▝ │
+│                         ▖                                     ▄▗▄▀▘  ▖         │ 10
+│                            ▝       ▝    ▗        ▗  ▖▖▖     ▄▞▀▘▝      ▞  ▖    │
+│                                          ▖ ▖ ▝▗▘  ▝  ▖▘▀▐▄▞▀▀▗ ▖   ▘    ▗  ▖   │
+│                            ▗   ▌         ▘ ▗    ▘ ▄ ▝▗▄▀▀ ▐▗▝  ▘▝              │
+│                                     ▄▗▗  ▘ ▘▖▀▐▝▘ ▗▄▀▘▖▖       ▖   ▗     ▘     │
+│                  ▌                 ▘ ▖ ▗▞▘▝▚▝ ▐▄▞▀▘▀▖▖▝▐▝▘▝  ▗▘                │ 8
+│                               ▘▘  ▞▘ ▌▘█ ▝▖ ▄▞▀▙▝▖▞▖▄ ▘      ▗▖                │
+│         ▝            ▘▗  ▖▝▞ ▝▄▗ ▗▘▌▀▖▗▞▗▄▀▀▚▗ ▝ ▌▞   ▘▗ ▚▘▀ ▘       ▘         │
+│               ▝   ▝ ▘  ▗ ▖  ▗▌ ▙▞▌ ▐▝▗▄▀▘▜▘ ▀▘▜ ▟▄  ▝ ▌      ▘                 │
+│              ▗  ▌▘   ▝▖▗ ▖▌▗▙ ▝▖▗▐▄▄▀▘▛ ▄▘▝▚ ▘ ▖▖▝             ▞               │
+│     ▖      ▖▝ ▗▗   ▘▗ ▞▌ ▝▘▙▄▘ ▄▞▀▀ ▘  ▖▀▜▗  ▝▗      ▙    ▝                    │ 6
+│    ▗      ▖      ▖▖▞ ▀▗ ▗ ▘▗▄▞▀▖▐▖  ▘▗▜▝▚ ▚ ▗  ▘    ▘           ▗              │
+│           ▘▗▗▘ ▘▗▗▐▀ ▟▝ ▗▄▀▘   ▙      ▞   ▗ ▗     ▘                            │
+│      ▐    ▘  ▗▘▌▄▌   ▄▄▀▘▘█▌▝▗▗  ▝  ▝ ▗   ▗ ▘    ▘                             │
+│     ▝    ▗▗  ▞▖▝ ▝▄▞▀ ▐   ▗ ▝▝ ▞▌    ▖▖   ▘                             ▗      │
+│    ▝  ▖▖▖ ▝▖▀▖▗▄▞▀▚▞ ▗  ▘    ▝  ▄  ▗       ▘                                   │ 4
+│     ▖ ▗▝ ▖▛▗▄▀▘▖▖       ▝                        ▖                             │
+│      ▘  ▄▄▀▘▝▝▝       ▘▖         ▝                                             │
+│     ▖▄▞▀                                                                       │
+│  ▗▄▞▀▝▘                                                                        │
+│▄▀▘ ▗                                                                           │ 2
+└────────────────────────────────────────────────────────────────────────────────┘
+    2              4               6               8             10
+[INFO][SUMMARY] Errors Distribution (Residuals):
+                              Residuals Distribution
+┌────────────────────────────────────────────────────────────────────────────────┐
+│                                              ▙                                 │
+│                                             ▞│▚                                │
+│                                            ▗▘│ ▚                               │
+│                                            ▞ │ ▝▖                              │ 100
+│                                           ▗▘ │  ▝▖                             │
+│                                           ▞  │   ▝▚                            │
+│                                          ▗▘  │     ▀▖                          │
+│                                          ▞   │      ▝▚                         │
+│                                         ▗▘   │       ▝▖                        │
+│                                        ▗▘    │        ▚                        │
+│                                        ▞     │        ▐                        │
+│                                       ▐      │         ▌                       │
+│                                      ▗▘      │         ▐                       │
+│                                      ▞       │          ▌                      │
+│                                     ▞        │          ▐                      │
+│                                   ▗▞         │          ▝▖                     │
+│                                  ▗▘          │           ▚                     │
+│                                 ▗▘           │           ▝▖                    │
+│                                ▞▘            │            ▝▖                   │
+│                               ▞              │             ▝▖                  │
+│                             ▗▀               │              ▝▖                 │
+│                           ▗▞▘                │               ▐▄                │
+│                         ▄▀▘                  │                 ▀▄▖             │
+│                    ▗▄▄▀▀                     │                   ▝▀▀▚▄▄▄▄▄▄    │
+│▄▄▄▄▄▄▄▄▄▄▄▀▀▀▀▄▄▄▀▀▘▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁│▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▀▀▀▚│ 0
+└────────────────────────────────────────────────────────────────────────────────┘
+    -6            -4            -2             0             2             4
+[INFO][SUMMARY] Generating Multi-column ASCII Dashboard.
+[INFO][SUMMARY] 
+Learning Curve (Loss)                                           Validation RMSE
+▘=Train Loss  *=Val Loss                                        ▘=Train RMSE  *=Val RMSE
++------------------------------------------------+              +------------------------------------------------+
+|▘                                               | 0.3623       |**                                              | 1.7425
+| *                                              |              |▘▘*  ** *                                       |
+| ▘   **                                         |              |  ▘ ▘▘▘* * *****   ***    *                     |
+|  ▘ ▘  ***   *                                  | 0.2734       |       ▘▘       * *   * ** *** ****** ****** ***| 1.3635
+|     ▘▘    ** **  ****  ***                     |              |         ▘ ▘▘▘                                  |
+|       ▘▘▘ ▘    *     *    *** ****** ****** ***|              |              ▘▘                                |
+|            ▘▘                                  | 0.1846       |                ▘ ▘▘ ▘                          | 0.9846
+|              ▘▘▘                               |              |                    ▘                           |
+|                  ▘▘▘▘                          |              |                      ▘ ▘▘                      |
+|                      ▘                         | 0.0958       |                          ▘▘▘▘ ▘                | 0.6056
+|                        ▘▘▘▘                    |              |                                ▘▘▘             |
+|                            ▘▘ ▘▘▘▘             |              |                                   ▘▘ ▘▘▘       |
+|                                   ▘▘ ▘▘▘▘▘▘ ▘▘▘| 0.0069       |                                         ▘▘▘ ▘▘▘| 0.2267
++------------------------------------------------+              +------------------------------------------------+
+1                                             41                1                                             41
+[INFO][SUMMARY] 
+Correlation (Pearson R)                                         Ranking Accuracy (CI)
+▘=Train Pearson  *=Val Pearson                                  ▘=Train CI  *=Val CI
++------------------------------------------------+              +------------------------------------------------+
+|                                 ▘▘▘▘ ▘▘▘▘▘▘ ▘▘▘| 0.9938       |                                        ▘▘▘▘ ▘▘▘| 0.9836
+|                          ▘▘▘▘ ▘▘               |              |                                 ▘▘▘▘ ▘▘        |
+|                      ▘ ▘▘                      |              |                                ▘               |
+|                   ▘▘                           | 0.8978       |                          ▘▘▘▘ ▘                | 0.9159
+|               ▘▘ ▘  ▘                          |              |                      ▘ ▘▘                      |
+|              ▘                                 |              |                    ▘▘                          |
+|           ▘▘▘                                  | 0.8017       |               ▘▘ ▘▘                            | 0.8481
+|       ▘▘▘                       * *            |              |              ▘                                 |
+|      ▘       *** ***** ****** ** * * ****** ***|              |           ▘▘▘                                  |
+|    ▘▘***  ***                                  | 0.7057       |     ▘▘▘▘▘    * * *   * ****** ****** ****** ***| 0.7803
+|  ▘ **   *                                      |              |  ▘ ▘****  *** *   ***                          |
+| ▘                                              |              | ▘* *    *                                      |
+|▘*                                              | 0.6096       |▘*                                              | 0.7126
++------------------------------------------------+              +------------------------------------------------+
+1                                             41                1                                             41
+[INFO][SUMMARY] Final Performance Analytics:
+                Actual vs Predicted                                            Residuals Distribution
+┌──────────────────────────────────────────────────┐            ┌──────────────────────────────────────────────────┐
+│                                               ▄▄▀│            │                            ▐▖                    │
+│                                           ▝▄▞▀ ▗▝│            │                            ▌▝▖                   │
+│                                  ▝    ▄▗▄▀▀ ▝   ▘│ 10         │                           ▐ │▝▄                  │ 100
+│               ▝  ▘   ▝   ▘  ▄ ▗▖▄▗▖▖▄▞▀▘ ▗  ▌▝▖  │            │                          ▗▘ │ ▝▚                 │
+│                  ▖ ▌     ▌▐▗▟▐▗▖▗▄▀▀▌▞▘▘▘    ▌   │            │                          ▞  │   ▀▖               │
+│           ▖          ▗▜▀▄▄▙▜▐▄▄▀▘▚▜▖▘ ▌▘ ▝       │            │                         ▗▘  │    ▚               │
+│      ▖      ▗  ▖▄ ▟▘ █▟▚█▗▄▞▀▙█▛▚▐ ▄▄▄▌   ▗      │            │                        ▗▘   │    ▝▖              │
+│         ▝▗▖▘▘▞▌▖▞▄█▙█▟▗▄▀▘▛▜▜▗█ ▝▟▝  ▝           │            │                        ▞    │     ▚              │
+│   ▖   ▗▗▚▐ ▗▗▚▛▀▜█▞▄▞▀▘▀▟▙▞▘▜▀▝ ▐▖  ▘  ▀         │            │                       ▞     │     ▝▖             │
+│   ▘   ▖▄ ▖█▟▝█ ▗▄▀▀▄▀ ▘▜▀▀▘▝ ▘▗ ▘       ▘        │            │                      ▞      │      ▌             │
+│   ▗▌  ▘▝▛▙▙▘▄▄▀▘█▐▙▗▝ ▝▐  ▌▀  ▘                  │ 5          │                    ▗▛       │      ▝▖            │
+│  ▝ ▗▄▝▜▟▗▄▞▀▞▞▝ ▘ ▘▜▖ ▖▘  ▗                  ▘   │            │                   ▄▘        │       ▝▖           │
+│   ▚ ▖▄▄▀▘▜   ▗ ▘    ▗         ▘                  │            │                 ▗▞          │        ▝▖          │
+│   ▄▞▀         ▘                                  │            │              ▗▄▀▘           │         ▝▀▄▄       │
+│▄▀▀▖                                              │            │▄▄▄▄▄▄▄▄▙▄▄▄▀▀▘▁▁▁▁▁▁▁▁▁▁▁▁▁▁│▁▁▁▁▁▁▁▁▁▁▁▁▁▀▀▀▀▀▀▄│ 0
+└──────────────────────────────────────────────────┘            └──────────────────────────────────────────────────┘
+     2           5           8           10                            -5         -2          0          2
+[INFO][EXPERIMENT] Experiment completed successfully in 1h 57m 8.9s.

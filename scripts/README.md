@@ -19,6 +19,7 @@ The repo currently has two layers:
    - syncing `runs/` back to Drive,
    - syncing `protein_context_features/` back to Drive,
    - syncing `ligand_context_features/` back to Drive,
+   - rebuilding portable experiment indices from copied run folders,
    - running smoke checks on local, Colab, or Slurm environments.
 
 Those helpers are notebook/runtime concerns rather than experiment logic, so
@@ -59,6 +60,28 @@ before launching a long experiment.
   - sample `sbatch` wrapper that runs the environment smoke test and can
     optionally launch a very short pipeline run once the archive is present
   - defaults to a very cheap smoke profile with `MODEL_FAMILY=A1`
+- `rebuild_experiment_index.py`
+  - rescans a `runs/` directory and rewrites:
+    - `experiment_registry.csv`
+    - `experiment_journal.md`
+  - useful after copying fresh run folders from Colab, another workstation,
+    or a cluster scratch directory
+  - treats the run folders themselves as the portable source of truth rather
+    than trying to merge top-level journals by hand
+
+Example:
+
+```bash
+python scripts/rebuild_experiment_index.py --runs-dir runs
+```
+
+Typical workflow:
+
+1. copy only new `runs/<experiment_signature>/...` folders from the other
+   machine,
+2. skip or overwrite the copied top-level `experiment_registry.csv` /
+   `experiment_journal.md`,
+3. rebuild those two files locally from the imported run folders.
 
 ## Why `run.py` stays in the repo root
 
