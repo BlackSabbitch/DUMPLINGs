@@ -241,6 +241,34 @@ cp assistant/.env.example assistant/.env
 bash assistant/run_llm_journal.sh --live --limit 1
 ```
 
+## Colab Fallback
+
+If the assistant is too weak on a local machine and Ollama cannot be installed
+on the cluster, a practical fallback is to run the journal layer in Colab.
+
+The intended shape is:
+
+1. copy or sync finished `runs/<experiment_signature>/...` folders back to the
+   Drive-side repo,
+2. open [colab_assistant_journal.ipynb](../colab_assistant_journal.ipynb),
+3. mount Drive,
+4. stage a lightweight analysis-only workspace into `/content`,
+5. rebuild the factual registry,
+6. install/run Ollama inside the Colab runtime,
+7. generate:
+   - `runs/experiment_journal_llm.md`
+   - `runs/experiment_series_journal_llm.md`
+
+That notebook is intentionally separate from the heavy training notebook:
+
+- no dataset extraction,
+- no PyG install,
+- no training stack staging,
+- just copied run artifacts plus the assistant layer.
+
+For factual-only plotting and comparison without any local model, use
+[series_analysis.ipynb](../series_analysis.ipynb) locally instead.
+
 Useful checks:
 
 ```bash

@@ -151,8 +151,8 @@ def build_entry(packet: dict, *, note_lines: list[str], note_source: str, mode: 
         "",
         f"- setup: subset=`{setup.get('source_subset', '')}` | splitter=`{setup.get('splitter', '')}` | "
         f"core_as_test=`{setup.get('core_as_test', '')}` | primary_metric=`{setup.get('primary_metric', '')}`",
-        f"- outcomes: success=`{summary.get('success_count', 0)}` / total=`{summary.get('total_runs', 0)}` | "
-        f"failure=`{summary.get('failure_count', 0)}` | seeds=`{', '.join(summary.get('seeds', [])) or 'n/a'}`",
+        f"- outcomes: success=`{summary.get('success_count', 0)}` / observed=`{summary.get('total_runs', 0)}` | "
+        f"seeds=`{', '.join(summary.get('seeds', [])) or 'n/a'}`",
         f"- window: started=`{summary.get('started_at', '')}` | finished=`{summary.get('finished_at', '')}`",
     ]
     if summary.get("batch_positions"):

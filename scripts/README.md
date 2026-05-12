@@ -32,6 +32,9 @@ cells instead of inventing a new workflow:
 
 - `colab_stage_workspace.py`
   - mirrors the "copy selected repo files from Drive into /content" cell
+- `colab_stage_analysis_workspace.py`
+  - stages a much smaller analysis-only workspace into `/content`
+  - intended for factual rebuilds, assistant journals, and series plotting
 - `colab_install_pyg.py`
   - mirrors the "install PyG wheels matching the active torch build" cell
 - `colab_start_sync.sh`
@@ -103,6 +106,26 @@ Typical workflow:
 2. skip or overwrite the copied top-level `experiment_registry.csv` /
    `experiment_journal.md`,
 3. rebuild those two files locally from the imported run folders.
+
+- `series_analysis.py`
+  - lightweight plotting and summary helpers for `runs/experiment_registry.csv`
+  - deliberately torch-free so it can be used in a small Colab notebook
+  - powers:
+    - [series_analysis.ipynb](../series_analysis.ipynb)
+
+## Analysis Notebooks
+
+There are now two separate post-hoc analysis notebooks:
+
+- [colab_assistant_journal.ipynb](../colab_assistant_journal.ipynb)
+  - lightweight assistant-journal control panel
+  - stages only analysis files and copied run folders into `/content`
+  - intended when you want LLM notes but do not want to run the full training
+    environment
+
+- [series_analysis.ipynb](../series_analysis.ipynb)
+  - lightweight local factual plotting control panel
+  - reads `runs/experiment_registry.csv` and draws comparison plots from it
 
 ## Recommended Cluster Smoke Flow
 

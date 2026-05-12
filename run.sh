@@ -5,6 +5,7 @@ LOG_PATH=${LOG_PATH:-last_run.log}
 N_TIMES=1
 RSEED=""
 EXTRACT_FIRST_ONLY=0
+GPU_DIAGNOSTICS=${DUMPLING_GPU_DIAGNOSTICS:-0}
 FORWARD_ARGS=()
 
 while [[ $# -gt 0 ]]; do
@@ -41,6 +42,21 @@ if ! [[ "$N_TIMES" =~ ^[1-9][0-9]*$ ]]; then
     exit 1
 fi
 
+log_gpu_snapshot() {
+    local label="$1"
+    if [[ "$GPU_DIAGNOSTICS" != "1" ]]; then
+        return 0
+    fi
+    if ! command -v nvidia-smi >/dev/null 2>&1; then
+        return 0
+    fi
+    {
+        echo "== GPU snapshot: $label =="
+        date --iso-8601=seconds 2>/dev/null || date
+        nvidia-smi
+    } | tee -a "$LOG_PATH"
+}
+
 run_once() {
     local run_index="$1"
     local seed_arg=()
@@ -65,9 +81,15 @@ run_once() {
         echo "== Run $run_index/$N_TIMES | splitter_seed=$effective_seed ==" > "$LOG_PATH"
     fi
 
+    log_gpu_snapshot "before_run_${run_index}"
+
     DUMPLING_BATCH_RUN_INDEX="$run_index" \
     DUMPLING_BATCH_N_TIMES="$N_TIMES" \
     python run.py "${run_args[@]}" "${seed_arg[@]}" 2>&1 | tee -a "$LOG_PATH"
+    local run_status=${PIPESTATUS[0]}
+
+    log_gpu_snapshot "after_run_${run_index}"
+    return "$run_status"
 }
 
 for ((i = 1; i <= N_TIMES; i++)); do

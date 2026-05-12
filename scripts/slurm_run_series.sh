@@ -54,6 +54,12 @@ fi
 
 source "$VENV_DIR/bin/activate"
 
+if command -v nvidia-smi >/dev/null 2>&1; then
+  echo "== GPU snapshot at job start =="
+  nvidia-smi
+  echo
+fi
+
 CMD=(./run.sh --config "$CONFIG_PATH" --n-times "$N_TIMES" --rseed "$BASE_RSEED")
 
 if [[ "$RUN_EXTRACT" == "1" ]]; then
@@ -70,4 +76,10 @@ echo "== Running series =="
 printf ' %q' "${CMD[@]}"
 echo
 
-"${CMD[@]}"
+DUMPLING_GPU_DIAGNOSTICS=1 "${CMD[@]}"
+
+if command -v nvidia-smi >/dev/null 2>&1; then
+  echo
+  echo "== GPU snapshot at job end =="
+  nvidia-smi
+fi

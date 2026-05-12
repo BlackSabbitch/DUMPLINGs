@@ -414,7 +414,6 @@ def build_series_records(rows_with_notes: list[tuple[dict[str, str], list[str], 
                 "finished_at": rows[-1].get("finished_at", ""),
                 "total_runs": len(rows),
                 "success_count": success_count,
-                "failure_count": len(rows) - success_count,
                 "seeds": seeds,
                 "batch_positions": batch_positions,
                 "duration_sec_stats": summarize_numeric_field(rows, "duration_sec", decimals=1),
@@ -555,8 +554,8 @@ def build_series_journal_entry(series: dict) -> list[str]:
         f"primary_metric=`{series.get('primary_metric', '')}`"
     )
     lines.append(
-        f"- outcomes: success=`{series.get('success_count', 0)}` / total=`{series.get('total_runs', 0)}` | "
-        f"failure=`{series.get('failure_count', 0)}` | seeds=`{', '.join(series.get('seeds', [])) or 'n/a'}`"
+        f"- outcomes: success=`{series.get('success_count', 0)}` / observed=`{series.get('total_runs', 0)}` | "
+        f"seeds=`{', '.join(series.get('seeds', [])) or 'n/a'}`"
     )
     if series.get("batch_positions"):
         lines.append(f"- batch positions: `{', '.join(series.get('batch_positions', []))}`")

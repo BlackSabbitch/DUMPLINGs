@@ -115,7 +115,6 @@ def build_series_packet(experiment_name: str, packets: list[dict]) -> dict:
             "finished_at": str(rows[-1].get("finished_at", "")) if rows else "",
             "total_runs": len(rows),
             "success_count": success_count,
-            "failure_count": len(rows) - success_count,
             "seeds": seeds,
             "batch_positions": batch_positions,
         },

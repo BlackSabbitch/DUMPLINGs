@@ -5,6 +5,7 @@ import os
 import csv
 import socket
 import subprocess
+import platform
 import pandas as pd
 import gc
 import argparse
@@ -15,6 +16,7 @@ import random
 import torch
 import numpy as np
 from datetime import datetime
+from importlib import metadata as importlib_metadata
 from torch_geometric.loader import DataLoader
 
 from logger import *
@@ -116,6 +118,7 @@ class ExperimentRunner:
         self.git_commit = self._resolve_git_commit()
         self.execution_env = self._detect_execution_env()
         self.hostname = socket.gethostname()
+        self.runtime_fingerprint = self._collect_runtime_fingerprint()
 
     def prepare_folders(self):
         """
@@ -340,6 +343,7 @@ class ExperimentRunner:
             ),
             "history_metrics": self._load_history(),
             "test_metrics": test_metrics,
+            "runtime_fingerprint": self.runtime_fingerprint,
             "artifacts": {
                 "exp_dir": os.path.abspath(self.exp_run_dir),
                 "config_path": self.config_path,
@@ -366,6 +370,52 @@ class ExperimentRunner:
             return None
         with open(history_path, "r", encoding="utf-8") as f:
             return json.load(f)
+
+    @staticmethod
+    def _safe_package_version(package_name: str) -> str:
+        try:
+            return importlib_metadata.version(package_name)
+        except importlib_metadata.PackageNotFoundError:
+            return ""
+        except Exception:
+            return ""
+
+    def _collect_runtime_fingerprint(self) -> dict[str, object]:
+        gpu: dict[str, object] = {
+            "available": bool(torch.cuda.is_available()),
+            "count": int(torch.cuda.device_count()) if torch.cuda.is_available() else 0,
+        }
+        if torch.cuda.is_available():
+            try:
+                props = torch.cuda.get_device_properties(0)
+                gpu.update(
+                    {
+                        "name": torch.cuda.get_device_name(0),
+                        "total_memory_gb": round(props.total_memory / (1024 ** 3), 2),
+                        "cuda_runtime": str(torch.version.cuda or ""),
+                    }
+                )
+            except Exception:
+                pass
+
+        return {
+            "python_version": platform.python_version(),
+            "platform": platform.platform(),
+            "cpu_count": os.cpu_count() or "",
+            "libraries": {
+                "torch": getattr(torch, "__version__", ""),
+                "torch_geometric": self._safe_package_version("torch-geometric"),
+                "rdkit": self._safe_package_version("rdkit"),
+                "fair_esm": self._safe_package_version("fair-esm"),
+                "pandas": self._safe_package_version("pandas"),
+                "numpy": getattr(np, "__version__", ""),
+            },
+            "hardware": {
+                "device": self.device,
+                "hostname": self.hostname,
+                "gpu": gpu,
+            },
+        }
 
     @staticmethod
     def _last_metric(history: dict | None, key: str) -> float | None:
@@ -470,6 +520,23 @@ class ExperimentRunner:
             f"- epochs_completed: `{self.epochs_completed if self.epochs_completed is not None else 'n/a'}`",
             "",
         ]
+
+        libs = self.runtime_fingerprint.get("libraries", {})
+        hardware = self.runtime_fingerprint.get("hardware", {})
+        gpu = hardware.get("gpu", {}) if isinstance(hardware, dict) else {}
+        lines.extend([
+            "## Runtime Fingerprint",
+            f"- python_version: `{self.runtime_fingerprint.get('python_version', 'n/a')}`",
+            f"- platform: `{self.runtime_fingerprint.get('platform', 'n/a')}`",
+            f"- cpu_count: `{self.runtime_fingerprint.get('cpu_count', 'n/a')}`",
+            f"- torch: `{libs.get('torch', 'n/a')}` | torch_geometric: `{libs.get('torch_geometric', 'n/a')}` | "
+            f"rdkit: `{libs.get('rdkit', 'n/a')}` | fair_esm: `{libs.get('fair_esm', 'n/a')}` | "
+            f"pandas: `{libs.get('pandas', 'n/a')}` | numpy: `{libs.get('numpy', 'n/a')}`",
+            f"- device: `{hardware.get('device', 'n/a')}` | gpu_available: `{gpu.get('available', 'n/a')}` | "
+            f"gpu_count: `{gpu.get('count', 'n/a')}` | gpu_name: `{gpu.get('name', 'n/a')}` | "
+            f"gpu_total_memory_gb: `{gpu.get('total_memory_gb', 'n/a')}` | cuda_runtime: `{gpu.get('cuda_runtime', 'n/a')}`",
+            "",
+        ])
 
         if test_metrics:
             lines.extend([

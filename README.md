@@ -958,6 +958,19 @@ For a very short cluster-, Colab-, or launcher-side smoke run, the repo also shi
 
 - [`scripts/make_smoke_config.py`](scripts/make_smoke_config.py)
 - [`scripts/make_real_series_configs.py`](scripts/make_real_series_configs.py)
+
+For Colab, there are now three distinct notebook roles:
+
+- [colab_launch_main.ipynb](colab_launch_main.ipynb)
+  - the heavy training / sync notebook
+- [colab_assistant_journal.ipynb](colab_assistant_journal.ipynb)
+  - lightweight post-hoc assistant-journal notebook for copied `runs/`
+- [series_analysis.ipynb](series_analysis.ipynb)
+  - lightweight local factual series-analysis notebook for `runs/`
+
+The assistant notebook is intentionally separate from the training notebook so
+you can analyze completed results in Colab without staging the full runtime
+stack again. The plotting notebook is local-first because this work is light.
 - [`scripts/rebuild_experiment_index.py`](scripts/rebuild_experiment_index.py)
 - [`scripts/runtime_env_smoke.py`](scripts/runtime_env_smoke.py)
 - [`scripts/slurm_pipeline_smoke.sh`](scripts/slurm_pipeline_smoke.sh)
