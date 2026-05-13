@@ -769,6 +769,7 @@ class ExperimentRunner:
                 InteractionGraphParser(
                     dist_threshold=float(global_graph_cfg.get('dist_threshold', 5.0)),
                     ca_only=bool(global_graph_cfg.get('ca_only', False)),
+                    local_chemical_features=self.config.get("model", {}).get("local_chemical_features", {}),
                 ),
             ]
 
