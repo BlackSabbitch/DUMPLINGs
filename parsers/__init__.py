@@ -20,5 +20,6 @@ class ParserFactory:
             InteractionGraphParser(
                 dist_threshold=global_graph_cfg.get("dist_threshold", 5.0),
                 ca_only=global_graph_cfg.get("ca_only", False),
+                local_chemical_features=config_dict.get("model", {}).get("local_chemical_features", {}),
             ),
         ]

@@ -49,10 +49,21 @@ class A2DimeNet(A1DimeNet):
         self.local_gnn = None
         self.local_cutoff = None
         self.local_output_norm = None
+        self.local_chemical_cfg = dict(config.get("model", {}).get("local_chemical_features", {}))
+        self.local_chemical_enabled = bool(self.local_chemical_cfg.get("enabled", False))
+        self.local_chemical_projector = None
+        self.local_chemical_gate = None
         if self.local_encoder_cfg is not None and self.local_graph_mode != "none":
             self.local_gnn = build_dimenet_backbone(self.local_encoder_cfg)
             self.local_cutoff = float(self.local_graph_cfg.get("dist_threshold", 3.5))
             self.local_output_norm = nn.LayerNorm(self.local_encoder_cfg.hidden_channels)
+            if self.local_chemical_enabled:
+                self.local_chemical_projector = nn.Sequential(
+                    nn.LazyLinear(self.local_encoder_cfg.hidden_channels),
+                    nn.SiLU(),
+                    nn.Linear(self.local_encoder_cfg.hidden_channels, self.local_encoder_cfg.hidden_channels),
+                )
+                self.local_chemical_gate = nn.Parameter(torch.zeros(1))
         self.local_nonfinite_warned_ids: set[str] = set()
         self.local_guard_activation_count = 0
         self.local_guard_activation_ids: set[str] = set()
@@ -176,6 +187,21 @@ class A2DimeNet(A1DimeNet):
         """Return a neutral local embedding for failed or degenerate subgraphs."""
         return torch.zeros(self.local_encoder_cfg.hidden_channels, device=device, dtype=torch.float32)
 
+    def _summarize_local_chemical_features(
+        self,
+        graph_local_chemical_x: torch.Tensor | None,
+        selected_mask: torch.Tensor,
+    ) -> torch.Tensor | None:
+        if not self.local_chemical_enabled or self.local_chemical_projector is None:
+            return None
+        if graph_local_chemical_x is None or graph_local_chemical_x.numel() == 0:
+            return None
+        selected_features = graph_local_chemical_x[selected_mask]
+        if selected_features.numel() == 0:
+            return None
+        summary = selected_features.float().mean(dim=0, keepdim=True)
+        return self.local_chemical_projector(summary).view(-1)
+
     def get_local_guard_summary(self) -> dict[str, object]:
         """Expose how often the temporary local non-finite fallback was used."""
         return {
@@ -220,6 +246,7 @@ class A2DimeNet(A1DimeNet):
         batch = complex_data.batch
         x = complex_data.x
         pos = complex_data.pos.float()
+        local_chemical_x = getattr(complex_data, "local_chemical_x", None)
         outputs: list[torch.Tensor] = []
 
         unique_batches = torch.unique(batch, sorted=True)
@@ -227,6 +254,9 @@ class A2DimeNet(A1DimeNet):
             graph_mask = batch == batch_id
             graph_x = x[graph_mask]
             graph_pos = pos[graph_mask]
+            graph_local_chemical_x = None
+            if local_chemical_x is not None:
+                graph_local_chemical_x = local_chemical_x[graph_mask]
             selected = self._select_local_mask_for_graph(graph_x, graph_pos, self.local_cutoff)
             local_pos = self._stabilize_local_coordinates(graph_pos[selected])
             local_z = graph_x[selected, 0].long()
@@ -238,6 +268,9 @@ class A2DimeNet(A1DimeNet):
             # The local encoder sees one per-complex local graph at a time.
             local_batch = torch.zeros(local_pos.size(0), dtype=batch.dtype, device=batch.device)
             local_repr = self.local_gnn(local_z, local_pos, local_batch).view(-1)
+            local_chem_repr = self._summarize_local_chemical_features(graph_local_chemical_x, selected)
+            if local_chem_repr is not None:
+                local_repr = local_repr + self.local_chemical_gate * local_chem_repr
 
             if not torch.isfinite(local_repr).all():
                 pdb_id = self._graph_pdb_id(complex_data, batch_id)

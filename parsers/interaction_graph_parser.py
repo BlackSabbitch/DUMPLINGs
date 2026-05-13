@@ -7,6 +7,11 @@ from rdkit import Chem
 from Bio.PDB import PDBParser
 from scipy.spatial.distance import cdist
 from ._base_parser import BaseParser
+from .local_chemical_features import (
+    feature_names_from_config,
+    build_local_chemical_node_features,
+    normalize_local_chemical_features_config,
+)
 from logger import log_info, log_warn
 
 
@@ -17,12 +22,27 @@ class InteractionGraphParser(BaseParser):
     Produces a graph dictionary with node features, 3D positions, and edge indices.
     """
 
-    def __init__(self, dist_threshold: float = 5.0, ca_only: bool = False) -> None:
+    def __init__(
+        self,
+        dist_threshold: float = 5.0,
+        ca_only: bool = False,
+        local_chemical_features: Optional[Dict[str, Any]] = None,
+    ) -> None:
         self.parser_version = 2
         self.dist_threshold = dist_threshold
         self.ca_only = ca_only
+        self.local_chemical_features_cfg = normalize_local_chemical_features_config(local_chemical_features)
+        self.local_chemical_features_enabled = self.local_chemical_features_cfg.enabled
+        self.local_chemical_feature_flags = dict(self.local_chemical_features_cfg.features)
+        self.local_chemical_feature_names = feature_names_from_config(self.local_chemical_features_cfg)
         self.pdb_parser = PDBParser(QUIET=True)
-        log_info(f"Initialized dist_threshold={dist_threshold}, ca_only={ca_only}", stage="InteractionGraphParser")
+        log_info(
+            "Initialized "
+            f"dist_threshold={dist_threshold}, ca_only={ca_only}, "
+            f"local_chemical_features_enabled={self.local_chemical_features_enabled}, "
+            f"local_chemical_feature_count={len(self.local_chemical_feature_names)}",
+            stage="InteractionGraphParser",
+        )
 
     @staticmethod
     def _stabilize_duplicate_coordinates(coords: np.ndarray, eps: float = 1e-3) -> np.ndarray:
@@ -92,6 +112,7 @@ class InteractionGraphParser(BaseParser):
 
         pock_coords: List[List[float]] = []
         pock_x: List[List[int]] = []
+        pock_atom_records: List[Dict[str, Any]] = []
 
         if is_file:
             struct = self.pdb_parser.get_structure("pock", pock_data)
@@ -108,6 +129,16 @@ class InteractionGraphParser(BaseParser):
                             continue
                         coord = atom.get_coord()
                         pock_coords.append([float(coord[0]), float(coord[1]), float(coord[2])])
+                        residue_name = getattr(residue, "get_resname", lambda: "UNK")()
+                        atom_name = atom.get_name().strip()
+                        element = str(atom.element).upper()
+                        pock_atom_records.append(
+                            {
+                                "residue_name": str(residue_name).upper(),
+                                "atom_name": atom_name.upper(),
+                                "element": element,
+                            }
+                        )
                         atomic_num = 6 if atom.element == 'C' else 7 if atom.element == 'N' else 8 if atom.element == 'O' else 16 if atom.element == 'S' else 0
                         pock_x.append([atomic_num, 0, 0, 0])
             break
@@ -118,6 +149,16 @@ class InteractionGraphParser(BaseParser):
         all_x = np.array(lig_x + pock_x)
         all_coords = np.concatenate([lig_coords, np.array(pock_coords)], axis=0)
         all_coords = self._stabilize_duplicate_coordinates(all_coords)
+        local_chemical_x = None
+        if self.local_chemical_features_enabled:
+            local_chemical_x = build_local_chemical_node_features(
+                lig_mol,
+                lig_coords,
+                pock_atom_records,
+                np.asarray(pock_coords, dtype=np.float32),
+                dist_threshold=self.dist_threshold,
+                cfg=self.local_chemical_features_cfg,
+            )
 
         edges: List[List[int]] = []
         for bond in lig_mol.GetBonds():
@@ -130,11 +171,15 @@ class InteractionGraphParser(BaseParser):
             p_idx_shifted = j + len(lig_x)
             edges.extend([[i, p_idx_shifted], [p_idx_shifted, i]])
 
-        return {
+        graph_dict = {
             'x': all_x.tolist(),
             'pos': all_coords.tolist(),
             'edge_index': edges,
-        }, None
+        }
+        if local_chemical_x is not None:
+            graph_dict["local_chemical_x"] = local_chemical_x.tolist()
+            graph_dict["local_chemical_feature_names"] = tuple(self.local_chemical_feature_names)
+        return graph_dict, None
 
     def _process_ligand(self, mol: Any):
         pass

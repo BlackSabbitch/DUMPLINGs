@@ -40,6 +40,14 @@
     "launch_extra_args": ""
   },
   {
+    "filename": "a2ext_full.json",
+    "experiment_name": "DUMPLING_A2ext_full",
+    "model_family": "A2",
+    "protein_context_mode": "esm_frozen_whole",
+    "ligand_context_mode": "basic_rdkit",
+    "launch_extra_args": ""
+  },
+  {
     "filename": "a3_with_bias.json",
     "experiment_name": "DUMPLING_A3_with_bias",
     "model_family": "A3",
@@ -50,6 +58,22 @@
   {
     "filename": "a3_without_bias.json",
     "experiment_name": "DUMPLING_A3_without_bias",
+    "model_family": "A3",
+    "protein_context_mode": "esm_frozen_whole",
+    "ligand_context_mode": "basic_rdkit",
+    "launch_extra_args": "--no-a3-mixer-bias"
+  },
+  {
+    "filename": "a3ext_with_bias.json",
+    "experiment_name": "DUMPLING_A3ext_with_bias",
+    "model_family": "A3",
+    "protein_context_mode": "esm_frozen_whole",
+    "ligand_context_mode": "basic_rdkit",
+    "launch_extra_args": "--a3-mixer-bias"
+  },
+  {
+    "filename": "a3ext_without_bias.json",
+    "experiment_name": "DUMPLING_A3ext_without_bias",
     "model_family": "A3",
     "protein_context_mode": "esm_frozen_whole",
     "ligand_context_mode": "basic_rdkit",

@@ -1148,6 +1148,7 @@ class ExperimentRunner:
         local_encoder_cfg = get_local_encoder_config(self.config)
         local_graph_mode = get_local_graph_mode(self.config)
         local_graph_cfg = get_local_graph_config(self.config)
+        local_chemical_cfg = self.config.get("model", {}).get("local_chemical_features", {})
         hidden_dim = global_encoder_cfg.hidden_channels
         protein_context_mode = get_protein_context_mode(self.config)
         ligand_context_mode = get_ligand_context_mode(self.config)
@@ -1211,6 +1212,24 @@ class ExperimentRunner:
                     f"num_blocks={local_encoder_cfg.num_blocks}",
                     stage="MODEL"
                 )
+                if bool(local_chemical_cfg.get("enabled", False)):
+                    raw_features = local_chemical_cfg.get("features", {})
+                    if isinstance(raw_features, dict):
+                        enabled_feature_names = sorted(
+                            key for key, enabled in raw_features.items() if bool(enabled)
+                        )
+                    else:
+                        enabled_feature_names = []
+                    log_info(
+                        "Local chemical enrichment -> enabled=True, "
+                        f"features={enabled_feature_names if enabled_feature_names else '<none>'}",
+                        stage="MODEL"
+                    )
+                else:
+                    log_info(
+                        "Local chemical enrichment -> enabled=False",
+                        stage="MODEL"
+                    )
         if model_family == "A3":
             log_info(
                 f"A3 readout settings -> mixer_bias={get_a3_mixer_bias(self.config, self.a3_mixer_bias)}",
