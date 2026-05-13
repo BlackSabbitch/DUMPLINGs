@@ -7,6 +7,10 @@ from torch import nn
 
 from models.a1 import A1DimeNet
 from logger import log_info, log_warn
+from parsers.local_chemical_features import (
+    feature_names_from_config,
+    normalize_local_chemical_features_config,
+)
 from models.graph_components import (
     build_dimenet_backbone,
     get_global_encoder_config,
@@ -49,17 +53,20 @@ class A2DimeNet(A1DimeNet):
         self.local_gnn = None
         self.local_cutoff = None
         self.local_output_norm = None
-        self.local_chemical_cfg = dict(config.get("model", {}).get("local_chemical_features", {}))
-        self.local_chemical_enabled = bool(self.local_chemical_cfg.get("enabled", False))
+        self.local_chemical_cfg = normalize_local_chemical_features_config(
+            config.get("model", {}).get("local_chemical_features", {})
+        )
+        self.local_chemical_enabled = bool(self.local_chemical_cfg.enabled)
+        self.local_chemical_feature_dim = len(feature_names_from_config(self.local_chemical_cfg))
         self.local_chemical_projector = None
         self.local_chemical_gate = None
         if self.local_encoder_cfg is not None and self.local_graph_mode != "none":
             self.local_gnn = build_dimenet_backbone(self.local_encoder_cfg)
             self.local_cutoff = float(self.local_graph_cfg.get("dist_threshold", 3.5))
             self.local_output_norm = nn.LayerNorm(self.local_encoder_cfg.hidden_channels)
-            if self.local_chemical_enabled:
+            if self.local_chemical_enabled and self.local_chemical_feature_dim > 0:
                 self.local_chemical_projector = nn.Sequential(
-                    nn.LazyLinear(self.local_encoder_cfg.hidden_channels),
+                    nn.Linear(self.local_chemical_feature_dim, self.local_encoder_cfg.hidden_channels),
                     nn.SiLU(),
                     nn.Linear(self.local_encoder_cfg.hidden_channels, self.local_encoder_cfg.hidden_channels),
                 )
