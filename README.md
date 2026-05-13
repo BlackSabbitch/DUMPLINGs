@@ -644,34 +644,81 @@ That makes A3 look less "fundamentally broken" and more **trajectory-sensitive
 or seed-sensitive**, while also emphasizing that experiment orchestration must
 fail loudly when code sync goes wrong.
 
+The dedicated `A3 + bias` series eventually clarified the picture further. The
+important outcome was not a dramatic headline gain over the strongest `A1`
+family baselines, but a much cleaner readout-level diagnosis.
+
+Across the completed `A3 + bias` runs:
+
+- the global branch remained the dominant source of predictive signal,
+- the local branch contribution was highly variable across seeds,
+- the mixer coefficients (`alpha`, `beta`, `gamma`) did not converge to one
+  stable regime,
+- and the most revealing trend was that **larger local relative contribution
+  correlated with worse held-out performance**.
+
+In the run-level diagnostics for the completed `A3 + bias` series:
+
+- mean `global_contribution.mean_abs ~= 0.840`
+- mean `local_contribution.mean_abs ~= 0.353`
+- median `local_to_global_abs_contribution_ratio ~= 0.248`
+- mean `local_to_global_abs_contribution_ratio ~= 0.443`
+
+More importantly, the cross-run correlations were strongly directional:
+
+- `local_contribution.mean_abs` vs `test_pearson` `~ -0.875`
+- `local_contribution.mean_abs` vs `test_rmse` `~ +0.893`
+- `local/global abs contribution ratio` vs `test_pearson` `~ -0.752`
+- `local/global abs contribution ratio` vs `test_rmse` `~ +0.795`
+
+So the best `A3 + bias` runs were not the ones where the local branch took
+over. They were the ones where the local branch stayed present but relatively
+small, behaving more like a modest correction than like a co-equal expert.
+
+This is a strong update to the earlier interpretation. The question is no
+longer simply:
+
+> does a bias term rescue A3?
+
+The fuller answer now looks closer to:
+
+> a bias term can keep the scalar decomposition trainable, but the current
+> local branch still does not look trustworthy enough to dominate the final
+> prediction.
+
 ### Immediate Next Questions
 
-The current working questions after the first A3 run are:
+The next questions are therefore slightly different from the original ones:
 
-1. would an explicit mixer bias (`gamma`) free the local branch from having to
-   impersonate a constant offset?
-2. if an `A3 + bias` variant keeps the local term alive, does the local branch
-   then become more interpretable?
-3. only after that, does it make sense to move toward pair-scoring
-   local-correction experiments (`A3a`)?
-4. how sensitive is bias-free `A3` to initialization and training trajectory,
-   given that one run collapsed the local branch while another kept it alive?
+1. can the **local branch itself** be improved, rather than only the scalar
+   mixer around it?
+2. would a different local encoder (for example a SchNet-style alternative)
+   produce a local signal that is more useful and less destabilizing than the
+   current local DimeNet++ path?
+3. would richer local chemistry features help the local branch carry more
+   informative sample-specific structure instead of acting as a noisy
+   correction?
+4. only after that, does it make sense to move toward pair-scoring or more
+   explicit local-interaction experiments (`A3a`)?
 
-This ordering matters.
+This ordering still matters.
 
-If the local branch is already collapsed at the scalar-readout level, then
-moving immediately to pair scoring risks building additional machinery on top of
-a branch that is not currently carrying the intended signal.
+If the local branch in its current form tends to hurt performance when its
+relative contribution grows, then piling more expressive local readout
+machinery on top of the same branch risks optimizing the wrong object.
 
 So the present interpretation of the roadmap is:
 
 - `A2` showed that locality may matter,
-- first `A3` showed that a too-restrictive linear scalar decomposition can
-  suppress that locality,
-- second no-bias `A3` showed that this suppression is not deterministic,
-- the next experiments should test whether the local branch can be revived in a
-  more faithful coarse-plus-correction formulation before attention- or
-  pair-based refinement is added.
+- first `A3` showed that a too-restrictive scalar decomposition can suppress
+  that locality,
+- later `A3` reruns showed that the scalar decomposition is trajectory- and
+  seed-sensitive rather than uniformly collapsed,
+- the completed `A3 + bias` series showed that the current local branch is best
+  used as a small correction, and tends to degrade quality when it becomes too
+  influential,
+- therefore the next meaningful experiments should target the **content and
+  encoder of the local signal**, not just the final scalar mixing rule.
 
 ## Experimental Appendix
 
@@ -1323,6 +1370,73 @@ Current status of that roadmap:
   - factual grouping into `experiment_series_journal.md`,
   - assistant grouping into `experiment_series_journal_llm.md`.
 
+### Assistant Experiment Result: Local LLM Journal Feasibility
+
+The assistant-journal branch was taken seriously enough to treat it as an
+experiment rather than a vague future wish. That experiment should now be
+considered **operationally successful but scientifically negative**.
+
+What was tested:
+
+- factual run and series packets generated from the completed `runs/` tree,
+- dry-run prompt previews,
+- live Ollama-backed journal generation on lightweight local hardware where
+  possible,
+- a stronger Colab-hosted path for post-hoc assistant runs,
+- model sizes up through:
+  - `qwen2.5:7b`,
+  - `qwen2.5:14b`,
+  - `qwen2.5:32b`.
+
+What worked:
+
+- the staged assistant pipeline itself works end to end;
+- Colab is a viable temporary host for larger Ollama models;
+- live generation of
+  - `runs/experiment_journal_llm.md`,
+  - `runs/experiment_series_journal_llm.md`
+  is operationally reproducible;
+- caching and prompt-preview inspection are useful and worth keeping as
+  infrastructure.
+
+What failed:
+
+- scaling the local model size did **not** make the journal trustworthy;
+- the same failure modes persisted across 7B, 14B, and 32B models:
+  - copying metrics from the wrong run,
+  - mixing facts across different experiment series,
+  - drifting from factual headers into invented or reinterpreted numbers,
+  - adding unsupported narrative details such as wrong durations, wrong seeds,
+    or even nonsensical units,
+  - turning structured factual packets into polished summaries rather than
+    actual analysis.
+
+In other words, the assistant notes became smoother with larger models, but not
+more reliable. The dominant problem was not simply "use a bigger local LLM".
+The core issue is that a generic local model, given one experiment packet at a
+time, tends to produce:
+
+- paraphrase,
+- shallow summary,
+- or confident hallucination,
+
+rather than the kind of grounded comparative reasoning that this research
+workflow actually needs.
+
+Current interpretation:
+
+- the factual journals are already useful because they do not invent facts;
+- the current local-LLM journal hypothesis is **not** a good path to reliable
+  scientific analysis in this project;
+- further progress would likely require a different problem formulation
+  entirely, such as:
+  - deterministic analytic feature extraction first,
+  - then tightly scoped reasoning over those derived signals,
+  - or a separate learned assistant trained on manually curated labels.
+
+For now, this branch is kept as infrastructure and as a documented negative
+result, not as an active bet for the main research loop.
+
 ### MVP-1
 
 The first assistant step is implemented as:
@@ -1421,9 +1535,13 @@ The project includes:
 - Add a lightweight smoke-test config for one batch and one forward/backward pass.
 - Refine the factual rebuild workflow and keep the top-level experiment indices
   documented as rebuildable views over run folders.
-- Keep the manual assistant journal flow alive, but treat better hardware or a
-  stronger local model as the next meaningful quality unlock rather than
-  overfitting prompt tweaks to a tiny laptop model.
+- Keep the manual assistant journal flow as optional infrastructure, but treat
+  the first local-LLM-journal experiment as a documented negative result:
+  stronger local Ollama models up to `qwen2.5:32b` improved fluency but did
+  not produce reliable run- or series-level scientific analysis. The useful
+  pieces to preserve are the factual packets, prompt previews, caching, and
+  Colab execution path, not the expectation that a larger generic local model
+  will automatically become a trustworthy experiment analyst.
 - Expand ligand context with optional ablations such as `SASA` and electronic
   descriptors once the compact baseline is stable.
 - Add additional geometric baselines that consume richer parser output.

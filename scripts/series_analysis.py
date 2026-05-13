@@ -209,6 +209,356 @@ def load_series_histories(
     return pd.DataFrame(rows)
 
 
+def load_series_readout_diagnostics(
+    df: pd.DataFrame,
+    experiment_name: str,
+    *,
+    runs_dir: str | Path = "runs",
+    only_success: bool = True,
+) -> pd.DataFrame:
+    runs_dir = Path(runs_dir)
+    series_df = df[df["experiment_name"] == experiment_name].copy()
+    if only_success:
+        series_df = series_df[series_df["status"].fillna("") == "success"]
+    if series_df.empty:
+        return pd.DataFrame()
+
+    rows: list[dict[str, object]] = []
+    for _, run_row in series_df.iterrows():
+        exp_dir_value = run_row.get("exp_dir", "")
+        exp_dir = (
+            Path(exp_dir_value)
+            if isinstance(exp_dir_value, str) and exp_dir_value
+            else runs_dir / str(run_row["experiment_signature"])
+        )
+        test_results_path = exp_dir / "test_results.json"
+        if not test_results_path.exists():
+            continue
+
+        test_results = json.loads(test_results_path.read_text(encoding="utf-8"))
+        readout = test_results.get("readout_diagnostics")
+        if not isinstance(readout, dict):
+            continue
+
+        row: dict[str, object] = {
+            "experiment_name": run_row.get("experiment_name"),
+            "experiment_signature": run_row.get("experiment_signature"),
+            "splitter_seed": run_row.get("splitter_seed"),
+            "batch_run_index": run_row.get("batch_run_index"),
+            "status": run_row.get("status"),
+            "test_rmse": _coerce_float(test_results.get("RMSE", run_row.get("test_rmse"))),
+            "test_pearson": _coerce_float(test_results.get("Pearson_R", run_row.get("test_pearson"))),
+            "test_ci": _coerce_float(test_results.get("CI", run_row.get("test_ci"))),
+            "readout_type": readout.get("type"),
+            "mixer_has_bias": readout.get("mixer_has_bias"),
+            "alpha": _coerce_float(readout.get("alpha")),
+            "beta": _coerce_float(readout.get("beta")),
+            "gamma": _coerce_float(readout.get("gamma")),
+            "local_to_global_abs_contribution_ratio": _coerce_float(
+                readout.get("local_to_global_abs_contribution_ratio")
+            ),
+        }
+
+        for prefix in (
+            "global_branch_output",
+            "local_branch_output",
+            "global_contribution",
+            "local_contribution",
+            "alpha_stats",
+            "beta_stats",
+            "gamma_stats",
+            "local_to_global_abs_contribution_ratio_stats",
+        ):
+            block = readout.get(prefix)
+            if not isinstance(block, dict):
+                continue
+            for key in ("mean", "std", "min", "max", "mean_abs"):
+                if key in block:
+                    row[f"{prefix}_{key}"] = _coerce_float(block.get(key))
+
+        rows.append(row)
+
+    if not rows:
+        return pd.DataFrame()
+    diag_df = pd.DataFrame(rows)
+    numeric_cols = [
+        col
+        for col in diag_df.columns
+        if col
+        not in {
+            "experiment_name",
+            "experiment_signature",
+            "status",
+            "readout_type",
+            "mixer_has_bias",
+        }
+    ]
+    for column in numeric_cols:
+        diag_df[column] = pd.to_numeric(diag_df[column], errors="coerce")
+    return diag_df.sort_values(["batch_run_index", "splitter_seed", "experiment_signature"]).reset_index(drop=True)
+
+
+def summarize_a3_mixture_diagnostics(diag_df: pd.DataFrame) -> dict[str, pd.DataFrame]:
+    if diag_df.empty:
+        raise ValueError("No readout diagnostics rows available")
+
+    required = {
+        "alpha",
+        "beta",
+        "gamma",
+        "test_rmse",
+        "test_pearson",
+        "test_ci",
+        "global_contribution_mean_abs",
+        "local_contribution_mean_abs",
+        "local_to_global_abs_contribution_ratio",
+    }
+    missing = sorted(required - set(diag_df.columns))
+    if missing:
+        raise ValueError(f"Missing required diagnostic columns: {', '.join(missing)}")
+
+    parameter_cols = [
+        "alpha",
+        "beta",
+        "gamma",
+        "global_branch_output_mean",
+        "local_branch_output_mean",
+        "global_contribution_mean",
+        "local_contribution_mean",
+        "global_contribution_mean_abs",
+        "local_contribution_mean_abs",
+        "local_to_global_abs_contribution_ratio",
+        "local_to_global_abs_contribution_ratio_stats_mean",
+        "local_to_global_abs_contribution_ratio_stats_std",
+        "test_rmse",
+        "test_pearson",
+        "test_ci",
+    ]
+    parameter_cols = [col for col in parameter_cols if col in diag_df.columns]
+
+    summary_rows: list[dict[str, object]] = []
+    for col in parameter_cols:
+        series = pd.to_numeric(diag_df[col], errors="coerce").dropna()
+        if series.empty:
+            continue
+        summary_rows.append(
+            {
+                "metric": col,
+                "n": int(series.shape[0]),
+                "mean": float(series.mean()),
+                "std": float(series.std(ddof=0)),
+                "min": float(series.min()),
+                "max": float(series.max()),
+                "median": float(series.median()),
+            }
+        )
+    summary_df = pd.DataFrame(summary_rows).sort_values("metric").reset_index(drop=True)
+
+    correlation_pairs = [
+        ("alpha", "test_rmse"),
+        ("alpha", "test_pearson"),
+        ("alpha", "test_ci"),
+        ("beta", "test_rmse"),
+        ("beta", "test_pearson"),
+        ("beta", "test_ci"),
+        ("gamma", "test_rmse"),
+        ("gamma", "test_pearson"),
+        ("gamma", "test_ci"),
+        ("local_to_global_abs_contribution_ratio", "test_rmse"),
+        ("local_to_global_abs_contribution_ratio", "test_pearson"),
+        ("local_to_global_abs_contribution_ratio", "test_ci"),
+        ("local_contribution_mean_abs", "test_rmse"),
+        ("local_contribution_mean_abs", "test_pearson"),
+        ("local_contribution_mean_abs", "test_ci"),
+    ]
+
+    corr_rows: list[dict[str, object]] = []
+    for left, right in correlation_pairs:
+        if left not in diag_df.columns or right not in diag_df.columns:
+            continue
+        pair = diag_df[[left, right]].dropna()
+        if len(pair) < 2:
+            corr = None
+        else:
+            corr = float(pair[left].corr(pair[right]))
+        corr_rows.append(
+            {
+                "x": left,
+                "y": right,
+                "pearson_corr": corr,
+                "n": int(len(pair)),
+            }
+        )
+    corr_df = pd.DataFrame(corr_rows).sort_values(["x", "y"]).reset_index(drop=True)
+
+    ranking_cols = [
+        col
+        for col in [
+            "experiment_signature",
+            "splitter_seed",
+            "batch_run_index",
+            "test_rmse",
+            "test_pearson",
+            "test_ci",
+            "alpha",
+            "beta",
+            "gamma",
+            "global_contribution_mean_abs",
+            "local_contribution_mean_abs",
+            "local_to_global_abs_contribution_ratio",
+        ]
+        if col in diag_df.columns
+    ]
+    by_pearson_df = diag_df[ranking_cols].sort_values(
+        ["test_pearson", "test_ci", "test_rmse"],
+        ascending=[False, False, True],
+    ).reset_index(drop=True)
+    by_rmse_df = diag_df[ranking_cols].sort_values(
+        ["test_rmse", "test_pearson", "test_ci"],
+        ascending=[True, False, False],
+    ).reset_index(drop=True)
+
+    return {
+        "per_run": diag_df.copy(),
+        "summary": summary_df,
+        "correlations": corr_df,
+        "ranked_by_pearson": by_pearson_df,
+        "ranked_by_rmse": by_rmse_df,
+    }
+
+
+def plot_a3_mixture_parameters(
+    diag_df: pd.DataFrame,
+    *,
+    figsize: tuple[float, float] = (10, 4.8),
+    title: str | None = None,
+) -> plt.Axes:
+    required = ["alpha", "beta", "gamma"]
+    missing = [col for col in required if col not in diag_df.columns]
+    if missing:
+        raise ValueError(f"Missing required columns for parameter plot: {', '.join(missing)}")
+
+    plot_df = diag_df.copy()
+    x = np.arange(len(plot_df))
+    labels = (
+        plot_df.get("splitter_seed")
+        if "splitter_seed" in plot_df.columns
+        else plot_df.get("batch_run_index")
+    )
+    if labels is None:
+        labels = pd.Series(range(1, len(plot_df) + 1))
+
+    fig, ax = plt.subplots(figsize=figsize)
+    ax.plot(x, plot_df["alpha"], marker="o", linewidth=1.8, label="alpha")
+    ax.plot(x, plot_df["beta"], marker="o", linewidth=1.8, label="beta")
+    ax.plot(x, plot_df["gamma"], marker="o", linewidth=1.8, label="gamma (bias)")
+    ax.axhline(0.0, color="black", linewidth=1.0, alpha=0.5)
+    ax.set_xticks(x)
+    ax.set_xticklabels([str(v) for v in labels], rotation=0)
+    ax.set_xlabel("Seed" if "splitter_seed" in plot_df.columns else "Run")
+    ax.set_ylabel("Coefficient value")
+    ax.set_title(title or "A3 mixer parameters by run")
+    ax.grid(alpha=0.3)
+    ax.legend(loc="best", fontsize=8)
+    plt.tight_layout()
+    return ax
+
+
+def plot_a3_local_ratio_vs_metric(
+    diag_df: pd.DataFrame,
+    *,
+    metric: str = "test_pearson",
+    figsize: tuple[float, float] = (6.5, 5.0),
+    title: str | None = None,
+) -> plt.Axes:
+    x_col = "local_to_global_abs_contribution_ratio"
+    required = [x_col, metric]
+    missing = [col for col in required if col not in diag_df.columns]
+    if missing:
+        raise ValueError(f"Missing required columns for ratio plot: {', '.join(missing)}")
+
+    plot_df = diag_df.dropna(subset=required).copy()
+    if plot_df.empty:
+        raise ValueError(f"No rows available with both {x_col} and {metric}")
+
+    fig, ax = plt.subplots(figsize=figsize)
+    scatter = ax.scatter(
+        plot_df[x_col],
+        plot_df[metric],
+        c=plot_df.get("splitter_seed", pd.Series(np.arange(len(plot_df)))).to_numpy(),
+        cmap="viridis",
+        s=55,
+        alpha=0.9,
+    )
+    for _, row in plot_df.iterrows():
+        label = row.get("splitter_seed", row.get("batch_run_index", ""))
+        ax.annotate(
+            str(int(label)) if pd.notna(label) and float(label).is_integer() else str(label),
+            (row[x_col], row[metric]),
+            textcoords="offset points",
+            xytext=(4, 4),
+            ha="left",
+            fontsize=8,
+        )
+    corr = plot_df[x_col].corr(plot_df[metric]) if len(plot_df) >= 2 else np.nan
+    ax.set_xlabel("local/global abs contribution ratio")
+    ax.set_ylabel(metric)
+    corr_text = f" (corr={corr:.3f})" if pd.notna(corr) else ""
+    ax.set_title(title or f"{metric} vs local/global ratio{corr_text}")
+    ax.grid(alpha=0.3)
+    cbar = plt.colorbar(scatter, ax=ax)
+    cbar.set_label("splitter_seed" if "splitter_seed" in plot_df.columns else "run index")
+    plt.tight_layout()
+    return ax
+
+
+def plot_a3_alpha_beta_scatter(
+    diag_df: pd.DataFrame,
+    *,
+    color_metric: str = "test_rmse",
+    figsize: tuple[float, float] = (6.5, 5.2),
+    title: str | None = None,
+) -> plt.Axes:
+    required = ["alpha", "beta", color_metric]
+    missing = [col for col in required if col not in diag_df.columns]
+    if missing:
+        raise ValueError(f"Missing required columns for alpha/beta scatter: {', '.join(missing)}")
+
+    plot_df = diag_df.dropna(subset=required).copy()
+    if plot_df.empty:
+        raise ValueError("No rows available for alpha/beta scatter")
+
+    fig, ax = plt.subplots(figsize=figsize)
+    scatter = ax.scatter(
+        plot_df["alpha"],
+        plot_df["beta"],
+        c=plot_df[color_metric],
+        cmap="plasma",
+        s=65,
+        alpha=0.9,
+    )
+    for _, row in plot_df.iterrows():
+        label = row.get("splitter_seed", row.get("batch_run_index", ""))
+        ax.annotate(
+            str(int(label)) if pd.notna(label) and float(label).is_integer() else str(label),
+            (row["alpha"], row["beta"]),
+            textcoords="offset points",
+            xytext=(4, 4),
+            ha="left",
+            fontsize=8,
+        )
+    ax.axhline(0.0, color="black", linewidth=1.0, alpha=0.4)
+    ax.axvline(0.0, color="black", linewidth=1.0, alpha=0.4)
+    ax.set_xlabel("alpha")
+    ax.set_ylabel("beta")
+    ax.set_title(title or f"alpha vs beta colored by {color_metric}")
+    ax.grid(alpha=0.3)
+    cbar = plt.colorbar(scatter, ax=ax)
+    cbar.set_label(color_metric)
+    plt.tight_layout()
+    return ax
+
+
 def summarize_history_metric_by_epoch(history_df: pd.DataFrame, metric: str) -> pd.DataFrame:
     if history_df.empty:
         raise ValueError("No history rows available")
@@ -519,3 +869,17 @@ def _nan_or_none(value: float) -> float | None:
     if pd.isna(value):
         return None
     return float(value)
+
+
+def _coerce_float(value: object) -> float | None:
+    if value is None:
+        return None
+    try:
+        if pd.isna(value):
+            return None
+    except TypeError:
+        pass
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
