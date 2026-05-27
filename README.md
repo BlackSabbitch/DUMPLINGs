@@ -686,6 +686,55 @@ The fuller answer now looks closer to:
 > local branch still does not look trustworthy enough to dominate the final
 > prediction.
 
+The next experiment family tested whether the problem was simply that the local
+branch was too geometry-only. A lightweight `ext` variant was added for `A2`
+and `A3`, enriching the local branch with optional chemistry-aware features
+derived during graph construction:
+
+- atom-level charge / aromaticity / hybridization style descriptors,
+- donor / acceptor flags,
+- residue-class and sidechain/backbone labels on the pocket side,
+- and local contact-type participation summaries.
+
+This enrichment path was implemented as a switchable parser-side extension, so
+the underlying `A2` and `A3` architectures remained unchanged. In other words,
+`A2ext` and `A3ext` are not new model families; they are the same families fed
+an enriched local signal.
+
+After the incomplete runs were finished and the `ext` families were compared on
+the same 10-seed footing as the earlier `A1/A2/A3` series, the conclusion
+became a little sharper.
+
+The result was again informative and again negative in the scientifically
+useful sense:
+
+- `A2_full` remained the strongest overall series and the current performance
+  reference,
+- `A2ext_full` landed extremely close to `A2_full` and may be best described as
+  neutral-to-slightly-positive, but not as a clear new record,
+- `A3ext_with_bias` did not materially improve on `A3_with_bias`,
+- `A3ext_without_bias` looked healthier than plain `A3_without_bias`, but still
+  did not rise into the same class as `A2`.
+
+So the first local-chemistry enrichment pass did not rescue the local branch or
+surpass the current `A2_full` record. The most plausible reading is not that
+local chemistry is irrelevant, but that this particular injection path is too
+weak or too indirect: chemistry-aware node summaries did not translate into a
+stronger local predictor under the current local DimeNet++ + late fusion
+design.
+
+The nuanced positive signal is that enrichment appears easier to read as a
+stabilizer than as a breakthrough. In particular, `A3ext_without_bias` moved
+closer to the bias-enabled `A3` variants, which suggests that chemistry-aware
+local summaries may make the local branch less fragile even when they do not
+make it decisively more predictive.
+
+For `A3ext_with_bias`, the diagnostic picture also stayed cautious rather than
+transformative. The old pattern "larger relative local contribution tends to
+hurt" appears to weaken somewhat, but no new stable high-performing coefficient
+regime emerges. That suggests the enrichment may make the local branch slightly
+less pathological without making it decisively more useful.
+
 ### Immediate Next Questions
 
 The next questions are therefore slightly different from the original ones:
@@ -695,9 +744,8 @@ The next questions are therefore slightly different from the original ones:
 2. would a different local encoder (for example a SchNet-style alternative)
    produce a local signal that is more useful and less destabilizing than the
    current local DimeNet++ path?
-3. would richer local chemistry features help the local branch carry more
-   informative sample-specific structure instead of acting as a noisy
-   correction?
+3. do we need true **pair/edge-aware** local interaction features, rather than
+   node-level chemistry summaries, before local chemistry can really matter?
 4. only after that, does it make sense to move toward pair-scoring or more
    explicit local-interaction experiments (`A3a`)?
 
@@ -1542,8 +1590,14 @@ The project includes:
   pieces to preserve are the factual packets, prompt previews, caching, and
   Colab execution path, not the expectation that a larger generic local model
   will automatically become a trustworthy experiment analyst.
-- Expand ligand context with optional ablations such as `SASA` and electronic
-  descriptors once the compact baseline is stable.
+- Treat `A2_full` as the current performance reference. The completed
+  `A2ext` / `A3ext` chemistry-enrichment series were a useful negative result:
+  parser-side local chemistry summaries were operationally clean and
+  scientifically interpretable, but they did not beat `A2_full`.
+- If the local branch is revisited next, prioritize stronger local signal
+  content over more scalar readout tricks: pair/edge-aware interaction
+  features, directional local geometry, or a different local encoder are more
+  promising than another round of the same node-summary enrichment.
 - Add additional geometric baselines that consume richer parser output.
 - Tighten regression-test coverage around dataset cache signatures and runtime
   diagnostics.

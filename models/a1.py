@@ -5,7 +5,7 @@ from typing import Sequence
 import torch
 from torch import nn
 
-from models.graph_components import build_dimenet_backbone, get_global_encoder_config
+from models.graph_components import build_geometry_backbone, get_global_encoder_config
 from models.protein_context import (
     ProteinContextProjector,
     build_protein_context_encoder,
@@ -48,7 +48,7 @@ class A1DimeNet(nn.Module):
         self.protein_context_mode = get_protein_context_mode(config)
         self.ligand_context_mode = get_ligand_context_mode(config)
 
-        self.gnn = build_dimenet_backbone(self.global_encoder_cfg)
+        self.gnn = build_geometry_backbone(self.global_encoder_cfg)
 
         self.protein_context_encoder = build_protein_context_encoder(config, device)
         self.protein_context_projector = None

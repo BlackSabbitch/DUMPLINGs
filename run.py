@@ -1209,6 +1209,7 @@ class ExperimentRunner:
                     f"Local branch settings -> local_graph={local_graph_mode} "
                     f"(dist_threshold={local_graph_cfg.get('dist_threshold', 'na')}), "
                     f"local_encoder={local_encoder_mode}, hidden_channels={local_encoder_cfg.hidden_channels}, "
+                    f"pooling_mode={getattr(local_encoder_cfg, 'pooling_mode', 'na')}, "
                     f"cutoff={local_encoder_cfg.cutoff}, max_num_neighbors={local_encoder_cfg.max_num_neighbors}, "
                     f"num_blocks={local_encoder_cfg.num_blocks}",
                     stage="MODEL"
@@ -1236,7 +1237,9 @@ class ExperimentRunner:
                 f"A3 readout settings -> mixer_bias={get_a3_mixer_bias(self.config, self.a3_mixer_bias)}",
                 stage="MODEL"
             )
-        elif local_graph_mode != "none" or get_local_encoder_mode(self.config) != "none":
+        elif model_family not in {"A2", "A3"} and (
+            local_graph_mode != "none" or get_local_encoder_mode(self.config) != "none"
+        ):
             log_info(
                 f"Local branch configuration present but ignored because model={model_family}: "
                 f"local_graph={local_graph_mode}, local_encoder={get_local_encoder_mode(self.config)}",

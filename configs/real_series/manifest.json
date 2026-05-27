@@ -78,5 +78,29 @@
     "protein_context_mode": "esm_frozen_whole",
     "ligand_context_mode": "basic_rdkit",
     "launch_extra_args": "--no-a3-mixer-bias"
+  },
+  {
+    "filename": "a2s_full.json",
+    "experiment_name": "DUMPLING_A2s_full",
+    "model_family": "A2",
+    "protein_context_mode": "esm_frozen_whole",
+    "ligand_context_mode": "basic_rdkit",
+    "launch_extra_args": ""
+  },
+  {
+    "filename": "a3s_with_bias.json",
+    "experiment_name": "DUMPLING_A3s_with_bias",
+    "model_family": "A3",
+    "protein_context_mode": "esm_frozen_whole",
+    "ligand_context_mode": "basic_rdkit",
+    "launch_extra_args": "--a3-mixer-bias"
+  },
+  {
+    "filename": "a3s_without_bias.json",
+    "experiment_name": "DUMPLING_A3s_without_bias",
+    "model_family": "A3",
+    "protein_context_mode": "esm_frozen_whole",
+    "ligand_context_mode": "basic_rdkit",
+    "launch_extra_args": "--no-a3-mixer-bias"
   }
 ]

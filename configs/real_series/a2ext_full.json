@@ -72,7 +72,16 @@
                     "cutoff": 3.5,
                     "max_num_neighbors": 12,
                     "num_blocks": 3,
-                    "pooling_mode": "mean"
+                    "pooling_mode": "sum"
+                },
+                "SchNet": {
+                    "hidden_channels": 128,
+                    "cutoff": 3.5,
+                    "max_num_neighbors": 12,
+                    "num_interactions": 3,
+                    "num_filters": 128,
+                    "num_gaussians": 50,
+                    "pooling_mode": "sum"
                 }
             }
         },

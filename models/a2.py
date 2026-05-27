@@ -12,7 +12,7 @@ from parsers.local_chemical_features import (
     normalize_local_chemical_features_config,
 )
 from models.graph_components import (
-    build_dimenet_backbone,
+    build_geometry_backbone,
     get_global_encoder_config,
     get_local_encoder_config,
     get_local_graph_config,
@@ -32,10 +32,11 @@ class A2DimeNet(A1DimeNet):
     - concatenates the coarse global representation with the local
       representation before the final readout.
 
-    The first revision intentionally keeps the local branch simple:
-    radius-based node selection plus a second DimeNet++ encoder. Importance-
-    based local weighting is left for later A2/A3a iterations, but the model
-    already exposes clean seams for that expansion.
+    The current revision intentionally keeps the local branch simple:
+    radius-based node selection plus a second geometry encoder selected through
+    config (`DimeNet` by default, `SchNet` as an ablation). Importance-based
+    local weighting is left for later A2/A3a iterations, but the model already
+    exposes clean seams for that expansion.
     """
 
     def __init__(
@@ -61,7 +62,7 @@ class A2DimeNet(A1DimeNet):
         self.local_chemical_projector = None
         self.local_chemical_gate = None
         if self.local_encoder_cfg is not None and self.local_graph_mode != "none":
-            self.local_gnn = build_dimenet_backbone(self.local_encoder_cfg)
+            self.local_gnn = build_geometry_backbone(self.local_encoder_cfg)
             self.local_cutoff = float(self.local_graph_cfg.get("dist_threshold", 3.5))
             self.local_output_norm = nn.LayerNorm(self.local_encoder_cfg.hidden_channels)
             if self.local_chemical_enabled and self.local_chemical_feature_dim > 0:

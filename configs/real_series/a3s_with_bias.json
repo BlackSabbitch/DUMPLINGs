@@ -1,5 +1,5 @@
 {
-    "experiment_name": "DUMPLING_A1_dimenet_only",
+    "experiment_name": "DUMPLING_A3s_with_bias",
     "debug_mode": true,
     "splitter": {
         "selected": "random",
@@ -33,7 +33,7 @@
         "lig_vocab": "?ABCDEFGHIKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-=[]()#%@+./\\:,;^$"
     },
     "model": {
-        "selected": "A1",
+        "selected": "A3",
         "global_graph": {
             "selected": "interaction",
             "available": {
@@ -64,7 +64,7 @@
             }
         },
         "local_encoder": {
-            "selected": "DimeNet",
+            "selected": "SchNet",
             "available": {
                 "none": {},
                 "DimeNet": {
@@ -86,7 +86,7 @@
             }
         },
         "protein_context": {
-            "selected": "none",
+            "selected": "esm_frozen_whole",
             "available": {
                 "none": {},
                 "esm_frozen_whole": {
@@ -119,7 +119,7 @@
             }
         },
         "ligand_context": {
-            "selected": "none",
+            "selected": "basic_rdkit",
             "available": {
                 "none": {},
                 "basic_rdkit": {

@@ -4,7 +4,9 @@ import os
 from dataclasses import dataclass
 from typing import Any
 
-from torch_geometric.nn import DimeNetPlusPlus
+import torch
+from torch import nn
+from torch_geometric.nn import DimeNetPlusPlus, SchNet
 
 
 @dataclass(frozen=True)
@@ -22,6 +24,9 @@ class EncoderConfig:
     cutoff: float
     max_num_neighbors: int
     num_blocks: int
+    pooling_mode: str = "sum"
+    num_filters: int = 128
+    num_gaussians: int = 50
 
 
 def get_model_family(config: dict) -> str:
@@ -116,6 +121,9 @@ def get_global_encoder_config(config: dict) -> EncoderConfig:
         cutoff=float(params.get("cutoff", params.get("dist_threshold", 5.0))),
         max_num_neighbors=int(params.get("max_num_neighbors", 32)),
         num_blocks=int(params.get("num_blocks", 3)),
+        pooling_mode=str(params.get("pooling_mode", "sum")),
+        num_filters=int(params.get("num_filters", params.get("hidden_channels", 128))),
+        num_gaussians=int(params.get("num_gaussians", 50)),
     )
 
 
@@ -135,7 +143,10 @@ def get_local_encoder_config(config: dict) -> EncoderConfig | None:
         hidden_channels=int(entry.get("hidden_channels", 128)),
         cutoff=float(entry.get("cutoff", 3.5)),
         max_num_neighbors=int(entry.get("max_num_neighbors", 32)),
-        num_blocks=int(entry.get("num_blocks", 3)),
+        num_blocks=int(entry.get("num_interactions", entry.get("num_blocks", 3))),
+        pooling_mode=str(entry.get("pooling_mode", "sum")),
+        num_filters=int(entry.get("num_filters", entry.get("hidden_channels", 128))),
+        num_gaussians=int(entry.get("num_gaussians", 50)),
     )
 
 
@@ -166,3 +177,86 @@ def build_dimenet_backbone(
         max_num_neighbors=encoder_cfg.max_num_neighbors,
         envelope_exponent=5,
     )
+
+
+class SchNetBackbone(nn.Module):
+    """
+    Thin SchNet wrapper that returns a graph-level embedding instead of a scalar.
+
+    PyG's stock `SchNet` applies an additional regression head and then pools to
+    one scalar per graph. For the DUMPLINGs A2/A3 local branch we want the
+    pooled hidden representation itself so it can play the same role as the
+    DimeNet branch embedding.
+    """
+
+    def __init__(
+        self,
+        encoder_cfg: EncoderConfig,
+        out_channels: int | None = None,
+    ) -> None:
+        super().__init__()
+        readout = encoder_cfg.pooling_mode.lower()
+        if readout == "sum":
+            readout = "add"
+        if readout not in {"add", "mean"}:
+            raise ValueError(
+                f"Unsupported SchNet pooling_mode={encoder_cfg.pooling_mode!r}. "
+                "Use 'sum'/'add' or 'mean'."
+            )
+
+        self.hidden_channels = encoder_cfg.hidden_channels
+        self.out_channels = encoder_cfg.hidden_channels if out_channels is None else out_channels
+        self.core = SchNet(
+            hidden_channels=encoder_cfg.hidden_channels,
+            num_filters=encoder_cfg.num_filters,
+            num_interactions=encoder_cfg.num_blocks,
+            num_gaussians=encoder_cfg.num_gaussians,
+            cutoff=encoder_cfg.cutoff,
+            max_num_neighbors=encoder_cfg.max_num_neighbors,
+            readout=readout,
+        )
+        if self.out_channels == encoder_cfg.hidden_channels:
+            self.output_proj = nn.Identity()
+        else:
+            self.output_proj = nn.Linear(encoder_cfg.hidden_channels, self.out_channels)
+
+    def forward(self, z: torch.Tensor, pos: torch.Tensor, batch: torch.Tensor | None = None) -> torch.Tensor:
+        batch = torch.zeros_like(z) if batch is None else batch
+
+        h = self.core.embedding(z)
+        edge_index, edge_weight = self.core.interaction_graph(pos, batch)
+        edge_attr = self.core.distance_expansion(edge_weight)
+
+        for interaction in self.core.interactions:
+            h = h + interaction(h, edge_index, edge_weight, edge_attr)
+
+        graph_h = self.core.readout(h, batch, dim=0)
+        return self.output_proj(graph_h)
+
+
+def build_schnet_backbone(
+    encoder_cfg: EncoderConfig,
+    out_channels: int | None = None,
+) -> SchNetBackbone:
+    return SchNetBackbone(encoder_cfg=encoder_cfg, out_channels=out_channels)
+
+
+def build_geometry_backbone(
+    encoder_cfg: EncoderConfig,
+    out_channels: int | None = None,
+) -> nn.Module:
+    """
+    Build the configured geometry backbone behind a branch.
+
+    At the moment DUMPLINGs keeps the branch contract intentionally simple:
+    every geometry encoder must accept `(z, pos, batch)` and return one pooled
+    vector per graph. This makes DimeNet/SchNet local-encoder swaps a clean
+    ablation rather than a model-family rewrite.
+    """
+
+    name = encoder_cfg.name.lower()
+    if name == "dimenet":
+        return build_dimenet_backbone(encoder_cfg, out_channels=out_channels)
+    if name == "schnet":
+        return build_schnet_backbone(encoder_cfg, out_channels=out_channels)
+    raise ValueError(f"Unsupported geometry encoder: {encoder_cfg.name!r}")

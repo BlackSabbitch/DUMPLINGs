@@ -72,7 +72,16 @@
                     "cutoff": 3.5,
                     "max_num_neighbors": 12,
                     "num_blocks": 3,
-                    "pooling_mode": "mean"
+                    "pooling_mode": "sum"
+                },
+                "SchNet": {
+                    "hidden_channels": 128,
+                    "cutoff": 3.5,
+                    "max_num_neighbors": 12,
+                    "num_interactions": 3,
+                    "num_filters": 128,
+                    "num_gaussians": 50,
+                    "pooling_mode": "sum"
                 }
             }
         },
@@ -120,6 +129,18 @@
                     "precompute_batch_size": 256
                 }
             }
+        },
+        "local_chemical_features": {
+            "enabled": false,
+            "features": {
+                "formal_charge": true,
+                "donor_acceptor": true,
+                "pair_contact_flags": true,
+                "residue_chemistry": true,
+                "sidechain_backbone": true,
+                "aromaticity": true,
+                "hybridization": true
+            }
         }
     },
     "training": {
@@ -142,22 +163,33 @@
         "loss_fn": {
             "selected": "HuberLoss",
             "available": {
-                "HuberLoss": { "delta": 1.0 },
+                "HuberLoss": {
+                    "delta": 1.0
+                },
                 "MSELoss": {}
             }
         },
         "optimizers": {
             "classic": {
                 "type": "AdamW",
-                "params": { "lr": 0.0001, "weight_decay": 0.01 },
+                "params": {
+                    "lr": 0.0001,
+                    "weight_decay": 0.01
+                },
                 "scheduler": {
                     "type": "ReduceLROnPlateau",
-                    "params": { "mode": "min", "factor": 0.5, "patience": 3 }
+                    "params": {
+                        "mode": "min",
+                        "factor": 0.5,
+                        "patience": 3
+                    }
                 }
             },
             "quantum": {
                 "type": "AdamW",
-                "params": { "lr": 0.001 }
+                "params": {
+                    "lr": 0.001
+                }
             }
         }
     }
