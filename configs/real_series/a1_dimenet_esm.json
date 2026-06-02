@@ -1,5 +1,6 @@
 {
     "experiment_name": "DUMPLING_A1_dimenet_esm",
+    "short_description": "A1 hybrid baseline: global DimeNet interaction-graph encoder plus frozen whole-protein ESM context; no ligand descriptors.",
     "debug_mode": true,
     "splitter": {
         "selected": "random",

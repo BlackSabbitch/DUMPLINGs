@@ -1,5 +1,6 @@
 {
     "experiment_name": "DUMPLING_A1_esm_only",
+    "short_description": "A1 sequence-only baseline: frozen whole-protein ESM context without graph geometry or ligand descriptors.",
     "debug_mode": true,
     "splitter": {
         "selected": "random",

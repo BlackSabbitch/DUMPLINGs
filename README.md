@@ -729,6 +729,14 @@ closer to the bias-enabled `A3` variants, which suggests that chemistry-aware
 local summaries may make the local branch less fragile even when they do not
 make it decisively more predictive.
 
+> **WARNING (HISTORICAL CONFIG BUG)**
+> Earlier `A3_without_bias` and `A3s_without_bias` JSON configs did not
+> explicitly set `model.a3.mixer_bias=false`. Some historical runs launched by
+> direct `CONFIG_PATH=...` execution may therefore have behaved like
+> bias-enabled runs. Treat those series as provisional until the no-bias
+> variants are re-run under the corrected configs. The `A3ext_without_bias`
+> config was already explicit and is not affected by this specific issue.
+
 For `A3ext_with_bias`, the diagnostic picture also stayed cautious rather than
 transformative. The old pattern "larger relative local contribution tends to
 hurt" appears to weaken somewhat, but no new stable high-performing coefficient

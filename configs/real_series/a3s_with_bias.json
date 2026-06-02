@@ -1,5 +1,6 @@
 {
     "experiment_name": "DUMPLING_A3s_with_bias",
+    "short_description": "A3 SchNet-local mixture variant: global DimeNet branch plus local SchNet branch with a linear coarse/local mixer and trainable bias, frozen whole-protein ESM context, ligand RDKit descriptors, and local chemistry enrichment disabled.",
     "debug_mode": true,
     "splitter": {
         "selected": "random",
@@ -34,6 +35,9 @@
     },
     "model": {
         "selected": "A3",
+        "a3": {
+            "mixer_bias": true
+        },
         "global_graph": {
             "selected": "interaction",
             "available": {

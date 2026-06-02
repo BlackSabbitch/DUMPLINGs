@@ -1,6 +1,6 @@
 {
-    "experiment_name": "DUMPLING_A1_smoke_tests",
-    "short_description": "Base template: A1 with a global DimeNet interaction-graph encoder, frozen whole-protein ESM context, ligand RDKit descriptors, and local chemistry enrichment disabled.",
+    "experiment_name": "DUMPLING_A2sext_full",
+    "short_description": "A2 SchNet-local chemistry-enriched variant: global DimeNet branch plus local SchNet branch, frozen whole-protein ESM context, ligand RDKit descriptors, and local chemistry summaries enabled.",
     "debug_mode": true,
     "splitter": {
         "selected": "random",
@@ -34,7 +34,21 @@
         "lig_vocab": "?ABCDEFGHIKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-=[]()#%@+./\\:,;^$"
     },
     "model": {
-        "selected": "A1",
+        "selected": "A2",
+        "head": {
+            "selected": "mlp",
+            "available": {
+                "mlp": {
+                    "hidden_dim": 64
+                },
+                "vqc": {
+                    "pre_hidden_dim": 64,
+                    "n_qubits": 6,
+                    "n_layers": 2,
+                    "backend": "default.qubit"
+                }
+            }
+        },
         "global_graph": {
             "selected": "interaction",
             "available": {
@@ -65,7 +79,7 @@
             }
         },
         "local_encoder": {
-            "selected": "DimeNet",
+            "selected": "SchNet",
             "available": {
                 "none": {},
                 "DimeNet": {
@@ -132,7 +146,7 @@
             }
         },
         "local_chemical_features": {
-            "enabled": false,
+            "enabled": true,
             "features": {
                 "formal_charge": true,
                 "donor_acceptor": true,

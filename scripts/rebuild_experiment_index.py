@@ -28,6 +28,7 @@ REGISTRY_FIELD_ORDER = [
     "duration_sec",
     "status",
     "experiment_name",
+    "short_description",
     "experiment_signature",
     "exp_dir",
     "config_path",
@@ -86,6 +87,11 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Where to write the rebuilt series markdown journal. Defaults to <runs-dir>/experiment_series_journal.md",
     )
+    parser.add_argument(
+        "--backfill-run-configs",
+        action="store_true",
+        help="Write missing short_description values back into discovered run config.json files when they can be recovered from the current config catalog.",
+    )
     return parser.parse_args()
 
 
@@ -98,6 +104,49 @@ def load_json(path: Path) -> dict | None:
             return json.load(f)
     except Exception:
         return None
+
+
+def load_config_catalog(repo_root: Path) -> dict[str, dict[str, str]]:
+    """Build a small experiment-name metadata catalog from current configs."""
+    catalog: dict[str, dict[str, str]] = {}
+
+    manifest_path = repo_root / "configs" / "real_series" / "manifest.json"
+    manifest = load_json(manifest_path)
+    if isinstance(manifest, list):
+        for entry in manifest:
+            if not isinstance(entry, dict):
+                continue
+            experiment_name = str(entry.get("experiment_name", "")).strip()
+            if not experiment_name:
+                continue
+            catalog.setdefault(experiment_name, {})
+            short_description = str(entry.get("short_description", "")).strip()
+            if short_description:
+                catalog[experiment_name]["short_description"] = short_description
+
+    config_dir = repo_root / "configs" / "real_series"
+    if config_dir.exists():
+        for path in sorted(config_dir.glob("*.json")):
+            config = load_json(path)
+            if not isinstance(config, dict):
+                continue
+            experiment_name = str(config.get("experiment_name", "")).strip()
+            if not experiment_name:
+                continue
+            catalog.setdefault(experiment_name, {})
+            short_description = str(config.get("short_description", "")).strip()
+            if short_description:
+                catalog[experiment_name]["short_description"] = short_description
+
+    root_config = load_json(repo_root / "config.json")
+    if isinstance(root_config, dict):
+        experiment_name = str(root_config.get("experiment_name", "")).strip()
+        short_description = str(root_config.get("short_description", "")).strip()
+        if experiment_name and short_description:
+            catalog.setdefault(experiment_name, {})
+            catalog[experiment_name]["short_description"] = short_description
+
+    return catalog
 
 
 def find_first(path: Path, pattern: str) -> Path | None:
@@ -226,13 +275,19 @@ def build_factual_notes(
     return notes
 
 
-def build_registry_row(run_dir: Path) -> tuple[dict[str, str], list[str]]:
+def build_registry_row(
+    run_dir: Path,
+    config_catalog: dict[str, dict[str, str]],
+    *,
+    backfill_run_configs: bool = False,
+) -> tuple[dict[str, str], list[str]]:
     """Recover one portable registry row from the artifacts in a run folder."""
     manifest = load_json(run_dir / "run_manifest.json") or {}
     manifest_row = manifest.get("registry_row", {}) if isinstance(manifest, dict) else {}
     history = manifest.get("history_metrics") if isinstance(manifest, dict) else None
 
-    config = load_json(run_dir / "config.json")
+    config_path = run_dir / "config.json"
+    config = load_json(config_path)
     history = history or load_json(find_first(run_dir, "history*.json") or Path(""))
     test_metrics = load_json(find_first(run_dir, "test_results*.json") or Path(""))
     summary_path = find_first(run_dir, "assistant_summary*.md")
@@ -248,6 +303,17 @@ def build_registry_row(run_dir: Path) -> tuple[dict[str, str], list[str]]:
         or summary_snapshot.get("experiment_name", "")
         or str((config or {}).get("experiment_name", ""))
     )
+    catalog_entry = config_catalog.get(experiment_name, {})
+    short_description = str((config or {}).get("short_description", "")).strip()
+    if not short_description:
+        short_description = str(catalog_entry.get("short_description", "")).strip()
+        if short_description:
+            if config is None:
+                config = {}
+            config["short_description"] = short_description
+            if backfill_run_configs and config_path.exists():
+                with config_path.open("w", encoding="utf-8") as f:
+                    json.dump(config, f, indent=4)
     started_at = (
         str(manifest_row.get("started_at", ""))
         or normalize_iso_like(summary_snapshot.get("started_at", ""))
@@ -294,9 +360,10 @@ def build_registry_row(run_dir: Path) -> tuple[dict[str, str], list[str]]:
         "duration_sec": duration_sec,
         "status": str(manifest_row.get("status", "")) or summary_snapshot.get("status", "") or ("success" if test_metrics else ""),
         "experiment_name": experiment_name,
+        "short_description": short_description,
         "experiment_signature": signature,
         "exp_dir": str(manifest_row.get("exp_dir", "")) or str(run_dir.resolve()),
-        "config_path": str(manifest_row.get("config_path", "")) or str((run_dir / "config.json").resolve()),
+        "config_path": str(manifest_row.get("config_path", "")) or str(config_path.resolve()),
         "git_commit": str(manifest_row.get("git_commit", "")) or summary_snapshot.get("git_commit", ""),
         "execution_env": str(manifest_row.get("execution_env", "")) or summary_snapshot.get("execution_env", ""),
         "hostname": str(manifest_row.get("hostname", "")) or summary_snapshot.get("hostname", ""),
@@ -405,6 +472,7 @@ def build_series_records(rows_with_notes: list[tuple[dict[str, str], list[str], 
         series_records.append(
             {
                 "experiment_name": experiment_name,
+                "short_description": consensus_value(rows, "short_description"),
                 "model_family": consensus_value(rows, "model_family"),
                 "source_subset": consensus_value(rows, "source_subset"),
                 "splitter": consensus_value(rows, "splitter"),
@@ -503,6 +571,8 @@ def build_journal_entry(
         f"env: `{row.get('execution_env', '')}` | seed: `{row.get('splitter_seed', '')}` | "
         f"duration_sec: `{row.get('duration_sec', '')}`"
     )
+    if row.get("short_description", ""):
+        lines.append(f"- description: {row.get('short_description', '')}")
     lines.append(
         f"- location: `{row.get('exp_dir', '')}` on `{row.get('hostname', '')}`"
     )
@@ -548,6 +618,8 @@ def build_series_journal_entry(series: dict) -> list[str]:
         f"model=`{series.get('model_family', '')}` | runs=`{series.get('total_runs', '')}`"
     )
     lines = [header, ""]
+    if series.get("short_description", ""):
+        lines.append(f"- description: {series.get('short_description', '')}")
     lines.append(
         f"- setup: subset=`{series.get('source_subset', '')}` | "
         f"splitter=`{series.get('splitter', '')}` | core_as_test=`{series.get('core_as_test', '')}` | "
@@ -620,6 +692,7 @@ def main() -> None:
     registry_path = (args.registry_path or (runs_dir / "experiment_registry.csv")).resolve()
     journal_path = (args.journal_path or (runs_dir / "experiment_journal.md")).resolve()
     series_journal_path = (args.series_journal_path or (runs_dir / "experiment_series_journal.md")).resolve()
+    config_catalog = load_config_catalog(runs_dir.parent.resolve())
 
     if not runs_dir.exists():
         raise SystemExit(f"runs dir does not exist: {runs_dir}")
@@ -628,7 +701,11 @@ def main() -> None:
     seen_signatures: set[str] = set()
 
     for run_dir in discover_run_dirs(runs_dir):
-        row, heuristic_notes = build_registry_row(run_dir)
+        row, heuristic_notes = build_registry_row(
+            run_dir,
+            config_catalog,
+            backfill_run_configs=args.backfill_run_configs,
+        )
         signature = row.get("experiment_signature", "")
         if not signature or signature in seen_signatures:
             continue

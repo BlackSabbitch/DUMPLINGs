@@ -1,5 +1,6 @@
 {
     "experiment_name": "DUMPLING_A1_dimenet_only",
+    "short_description": "A1 graph-only baseline: fused interaction graph with a global DimeNet encoder; no protein context and no ligand descriptors.",
     "debug_mode": true,
     "splitter": {
         "selected": "random",

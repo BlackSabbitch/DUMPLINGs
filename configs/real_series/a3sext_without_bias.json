@@ -1,6 +1,6 @@
 {
-    "experiment_name": "DUMPLING_A1_smoke_tests",
-    "short_description": "Base template: A1 with a global DimeNet interaction-graph encoder, frozen whole-protein ESM context, ligand RDKit descriptors, and local chemistry enrichment disabled.",
+    "experiment_name": "DUMPLING_A3sext_without_bias",
+    "short_description": "A3 bias-free SchNet-local chemistry-enriched mixture variant: global DimeNet branch plus local SchNet branch with a linear coarse/local mixer and no bias term, frozen whole-protein ESM context, ligand RDKit descriptors, and local chemistry summaries enabled.",
     "debug_mode": true,
     "splitter": {
         "selected": "random",
@@ -34,7 +34,10 @@
         "lig_vocab": "?ABCDEFGHIKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-=[]()#%@+./\\:,;^$"
     },
     "model": {
-        "selected": "A1",
+        "selected": "A3",
+        "a3": {
+            "mixer_bias": false
+        },
         "global_graph": {
             "selected": "interaction",
             "available": {
@@ -65,7 +68,7 @@
             }
         },
         "local_encoder": {
-            "selected": "DimeNet",
+            "selected": "SchNet",
             "available": {
                 "none": {},
                 "DimeNet": {
@@ -84,6 +87,18 @@
                     "num_gaussians": 50,
                     "pooling_mode": "sum"
                 }
+            }
+        },
+        "local_chemical_features": {
+            "enabled": true,
+            "features": {
+                "formal_charge": true,
+                "donor_acceptor": true,
+                "pair_contact_flags": true,
+                "residue_chemistry": true,
+                "sidechain_backbone": true,
+                "aromaticity": true,
+                "hybridization": true
             }
         },
         "protein_context": {
@@ -129,18 +144,6 @@
                     "embedding_dim": 7,
                     "precompute_batch_size": 256
                 }
-            }
-        },
-        "local_chemical_features": {
-            "enabled": false,
-            "features": {
-                "formal_charge": true,
-                "donor_acceptor": true,
-                "pair_contact_flags": true,
-                "residue_chemistry": true,
-                "sidechain_backbone": true,
-                "aromaticity": true,
-                "hybridization": true
             }
         }
     },

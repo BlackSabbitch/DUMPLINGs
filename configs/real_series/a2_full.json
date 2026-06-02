@@ -1,5 +1,6 @@
 {
     "experiment_name": "DUMPLING_A2_full",
+    "short_description": "A2 coarse-to-local baseline: global DimeNet branch plus local DimeNet branch, frozen whole-protein ESM context, ligand RDKit descriptors, and local chemistry enrichment disabled.",
     "debug_mode": true,
     "splitter": {
         "selected": "random",
@@ -34,6 +35,20 @@
     },
     "model": {
         "selected": "A2",
+        "head": {
+            "selected": "mlp",
+            "available": {
+                "mlp": {
+                    "hidden_dim": 64
+                },
+                "vqc": {
+                    "pre_hidden_dim": 64,
+                    "n_qubits": 6,
+                    "n_layers": 2,
+                    "backend": "default.qubit"
+                }
+            }
+        },
         "global_graph": {
             "selected": "interaction",
             "available": {

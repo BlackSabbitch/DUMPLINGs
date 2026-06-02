@@ -1177,6 +1177,12 @@ class ExperimentRunner:
             f"epochs={self.config['training']['epochs']}",
             stage="EXPERIMENT"
         )
+        short_description = str(self.config.get("short_description", "")).strip()
+        if short_description:
+            log_info(
+                f"Experiment description -> {short_description}",
+                stage="EXPERIMENT"
+            )
         self._log_model_overview(
             model_family=model_family,
             global_graph_mode=global_graph_mode,

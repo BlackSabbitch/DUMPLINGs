@@ -1,5 +1,6 @@
 {
     "experiment_name": "DUMPLING_A3ext_without_bias",
+    "short_description": "A3 bias-free chemistry-enriched mixture variant: global DimeNet branch plus local DimeNet branch with a linear coarse/local mixer and no bias term, frozen whole-protein ESM context, ligand RDKit descriptors, and local chemistry summaries enabled.",
     "debug_mode": true,
     "splitter": {
         "selected": "random",

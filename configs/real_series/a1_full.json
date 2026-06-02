@@ -1,5 +1,6 @@
 {
     "experiment_name": "DUMPLING_A1_full",
+    "short_description": "A1 full baseline: global DimeNet interaction-graph encoder plus frozen whole-protein ESM context and ligand RDKit descriptors.",
     "debug_mode": true,
     "splitter": {
         "selected": "random",
