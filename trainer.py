@@ -48,7 +48,7 @@ class Trainer:
         self.train_cfg = config['training']
         self.evaluator = evaluator or Evaluator(model, device)
 
-        q_prefixes = ["qlayer.", "final_layer."]
+        q_prefixes = ["qlayer.", "final_layer.", "head.qlayer.", "head.final_layer."]
         all_params = list(model.named_parameters())
         quantum_named_params = [
             (n, p) for n, p in all_params if any(n.startswith(prefix) for prefix in q_prefixes)]
@@ -129,6 +129,10 @@ class Trainer:
 
     @staticmethod
     def _parameter_group_name(param_name: str) -> str:
+        if param_name.startswith("head.qlayer."):
+            return "qlayer"
+        if param_name.startswith("head.final_layer."):
+            return "final_layer"
         if param_name.startswith("protein_context_encoder."):
             return "protein_context_encoder"
         if param_name.startswith("protein_context_projector."):
@@ -141,12 +145,12 @@ class Trainer:
             return "local_gnn"
         if param_name.startswith("gnn."):
             return "gnn"
-        if param_name.startswith("head."):
-            return "head"
         if param_name.startswith("qlayer."):
             return "qlayer"
         if param_name.startswith("final_layer."):
             return "final_layer"
+        if param_name.startswith("head."):
+            return "head"
         return param_name.split(".", 1)[0]
 
     @staticmethod

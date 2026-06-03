@@ -14,10 +14,14 @@ from parsers.local_chemical_features import (
 from models.graph_components import (
     build_geometry_backbone,
     get_global_encoder_config,
+    get_head_config,
+    get_head_mode,
     get_local_encoder_config,
     get_local_graph_config,
     get_local_graph_mode,
+    get_model_family,
 )
+from models.vqc_head import VQCHead
 
 
 class A2DimeNet(A1DimeNet):
@@ -50,6 +54,19 @@ class A2DimeNet(A1DimeNet):
         self.local_graph_mode = get_local_graph_mode(config)
         self.local_graph_cfg = get_local_graph_config(config)
         self.local_encoder_cfg = get_local_encoder_config(config)
+        self.head_owner_family = get_model_family(config)
+        if self.head_owner_family == "A2":
+            self.head_mode = get_head_mode(config)
+            self.head_cfg = get_head_config(config)
+        else:
+            # A3 inherits through A2 but replaces the readout entirely; other
+            # families ignore `model.head` as well. Keep the intermediate A2
+            # initialization path explicitly classical in those cases. In
+            # particular, A3 does not "use an MLP head" semantically here:
+            # `A3DimeNet.__init__` replaces this temporary A2 readout with its
+            # own structured coarse/local heads and final linear mixer.
+            self.head_mode = "mlp"
+            self.head_cfg = {}
 
         self.local_gnn = None
         self.local_cutoff = None
@@ -98,12 +115,42 @@ class A2DimeNet(A1DimeNet):
         The head itself stays deliberately small; the main architectural change
         in A2 is the existence of the local branch, not a more expressive MLP.
         """
-        hidden_dim = max(self.global_encoder_cfg.hidden_channels // 2, 1)
-        return nn.Sequential(
-            nn.Linear(input_dim, hidden_dim),
-            nn.SiLU(),
-            nn.Linear(hidden_dim, out_channels),
-        )
+        if self.head_mode == "mlp":
+            hidden_dim = int(
+                self.head_cfg.get(
+                    "hidden_dim",
+                    max(self.global_encoder_cfg.hidden_channels // 2, 1),
+                )
+            )
+            return nn.Sequential(
+                nn.Linear(input_dim, hidden_dim),
+                nn.SiLU(),
+                nn.Linear(hidden_dim, out_channels),
+            )
+
+        if self.head_mode == "vqc":
+            adapter_hidden_layers = self.head_cfg.get("adapter_hidden_layers")
+            if adapter_hidden_layers is None and "pre_hidden_dim" in self.head_cfg:
+                adapter_hidden_layers = [int(self.head_cfg["pre_hidden_dim"])]
+            return VQCHead(
+                input_dim=input_dim,
+                out_channels=out_channels,
+                adapter_hidden_layers=adapter_hidden_layers,
+                adapter_activation=str(self.head_cfg.get("adapter_activation", "Tanh")),
+                n_qubits=int(self.head_cfg.get("n_qubits", 6)),
+                n_layers=int(self.head_cfg.get("n_layers", 2)),
+                backend=str(self.head_cfg.get("backend", "default.qubit")),
+                rotation=str(self.head_cfg.get("rotation", "X")),
+                initial_rotation=str(self.head_cfg.get("initial_rotation", "Y")),
+                entanglement=str(self.head_cfg.get("entanglement", "strongly_entangling")),
+                input_scale=float(self.head_cfg.get("input_scale", 0.01)),
+                start_scale=float(self.head_cfg.get("start_scale", torch.pi / 6)),
+                end_scale=float(self.head_cfg.get("end_scale", torch.pi)),
+                readout_hidden_dim=self.head_cfg.get("readout_hidden_dim", 16),
+                readout_activation=str(self.head_cfg.get("readout_activation", "Tanh")),
+            )
+
+        raise ValueError(f"Unsupported A2 head mode: {self.head_mode!r}")
 
     @staticmethod
     def _select_local_mask_for_graph(
@@ -314,4 +361,6 @@ class A2DimeNet(A1DimeNet):
             fused_parts.append(self._encode_local_branch(complex_data))
 
         fused = fused_parts[0] if len(fused_parts) == 1 else torch.cat(fused_parts, dim=-1)
+        if self.head_mode == "vqc":
+            return self.head(fused, progress=progress).view(-1)
         return self.head(fused).view(-1)

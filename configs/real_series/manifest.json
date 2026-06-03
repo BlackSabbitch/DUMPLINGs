@@ -142,5 +142,23 @@
     "protein_context_mode": "esm_frozen_whole",
     "ligand_context_mode": "basic_rdkit",
     "launch_extra_args": "--no-a3-mixer-bias"
+  },
+  {
+    "filename": "a2q_full.json",
+    "experiment_name": "DUMPLING_A2q_full",
+    "short_description": "A2 quantum-readout variant: global DimeNet branch plus local DimeNet branch, frozen whole-protein ESM context, ligand RDKit descriptors, local chemistry enrichment disabled, and a VQC head replacing the default MLP readout.",
+    "model_family": "A2",
+    "protein_context_mode": "esm_frozen_whole",
+    "ligand_context_mode": "basic_rdkit",
+    "launch_extra_args": ""
+  },
+  {
+    "filename": "a2qext_full.json",
+    "experiment_name": "DUMPLING_A2qext_full",
+    "short_description": "A2 quantum-readout chemistry-enriched variant: global DimeNet branch plus local DimeNet branch, frozen whole-protein ESM context, ligand RDKit descriptors, local chemistry summaries enabled, and a VQC head replacing the default MLP readout.",
+    "model_family": "A2",
+    "protein_context_mode": "esm_frozen_whole",
+    "ligand_context_mode": "basic_rdkit",
+    "launch_extra_args": ""
   }
 ]

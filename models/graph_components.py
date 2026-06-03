@@ -44,6 +44,36 @@ def get_model_family(config: dict) -> str:
     return str(config.get("model", {}).get("selected", "A1"))
 
 
+def get_head_mode(config: dict) -> str:
+    """
+    Return the selected readout-head mode.
+
+    At the moment only A2 consumes this switch directly, but the config entry
+    is kept generic so experiment JSONs stay uniform as the model ladder grows.
+    """
+
+    return str(config.get("model", {}).get("head", {}).get("selected", "mlp")).lower()
+
+
+def get_head_config(config: dict) -> dict[str, Any]:
+    """
+    Return the normalized config payload for the selected readout head.
+
+    Missing head sections default to the historical `mlp` behavior so older
+    configs remain valid.
+    """
+
+    head_section = config.get("model", {}).get("head", {})
+    selected = get_head_mode(config)
+    available = head_section.get("available", {})
+    for key, value in available.items():
+        if str(key).lower() == selected:
+            return dict(value)
+    if selected == "mlp":
+        return {}
+    raise ValueError(f"Unsupported head.selected={selected!r}")
+
+
 def _parse_bool_override(name: str, raw_value: str) -> bool:
     value = raw_value.strip().lower()
     if value in {"1", "true", "yes", "y", "on"}:

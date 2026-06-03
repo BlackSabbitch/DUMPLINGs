@@ -12,3 +12,4 @@ matplotlib
 # pyg-lib
 uniplot
 fair-esm
+pennylane

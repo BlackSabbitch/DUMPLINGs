@@ -31,6 +31,8 @@ from models.graph_components import (
     get_global_encoder_config,
     get_global_graph_config,
     get_global_graph_mode,
+    get_head_config,
+    get_head_mode,
     get_local_encoder_config,
     get_local_encoder_mode,
     get_local_graph_config,
@@ -1203,6 +1205,38 @@ class ExperimentRunner:
             f"protein_context={protein_context_mode}, ligand_context={ligand_context_mode}",
             stage="MODEL"
         )
+        head_mode = get_head_mode(self.config)
+        head_cfg = get_head_config(self.config)
+        if model_family == "A2":
+            if head_mode == "vqc":
+                adapter_hidden_layers = head_cfg.get("adapter_hidden_layers")
+                if adapter_hidden_layers is None and "pre_hidden_dim" in head_cfg:
+                    adapter_hidden_layers = [int(head_cfg["pre_hidden_dim"])]
+                log_info(
+                    "A2 readout settings -> "
+                    f"head=vqc, adapter_hidden_layers={adapter_hidden_layers or [128, 64]}, "
+                    f"adapter_activation={head_cfg.get('adapter_activation', 'Tanh')}, "
+                    f"n_qubits={head_cfg.get('n_qubits', 6)}, n_layers={head_cfg.get('n_layers', 2)}, "
+                    f"backend={head_cfg.get('backend', 'default.qubit')}, "
+                    f"rotation={head_cfg.get('rotation', 'X')}, "
+                    f"initial_rotation={head_cfg.get('initial_rotation', 'Y')}, "
+                    f"input_scale={head_cfg.get('input_scale', 0.01)}, "
+                    f"angle_schedule=[{head_cfg.get('start_scale', torch.pi / 6):.4f}, "
+                    f"{head_cfg.get('end_scale', torch.pi):.4f}], "
+                    f"readout_hidden_dim={head_cfg.get('readout_hidden_dim', 16)}",
+                    stage="MODEL"
+                )
+            else:
+                log_info(
+                    f"A2 readout settings -> head=mlp, hidden_dim={head_cfg.get('hidden_dim', max(hidden_dim // 2, 1))}",
+                    stage="MODEL"
+                )
+        elif head_mode != "mlp":
+            log_info(
+                f"Additional head configuration present but currently unused by model={model_family}: "
+                f"head={head_mode}",
+                stage="MODEL"
+            )
         if model_family in {"A2", "A3"}:
             local_encoder_mode = get_local_encoder_mode(self.config)
             if local_encoder_cfg is None or local_graph_mode == "none":
@@ -1258,6 +1292,16 @@ class ExperimentRunner:
             f"weight_decay={classic_opt_cfg['params'].get('weight_decay', 0.0)}",
             stage="OPTIMIZER"
         )
+        if model_family == "A2" and head_mode == "vqc":
+            quantum_opt_cfg = self.config['training']['optimizers']['quantum']
+            quantum_scheduler = quantum_opt_cfg.get('scheduler')
+            log_info(
+                f"Quantum optimizer settings -> type={quantum_opt_cfg['type']}, "
+                f"lr={quantum_opt_cfg['params'].get('lr')}, "
+                f"weight_decay={quantum_opt_cfg['params'].get('weight_decay', 0.0)}, "
+                f"scheduler={quantum_scheduler['type'] if quantum_scheduler else 'none'}",
+                stage="OPTIMIZER"
+            )
         log_info("Preparing model initialization.", stage="MODEL")
         model_init_started_at = time.perf_counter()
         if model_family == "A3":

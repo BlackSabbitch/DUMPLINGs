@@ -42,10 +42,22 @@
                     "hidden_dim": 64
                 },
                 "vqc": {
-                    "pre_hidden_dim": 64,
+                    "adapter_hidden_layers": [
+                        128,
+                        64
+                    ],
+                    "adapter_activation": "Tanh",
                     "n_qubits": 6,
                     "n_layers": 2,
-                    "backend": "default.qubit"
+                    "backend": "default.qubit",
+                    "rotation": "X",
+                    "initial_rotation": "Y",
+                    "entanglement": "strongly_entangling",
+                    "input_scale": 0.01,
+                    "start_scale": 0.5235987755982988,
+                    "end_scale": 3.141592653589793,
+                    "readout_hidden_dim": 16,
+                    "readout_activation": "Tanh"
                 }
             }
         },

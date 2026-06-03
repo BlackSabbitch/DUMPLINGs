@@ -1,6 +1,6 @@
 {
-    "experiment_name": "DUMPLING_A1_dimenet_only",
-    "short_description": "A1 graph-only baseline: fused interaction graph with a global DimeNet encoder; no protein context and no ligand descriptors.",
+    "experiment_name": "DUMPLING_A2qext_full",
+    "short_description": "A2 quantum-readout chemistry-enriched variant: global DimeNet branch plus local DimeNet branch, frozen whole-protein ESM context, ligand RDKit descriptors, local chemistry summaries enabled, and a VQC head replacing the default MLP readout.",
     "debug_mode": true,
     "splitter": {
         "selected": "random",
@@ -34,9 +34,9 @@
         "lig_vocab": "?ABCDEFGHIKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-=[]()#%@+./\\:,;^$"
     },
     "model": {
-        "selected": "A1",
+        "selected": "A2",
         "head": {
-            "selected": "mlp",
+            "selected": "vqc",
             "available": {
                 "mlp": {
                     "hidden_dim": 64
@@ -112,8 +112,20 @@
                 }
             }
         },
+        "local_chemical_features": {
+            "enabled": true,
+            "features": {
+                "formal_charge": true,
+                "donor_acceptor": true,
+                "pair_contact_flags": true,
+                "residue_chemistry": true,
+                "sidechain_backbone": true,
+                "aromaticity": true,
+                "hybridization": true
+            }
+        },
         "protein_context": {
-            "selected": "none",
+            "selected": "esm_frozen_whole",
             "available": {
                 "none": {},
                 "esm_frozen_whole": {
@@ -146,7 +158,7 @@
             }
         },
         "ligand_context": {
-            "selected": "none",
+            "selected": "basic_rdkit",
             "available": {
                 "none": {},
                 "basic_rdkit": {
@@ -155,18 +167,6 @@
                     "embedding_dim": 7,
                     "precompute_batch_size": 256
                 }
-            }
-        },
-        "local_chemical_features": {
-            "enabled": false,
-            "features": {
-                "formal_charge": true,
-                "donor_acceptor": true,
-                "pair_contact_flags": true,
-                "residue_chemistry": true,
-                "sidechain_backbone": true,
-                "aromaticity": true,
-                "hybridization": true
             }
         }
     },
@@ -215,7 +215,15 @@
             "quantum": {
                 "type": "AdamW",
                 "params": {
-                    "lr": 0.001
+                    "lr": 0.001,
+                    "weight_decay": 0.01
+                },
+                "scheduler": {
+                    "type": "CosineAnnealingLR",
+                    "params": {
+                        "T_max": 100,
+                        "eta_min": 1e-06
+                    }
                 }
             }
         }
